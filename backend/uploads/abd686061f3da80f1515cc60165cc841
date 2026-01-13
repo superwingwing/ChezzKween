@@ -1,0 +1,33 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2025.10.06"]
+[Round "-"]
+[White "Post889738"]
+[Black "super-wingwing"]
+[Result "0-1"]
+[CurrentPosition "6k1/1b2Rppp/8/4PQ2/8/8/P4PNP/2r3K1 w - - 1 29"]
+[Timezone "UTC"]
+[ECO "B12"]
+[ECOUrl "https://www.chess.com/openings/Caro-Kann-Defense-Advance-Botvinnik-Carls-Defense-4.dxc5-Nc6-5.Nf3-e6"]
+[UTCDate "2025.10.06"]
+[UTCTime "18:05:17"]
+[WhiteElo "1811"]
+[BlackElo "1811"]
+[TimeControl "60"]
+[Termination "super-wingwing won on time"]
+[StartTime "18:05:17"]
+[EndDate "2025.10.06"]
+[EndTime "18:07:26"]
+[Link "https://www.chess.com/analysis/game/live/143979385764/analysis?move=51"]
+[WhiteUrl "https://www.chess.com/bundles/web/images/noavatar_l.84a92436.gif"]
+[WhiteCountry "2"]
+[WhiteTitle ""]
+[BlackUrl "https://images.chesscomfiles.com/uploads/v1/user/271696241.033794cf.50x50o.c237a49275b0.jpg"]
+[BlackCountry "111"]
+[BlackTitle ""]
+
+1. e4 c6 2. d4 d5 3. e5 c5 4. dxc5 Nc6 5. Nf3 e6 6. Be3 Nge7 7. c3 Nf5 8. Bd4
+Be7 9. Bd3 b6 10. cxb6 axb6 11. O-O O-O 12. Nbd2 Bb7 13. Bxf5 exf5 14. Qc2 Qd7
+15. Rfe1 Rac8 16. Qd3 Na5 17. Bxb6 Nc4 18. Nxc4 Rxc4 19. b3 Rcc8 20. c4 Qc6 21.
+Bd4 dxc4 22. bxc4 Rfd8 23. Qxf5 Rxd4 24. Rad1 Rxc4 25. Rd7 Rc1 26. Rxe7 Rxe1+
+27. Nxe1 Qxg2+ 28. Nxg2 Rc1+ 0-1

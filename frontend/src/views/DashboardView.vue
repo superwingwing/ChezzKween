@@ -28,48 +28,38 @@
           class="mt-3"
         ></v-progress-linear>
         <p v-if="loading">{{ progress }}%</p>
-
-        <!-- Video Output -->
-            <video
-              v-if="videoUrl"
-              :key="videoUrl"
-              :src="videoUrl"
-              controls
-              preload="metadata"
-              class="mt-4"
-              style="width:100%"
-            ></video>
-
       </v-card-text>
     </v-card>
 
-    <!-- Move Analysis -->
-    <v-card v-if="analysis.length" class="mt-5">
-      <v-card-title>Move Analysis (from Lichess)</v-card-title>
-      <v-list>
-        <v-list-item
-          v-for="(a, idx) in analysis"
-          :key="idx"
-        >
-          Move {{ idx + 1 }}: {{ a.move }} — Eval: {{ a.eval }}
-        </v-list-item>
-      </v-list>
+    <!-- All Generated Videos -->
+    <v-card class="mt-5">
+      <v-card-title>All Generated Videos</v-card-title>
+      <v-card-text>
+        <div v-if="videos.length === 0">No videos found.</div>
+        <div v-for="(video, idx) in videos" :key="idx" class="mt-3">
+          <video
+            :src="video"
+            controls
+            preload="metadata"
+            style="width:100%"
+          ></video>
+        </div>
+      </v-card-text>
     </v-card>
 
   </v-container>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const fileInput = ref(null)
 const file = ref(null)
 const fileName = ref('')
-const videoUrl = ref('')
 const loading = ref(false)
 const progress = ref(0)
-const analysis = ref([])
+const videos = ref([])
 
 let progressInterval = null
 
@@ -84,7 +74,7 @@ function selectFile(e) {
   fileName.value = file.value.name
 }
 
-// Generate video and fetch analysis
+// Generate video and refresh list
 async function generateVideo() {
   if (!file.value) {
     alert('Please upload a PGN file first')
@@ -93,8 +83,6 @@ async function generateVideo() {
 
   loading.value = true
   progress.value = 0
-  videoUrl.value = ''
-  analysis.value = []
 
   // Start polling progress
   progressInterval = setInterval(async () => {
@@ -111,14 +99,12 @@ async function generateVideo() {
   formData.append('pgn', file.value)
 
   try {
-    const res = await axios.post('http://localhost:3000/upload', formData)
-
-    // Stop progress polling
+    await axios.post('http://localhost:3000/upload', formData)
     clearInterval(progressInterval)
     progress.value = 100
 
-    videoUrl.value = 'http://localhost:3000' + res.data.videoUrl
-    analysis.value = res.data.analysis || []
+    // Refresh the video list
+    await loadVideos()
   } catch (err) {
     console.error(err)
     alert('Video generation failed')
@@ -127,4 +113,21 @@ async function generateVideo() {
     loading.value = false
   }
 }
+
+// Load all generated videos
+async function loadVideos() {
+  try {
+    const res = await axios.get('http://localhost:3000/videos')
+    // prepend server origin to each video path
+    videos.value = res.data.videos.map(v => 'http://localhost:3000' + v)
+  } catch (err) {
+    console.error('Failed to load videos:', err)
+    videos.value = []
+  }
+}
+
+// Load videos when component mounts
+onMounted(() => {
+  loadVideos()
+})
 </script>

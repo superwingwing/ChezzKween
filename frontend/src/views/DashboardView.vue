@@ -1,6 +1,5 @@
 <template>
   <v-container>
-
     <!-- Upload PGN -->
     <v-card>
       <v-card-title>Upload PGN</v-card-title>
@@ -18,16 +17,6 @@
         <v-btn color="green" @click="generateVideo" :loading="loading">
           Generate 🎥
         </v-btn>
-
-        <!-- Progress Bar -->
-        <v-progress-linear
-          v-if="loading"
-          :value="progress"
-          striped
-          color="green"
-          class="mt-3"
-        ></v-progress-linear>
-        <p v-if="loading">{{ progress }}%</p>
       </v-card-text>
     </v-card>
 
@@ -37,16 +26,11 @@
       <v-card-text>
         <div v-if="videos.length === 0">No videos found.</div>
         <div v-for="(video, idx) in videos" :key="idx" class="mt-3">
-          <video
-            :src="video"
-            controls
-            preload="metadata"
-            style="width:100%"
-          ></video>
+          <video :src="'http://localhost:8000' + video" controls style="width:100%"></video>
+          <p>{{ video.split('/').pop() }}</p>
         </div>
       </v-card-text>
     </v-card>
-
   </v-container>
 </template>
 
@@ -58,76 +42,59 @@ const fileInput = ref(null)
 const file = ref(null)
 const fileName = ref('')
 const loading = ref(false)
-const progress = ref(0)
 const videos = ref([])
 
-let progressInterval = null
+// Open hidden file input
+function openFile() { fileInput.value.click() }
 
-// Open file dialog
-function openFile() {
-  fileInput.value.click()
-}
-
-// Select PGN file
+// Select a PGN file
 function selectFile(e) {
   file.value = e.target.files[0]
   fileName.value = file.value.name
 }
 
-// Generate video and refresh list
+// Upload PGN and generate video
 async function generateVideo() {
-  if (!file.value) {
-    alert('Please upload a PGN file first')
-    return
-  }
-
+  if (!file.value) return alert("Upload a PGN first")
   loading.value = true
-  progress.value = 0
-
-  // Start polling progress
-  progressInterval = setInterval(async () => {
-    try {
-      const res = await axios.get('http://localhost:3000/progress')
-      progress.value = res.data.progress
-    } catch (err) {
-      console.error('Progress polling error:', err)
-    }
-  }, 300)
-
-  // Upload PGN
   const formData = new FormData()
-  formData.append('pgn', file.value)
-
+  formData.append("file", file.value)
   try {
-    await axios.post('http://localhost:3000/upload', formData)
-    clearInterval(progressInterval)
-    progress.value = 100
-
-    // Refresh the video list
-    await loadVideos()
-  } catch (err) {
-    console.error(err)
-    alert('Video generation failed')
-    clearInterval(progressInterval)
-  } finally {
-    loading.value = false
+    // Correct endpoint
+    await axios.post("http://localhost:8000/upload_pgn", formData)
+    await loadVideos()  // refresh video list
+  } catch (err) { 
+    console.error(err) 
+    alert("Failed to generate video. Check console for details.")
   }
+  loading.value = false
 }
 
-// Load all generated videos
+// Load all videos from backend
 async function loadVideos() {
   try {
-    const res = await axios.get('http://localhost:3000/videos')
-    // prepend server origin to each video path
-    videos.value = res.data.videos.map(v => 'http://localhost:3000' + v)
-  } catch (err) {
-    console.error('Failed to load videos:', err)
-    videos.value = []
+    // Correct endpoint for listing videos
+    const res = await axios.get("http://localhost:8000/videos")
+    videos.value = res.data.videos
+  } catch (err) { 
+    console.error(err) 
+    alert("Failed to load videos. Check console.")
   }
 }
 
-// Load videos when component mounts
-onMounted(() => {
-  loadVideos()
-})
+// Load videos on mount
+onMounted(() => { loadVideos() })
 </script>
+
+<style scoped>
+.videos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.video-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+</style>

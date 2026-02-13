@@ -1,41 +1,6 @@
-<template>
-  <v-container>
-    <!-- Upload PGN -->
-    <v-card>
-      <v-card-title>Upload PGN</v-card-title>
-      <v-card-text>
-        <v-btn @click="openFile">Upload</v-btn>
-        <input ref="fileInput" hidden type="file" accept=".pgn" @change="selectFile">
-        <p v-if="fileName">File: {{ fileName }}</p>
-      </v-card-text>
-    </v-card>
-
-    <!-- Generate Video -->
-    <v-card class="mt-5">
-      <v-card-title>Generate Video</v-card-title>
-      <v-card-text>
-        <v-btn color="green" @click="generateVideo" :loading="loading">
-          Generate 🎥
-        </v-btn>
-      </v-card-text>
-    </v-card>
-
-    <!-- All Generated Videos -->
-    <v-card class="mt-5">
-      <v-card-title>All Generated Videos</v-card-title>
-      <v-card-text>
-        <div v-if="videos.length === 0">No videos found.</div>
-        <div v-for="(video, idx) in videos" :key="idx" class="mt-3">
-          <video :src="'http://localhost:8000' + video" controls style="width:100%"></video>
-          <p>{{ video.split('/').pop() }}</p>
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-container>
-</template>
-
 <script setup>
 import { ref, onMounted } from 'vue'
+import PlayerStyleUpload from '@/views/PlayerStyleUpload.vue'
 import axios from 'axios'
 
 const fileInput = ref(null)
@@ -86,6 +51,45 @@ async function loadVideos() {
 onMounted(() => { loadVideos() })
 </script>
 
+<template>
+  <v-container>
+    <!-- Upload PGN -->
+    <v-card>
+      <v-card-title>Upload PGN</v-card-title>
+      <v-card-text>
+        <v-btn @click="openFile">Upload</v-btn>
+        <input ref="fileInput" hidden type="file" accept=".pgn" @change="selectFile">
+        <p v-if="fileName">File: {{ fileName }}</p>
+      </v-card-text>
+    </v-card>
+
+    <!-- Generate Video -->
+    <v-card class="mt-5">
+      <v-card-title>Generate Video</v-card-title>
+      <v-card-text>
+        <v-btn color="green" @click="generateVideo" :loading="loading">
+          Generate 🎥
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
+    <!-- All Generated Videos -->
+    <v-card class="mt-5">
+      <v-card-title>All Generated Videos</v-card-title>
+      <v-card-text>
+        <div v-if="videos.length === 0">No videos found.</div>
+        <div v-for="(video, idx) in videos" :key="idx" class="mt-3">
+          <video :src="'http://localhost:8000' + video" controls style="width:100%"></video>
+          <p>{{ video.split('/').pop() }}</p>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- Player Style Classification -->
+    <PlayerStyleUpload />
+  </v-container>
+</template>
+
 <style scoped>
 .videos-grid {
   display: flex;
@@ -98,3 +102,4 @@ onMounted(() => { loadVideos() })
   align-items: center;
 }
 </style>
+

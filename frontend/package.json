@@ -13,9 +13,10 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "axios": "^1.13.2",
+    "axios": "^1.14.0",
     "chess.js": "^1.4.0",
     "chessboard-element": "^1.2.0",
+    "chessboardjs": "^0.0.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4",

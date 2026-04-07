@@ -4,6 +4,7 @@ import axios from "axios"
 import { Chess } from "chess.js"
 import "chessboard-element"
 import SideNavigation from "@/views/SideNavigation.vue"
+import StyleClassification from "./StyleClassification.vue" 
 
 // refs
 const boardRef = ref(null)
@@ -86,37 +87,44 @@ function prevMove() {
 <template>
     <SideNavigation v-model="drawerOpen" />
 
-  <div style="max-width: 600px; margin: auto; text-align: center;">
-    <h2>♟️ ChezzKween</h2>
+ <div class="row">
+      <div  class="col" style="max-width: 600px; margin: auto; text-align: center;">
+        <br><br>
+        <h2>♟️ ChezzKween</h2>
 
-    <!-- hidden file input -->
-    <input
-      ref="fileInput"
-      type="file"
-      accept=".pgn"
-      @change="selectFile"
-      style="display:none"
-    />
+        <!-- hidden file input -->
+        <input
+          ref="fileInput"
+          type="file"
+          accept=".pgn"
+          @change="selectFile"
+          style="display:none"
+        />
 
-    <!-- buttons -->
-    <button @click="openFile">Select PGN</button>
-    <span v-if="fileName">📄 {{ fileName }}</span>
-    <br /><br />
+        <!-- buttons -->
+        <button @click="openFile">Select PGN</button>
+        <span v-if="fileName">📄 {{ fileName }}</span>
+        <br /><br />
 
-    <button @click="uploadPGN" :disabled="loading">
-      {{ loading ? "Loading..." : "Load Game" }}
-    </button>
+        <button @click="uploadPGN" :disabled="loading">
+          {{ loading ? "Loading..." : "Load Game" }}
+        </button>
 
-    <!-- chessboard -->
-    <chess-board
-      ref="boardRef"
-      style="width: 400px; margin: 20px auto;"
-    ></chess-board>
+        <!-- chessboard -->
+        <chess-board
+          ref="boardRef"
+          style="width: 400px; margin: 20px auto;"
+        ></chess-board>
 
-    <!-- controls -->
-    <div>
-      <button @click="prevMove">⬅️ Back </button>
-      <button @click="nextMove">Forward ➡️</button>
-    </div>
-  </div>
+        <!-- controls -->
+        <div>
+          <button @click="prevMove">⬅️ Back </button>
+          <button @click="nextMove">Forward ➡️</button>
+        </div>
+      </div>
+      <div class="col">
+        <StyleClassification />
+      </div>
+ </div>
+
 </template>

@@ -3,6 +3,7 @@ import { ref } from "vue"
 import axios from "axios"
 import { Chess } from "chess.js"
 import "chessboard-element"
+import SideNavigation from "@/views/SideNavigation.vue"
 
 // refs
 const boardRef = ref(null)
@@ -10,10 +11,10 @@ const fileInput = ref(null)
 const file = ref(null)
 const fileName = ref("")
 const loading = ref(false)
-
 const chess = new Chess()
 const moves = ref([])
 const moveIndex = ref(0)
+const drawerOpen = ref(true)
 
 // open file picker
 function openFile() {
@@ -83,8 +84,10 @@ function prevMove() {
 </script>
 
 <template>
+    <SideNavigation v-model="drawerOpen" />
+
   <div style="max-width: 600px; margin: auto; text-align: center;">
-    <h2>♟️ Chess PGN Viewer</h2>
+    <h2>♟️ ChezzKween</h2>
 
     <!-- hidden file input -->
     <input
@@ -112,7 +115,7 @@ function prevMove() {
 
     <!-- controls -->
     <div>
-      <button @click="prevMove">⬅️ Back</button>
+      <button @click="prevMove">⬅️ Back </button>
       <button @click="nextMove">Forward ➡️</button>
     </div>
   </div>

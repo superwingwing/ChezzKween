@@ -85,10 +85,11 @@ function prevMove() {
 </script>
 
 <template>
-    <SideNavigation v-model="drawerOpen" />
-
- <div class="row">
-      <div  class="col" style="max-width: 600px; margin: auto; text-align: center;">
+ <div class="v-row">
+      <div class="v-col">
+        <SideNavigation v-model="drawerOpen" />
+      </div>
+      <div  class="v-col" style="max-width: 600px; margin: auto; text-align: center;">
         <br><br>
         <h2>♟️ ChezzKween</h2>
 
@@ -122,7 +123,7 @@ function prevMove() {
           <button @click="nextMove">Forward ➡️</button>
         </div>
       </div>
-      <div class="col">
+      <div class="v-col">
         <StyleClassification />
       </div>
  </div>

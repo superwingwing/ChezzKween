@@ -86,11 +86,11 @@ async function classifyStyle() {
 
 <style scoped>
 .card {
-  margin-top: 20px;
-  padding: 20px;
+  margin-top: 10px;
+  padding: 10px;
   border-radius: 10px;
   background: #f5f5f5;
-  text-align: center;
+  /* text-align: center; */
 }
 
 button {

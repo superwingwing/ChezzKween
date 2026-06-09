@@ -13,7 +13,7 @@ const handleFiles = (event) => {
 };
 </script>
 
-<template>
+<template><br>
   <div class="card">
     <h2>Multi-File PGN Style Classifier</h2>
 
@@ -26,11 +26,13 @@ const handleFiles = (event) => {
         <span class="browse">[Click to Browse]</span>
       </p>
       <input
-        type="file"
-        multiple
-        ref="fileInput"
-        @change="handleFiles"
-        hidden
+       ref="fileInput"
+      type="file"
+      accept=".pgn"
+      multiple
+      webkitdirectory
+      @change="selectFiles"
+      style="display:none"
       />
     </div>
 

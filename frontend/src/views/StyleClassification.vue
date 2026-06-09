@@ -1,108 +1,102 @@
 <script setup>
-import { ref } from 'vue'
-import axios from 'axios'
+import { ref } from "vue";
 
-const fileInput = ref(null)
-const files = ref([])
-const fileNames = ref([])
-const loading = ref(false)
+const fileInput = ref(null);
 
-// open file picker
-function openFile() {
-  fileInput.value.click()
-}
+const browseFile = () => {
+  fileInput.value.click();
+};
 
-// handle file/folder selection
-function selectFiles(e) {
-  const selected = Array.from(e.target.files)
-
-  // filter only .pgn files
-  files.value = selected.filter(f => f.name.toLowerCase().endsWith('.pgn'))
-
-  fileNames.value = files.value.map(f => f.name)
-
-  if (!files.value.length) {
-    alert("No PGN files found in selection")
-  }
-}
-
-// send to backend
-async function classifyStyle() {
-  if (!files.value.length) return
-
-  loading.value = true
-  const formData = new FormData()
-
-  files.value.forEach(f => formData.append("files", f))
-
-  try {
-    const res = await axios.post("http://127.0.0.1:8000/classify_style", formData)
-
-    alert(`🎯 Player Style: ${res.data.style}`)
-  } catch (err) {
-    console.error(err)
-    alert("Failed to classify style")
-  }
-
-  loading.value = false
-}
+const handleFiles = (event) => {
+  const files = event.target.files;
+  console.log(files);
+};
 </script>
 
 <template>
   <div class="card">
-    <h3>Upload Games to Classify Player Style</h3>
+    <h2>Multi-File PGN Style Classifier</h2>
 
-    <!-- Upload button -->
-    <button @click="openFile">
-      📂 Upload PGN(s) or Folder
-    </button>
+    <div class="drop-zone" @click="browseFile">
+      <div class="icon">📄⬆️</div>
+      <p>
+        <strong>Drag & Drop</strong><br />
+        Multi-file PGNs here<br />
+        or<br />
+        <span class="browse">[Click to Browse]</span>
+      </p>
+      <input
+        type="file"
+        multiple
+        ref="fileInput"
+        @change="handleFiles"
+        hidden
+      />
+    </div>
 
-    <!-- hidden input -->
-    <input
-      ref="fileInput"
-      type="file"
-      accept=".pgn"
-      multiple
-      webkitdirectory
-      @change="selectFiles"
-      style="display:none"
-    />
-
-    <!-- file list -->
-    <p v-if="fileNames.length">
-      📄 Files: {{ fileNames.join(", ") }}
-    </p>
-
-    <!-- classify -->
-    <button
-      class="classify-btn"
-      @click="classifyStyle"
-      :disabled="loading || fileNames.length === 0"
-    >
-      {{ loading ? "Analyzing..." : "Classify Style 🎯" }}
-    </button>
+    <button class="upload-btn">Upload & Classify</button>
+    <p class="subtitle">Analyze a collection of your Chess Games.</p>
   </div>
 </template>
 
 <style scoped>
 .card {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f5f5f5;
-  /* text-align: center; */
-}
-
-button {
-  margin: 10px;
-  padding: 10px 15px;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-}
-
-.classify-btn {
-  background-color: purple;
+  width: 320px;
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6bbf8f, #4c9c6d);
   color: white;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.drop-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 15px;
+  padding: 25px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.drop-zone:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.browse {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.upload-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  color: #4c9c6d;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.upload-btn:hover {
+  background: #f0f0f0;
+}
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.8;
 }
 </style>

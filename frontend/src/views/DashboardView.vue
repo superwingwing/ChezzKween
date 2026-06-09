@@ -90,38 +90,38 @@ function prevMove() {
         <SideNavigation v-model="drawerOpen" />
       </div>
       <div  class="v-col" style="max-width: 600px; margin: auto; text-align: center;">
-        <br><br>
-        <h2>♟️ ChessKween</h2>
+          <br>
+          <h2>♟️ ChessKween</h2>
 
-        <!-- hidden file input -->
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".pgn"
-          @change="selectFile"
-          style="display:none"
-        />
+          <!-- hidden file input -->
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".pgn"
+            @change="selectFile"
+            style="display:none"
+          />
 
-        <!-- buttons -->
-        <button @click="openFile">Select PGN</button>
-        <span v-if="fileName">📄 {{ fileName }}</span>
-        <br /><br />
+          <!-- buttons -->
+          <button @click="openFile">Select PGN</button>
+          <span v-if="fileName">📄 {{ fileName }}</span>
+          <br /><br />
 
-        <button @click="uploadPGN" :disabled="loading">
-          {{ loading ? "Loading..." : "Load Game" }}
-        </button>
+          <button @click="uploadPGN" :disabled="loading">
+            {{ loading ? "Loading..." : "Load Game" }}
+          </button>
 
-        <!-- chessboard -->
-        <chess-board
-          ref="boardRef"
-          style="width: 400px; margin: 20px auto;"
-        ></chess-board>
+          <!-- chessboard -->
+          <chess-board
+            ref="boardRef"
+            style="width: 500px; margin: 20px auto;"
+          ></chess-board>
 
-        <!-- controls -->
-        <div>
-          <button @click="prevMove">⬅️ Back </button>
-          <button @click="nextMove">Forward ➡️</button>
-        </div>
+          <!-- controls -->
+          <div>
+            <button @click="prevMove">⬅️ Back </button>
+            <button @click="nextMove">Forward ➡️</button>
+          </div>
       </div>
       <div class="v-col">
         <StyleClassification />

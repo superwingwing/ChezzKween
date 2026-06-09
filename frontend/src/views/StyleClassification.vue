@@ -44,7 +44,7 @@ const handleFiles = (event) => {
   width: 320px;
   padding: 20px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #6bbf8f, #4c9c6d);
+  background: #2e7d32;
   color: white;
   text-align: center;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -84,7 +84,7 @@ h2 {
   border: none;
   border-radius: 12px;
   background: white;
-  color: #4c9c6d;
+  color: #2e7d32;
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;

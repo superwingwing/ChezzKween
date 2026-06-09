@@ -91,7 +91,7 @@ function prevMove() {
       </div>
       <div  class="v-col" style="max-width: 600px; margin: auto; text-align: center;">
         <br><br>
-        <h2>♟️ ChezzKween</h2>
+        <h2>♟️ ChessKween</h2>
 
         <!-- hidden file input -->
         <input

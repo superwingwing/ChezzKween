@@ -1,8 +1,10 @@
 <template>
   <div class="side-nav" :class="{ open: modelValue }">
     <div class="profile">
-      <img :src="profile_pic || avatar_url" class="avatar" />
-      <p>{{ firstName ? firstName + ' ' + lastName : full_name }}</p>
+      <!-- <img :src="profile_pic || avatar_url" class="avatar" />
+      <p>{{ firstName ? firstName + ' ' + lastName : full_name }}</p> -->
+      <img :src="'/images/pic1.jpg'" class="avatar" />
+      <p>superwingwing</p>
     </div>
 
     <button @click="navigateTo('search')">Search</button>

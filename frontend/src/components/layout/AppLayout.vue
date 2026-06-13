@@ -11,7 +11,7 @@
       </div>
 
       <v-footer border app class="footer-container text-center d-flex flex-column">
-        <div>© Caraga State University - Lost and Found</div>
+        <div>© ChessKween - Improve your games</div>
         <v-divider></v-divider>
         <div>All Rights Reserved</div>
       </v-footer>

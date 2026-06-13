@@ -1,4 +1,0 @@
-cd backend-python
-python -m uvicorn main:app --reload
-git remote set-url origin https://github.com/superwingwing/ChezzKween.git
-

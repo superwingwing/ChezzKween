@@ -11,7 +11,7 @@
       </div>
 
       <v-footer border app class="footer-container text-center d-flex flex-column">
-        <div>© ChessKween - Improve your games</div>
+        <div>© ChessKween - Improve your games in chess</div>
         <v-divider></v-divider>
         <div>All Rights Reserved</div>
       </v-footer>

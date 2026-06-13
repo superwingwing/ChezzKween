@@ -48,7 +48,7 @@ const onSubmit = async () => {
     authStore.login(data.user, data.session.access_token)
 
     setTimeout(() => {
-      router.replace('/system/dashboard')
+      router.replace('/dashboard')
     }, 5000) // 5000 milliseconds = 5 seconds
   }
 

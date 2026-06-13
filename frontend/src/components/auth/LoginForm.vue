@@ -64,112 +64,111 @@ const onFormSubmit = () => {
 }
 
 ////google login
-const onGoogleSignIn = async () => {
-  try {
-    // Step 1: Google Login (OAuth)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/system/dashboard` // Redirect URI
-      }
-    })
+// const onGoogleSignIn = async () => {
+//   try {
+//     // Step 1: Google Login (OAuth)
+//     const { error } = await supabase.auth.signInWithOAuth({
+//       provider: 'google',
+//       options: {
+//         redirectTo: `${window.location.origin}/system/dashboard` // Redirect URI
+//       }
+//     })
 
-    if (error) {
-      console.error('Google Login Error:', error.message)
-      return
-    }
+//     if (error) {
+//       console.error('Google Login Error:', error.message)
+//       return
+//     }
 
-    // Step 2: Wait for session data
-    const sessionData = await sessionWait()
+//     // Step 2: Wait for session data
+//     const sessionData = await sessionWait()
 
-    if (!sessionData?.session?.user) {
-      console.error('Session not received from Google login.')
-      return
-    }
+//     if (!sessionData?.session?.user) {
+//       console.error('Session not received from Google login.')
+//       return
+//     }
 
-    const user = sessionData.session.user
-    const {
-      given_name: firstname,
-      family_name: lastname,
-      picture,
-      full_name,
-      email
-    } = user.user_metadata || {}
+//     const user = sessionData.session.user
+//     const {
+//       given_name: firstname,
+//       family_name: lastname,
+//       picture,
+//       full_name,
+//       email
+//     } = user.user_metadata || {}
 
-    // Ensure required user data is available
-    if (!email) {
-      console.error('Email is required but not available.')
-      return
-    }
+//     // Ensure required user data is available
+//     if (!email) {
+//       console.error('Email is required but not available.')
+//       return
+//     }
 
-    // Step 3: Prepare data for insertion into the database
-    const updateData = {
-      user_id: user.id,
-      firstname: full_name || 'Unknown',
-      lastname: lastname || 'Unknown',
-      profile_pic: picture || 'default-profile-pic.jpg',
-      verifiedEmail: !!user.email_confirmed_at,
-      token: user.id // This might not be a token, consider renaming
-    }
+//     // Step 3: Prepare data for insertion into the database
+//     const updateData = {
+//       user_id: user.id,
+//       username: full_name || 'Unknown',
+//       profile_pic: picture || 'default-profile-pic.jpg',
+//       verifiedEmail: !!user.email_confirmed_at,
+//       token: user.id // This might not be a token, consider renaming
+//     }
 
-    // Step 4: Check if user already exists
-    const { data: existingUser, error: existingUserError } = await supabase
-      .from('auth.users') // Adjust the schema and table name here if needed
-      .select('id') // Only select the ID to minimize payload
-      .eq('email', email)
-      .single() // Expect a single result
+//     // Step 4: Check if user already exists
+//     const { data: existingUser, error: existingUserError } = await supabase
+//       .from('auth.users') // Adjust the schema and table name here if needed
+//       .select('id') // Only select the ID to minimize payload
+//       .eq('email', email)
+//       .single() // Expect a single result
 
-    if (existingUserError && existingUserError.code !== 'PGRST116') {
-      // PGRST116 = no rows returned
-      console.error('Error checking existing user:', existingUserError.message)
-      return
-    }
+//     if (existingUserError && existingUserError.code !== 'PGRST116') {
+//       // PGRST116 = no rows returned
+//       console.error('Error checking existing user:', existingUserError.message)
+//       return
+//     }
 
-    // Step 5: Insert or Update user data
-    if (existingUser && existingUser.length > 0) {
-      // Step 5: Update the existing user's `raw_user_meta_data`
-      const { error: updateError } = await supabase
-        .from('auth.users') // Target the correct schema and table
-        .update({
-          raw_user_meta_data: {
-            firstname: full_name || 'Unknown',
-            lastname: lastname || 'Unknown',
-            profile_pic: picture || 'default-profile-pic.jpg',
-            verifiedEmail: user.email_confirmed_at ? true : false,
-            token: user.id
-          }
-        })
-        .eq('email', email) // Update based on the user's email
+//     // Step 5: Insert or Update user data
+//     if (existingUser && existingUser.length > 0) {
+//       // Step 5: Update the existing user's `raw_user_meta_data`
+//       const { error: updateError } = await supabase
+//         .from('auth.users') // Target the correct schema and table
+//         .update({
+//           raw_user_meta_data: {
+//             firstname: full_name || 'Unknown',
+//             lastname: lastname || 'Unknown',
+//             profile_pic: picture || 'default-profile-pic.jpg',
+//             verifiedEmail: user.email_confirmed_at ? true : false,
+//             token: user.id
+//           }
+//         })
+//         .eq('email', email) // Update based on the user's email
 
-      if (updateError) {
-        console.error('Error updating user:', updateError.message)
-        return
-      }
-    } else {
-      // Step 6: Insert new user with `raw_user_meta_data`
-      const { error: insertError } = await supabase
-        .from('auth.users') // Target the correct schema and table
-        .insert([
-          {
-            email, // Ensure required fields like `email` are included
-            raw_user_meta_data: {
-              username: full_name || 'Unknown',
-              profile_pic: picture || 'default-profile-pic.jpg'
-            }
-          }
-        ])
+//       if (updateError) {
+//         console.error('Error updating user:', updateError.message)
+//         return
+//       }
+//     } else {
+//       // Step 6: Insert new user with `raw_user_meta_data`
+//       const { error: insertError } = await supabase
+//         .from('auth.users') // Target the correct schema and table
+//         .insert([
+//           {
+//             email, // Ensure required fields like `email` are included
+//             raw_user_meta_data: {
+//               username: full_name || 'Unknown',
+//               profile_pic: picture || 'default-profile-pic.jpg'
+//             }
+//           }
+//         ])
 
-      if (insertError) {
-        console.error('Error inserting new user:', insertError.message)
-        return
-      }
-    }
+//       if (insertError) {
+//         console.error('Error inserting new user:', insertError.message)
+//         return
+//       }
+//     }
 
-    console.log('User data successfully inserted or updated.')
-  } catch (err) {
-    console.error('Unexpected Error:', err)
-  }
-}
+//     console.log('User data successfully inserted or updated.')
+//   } catch (err) {
+//     console.error('Unexpected Error:', err)
+//   }
+// }
 
 
 

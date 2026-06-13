@@ -1,8 +1,19 @@
+# Executable
 backend-python/stockfish.exe
+
+# Dependencies
 node_modules/
 backend/node_modules/
 frontend/node_modules/
+
+# Environment variables
 .env
+
+# Build output
 dist/
+
+# Notes
 notes.txt
+
+# Model files
 model/saved/model.pkl

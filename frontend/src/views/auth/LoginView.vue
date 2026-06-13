@@ -7,7 +7,7 @@ const { mobile } = useDisplay()
 </script>
 
 <template>
-  <!-- <AppLayout> -->
+  <AppLayout>
     <template #content>
       <v-row class="d-flex align-center justify-center">
         <v-col cols="12" lg="8" v-if="!mobile">
@@ -38,7 +38,7 @@ const { mobile } = useDisplay()
         </v-col>
       </v-row>
     </template>
-  <!-- </AppLayout> -->
+  </AppLayout>
 </template>
 
 <style scoped>

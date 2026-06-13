@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { supabase, formActionDefault } from '../../utils/supabase.js'
 import { requiredValidator, emailValidator } from '@/utils/validators'
-// import AlertNotification from '../common/AlertNotification.vue'
+import AlertNotification from '../common/AlertNotification.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authUser' // Correct import
 
@@ -175,10 +175,10 @@ const onFormSubmit = () => {
 </script>
 
 <template>
-  <!-- <AlertNotification
+  <AlertNotification
     :form-success-message="formAction.formSuccessMessage"
     :form-error-message="formAction.formErrorMessage"
-  ></AlertNotification> -->
+  ></AlertNotification>
 
   <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
     <v-text-field

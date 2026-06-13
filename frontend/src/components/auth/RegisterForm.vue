@@ -6,7 +6,7 @@ import {
   confirmedValidator
 } from '@/utils/validators'
 import { ref } from 'vue'
-// import AlertNotification from '../common/AlertNotification.vue'
+import AlertNotification from '../common/AlertNotification.vue'
 import { supabase, formActionDefault } from '../../utils/supabase.js'
 import { useRouter } from 'vue-router'
 
@@ -76,10 +76,10 @@ const onFormSubmit = () => {
 </script>
 
 <template>
-  <!-- <AlertNotification
+  <AlertNotification
     :form-success-message="formAction.formSuccessMessage"
     :form-error-message="formAction.formErrorMessage"
-  ></AlertNotification> -->
+  ></AlertNotification>
 
   <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
     <v-text-field

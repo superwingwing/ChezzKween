@@ -85,15 +85,57 @@ function prevMove() {
 </script>
 
 <template>
- <div class="v-row">
-      <div class="v-col">
-        <SideNavigation v-model="drawerOpen" />
-      </div>
-      <div  class="v-col" style="max-width: 600px; margin: auto; text-align: center;">
-          <br>
-          <h2>♟️ ChessKween</h2>
+  <v-container fluid>
+    <v-row>
 
-          <!-- hidden file input -->
+      <!-- 🧭 LEFT: SIDENAV -->
+      <v-col cols="2">
+        <SideNavigation v-model="drawerOpen" />
+      </v-col>
+
+      <!-- ♟️ CENTER: CHESSBOARD -->
+      <v-col cols="7" class="d-flex justify-center">
+        <div style="max-width: 600px; width: 100%;" class="text-center">
+
+          <!-- TOP PLAYER -->
+          <div class="player mb-2">
+            <div class="left">
+              <img src="/images/pic1.jpg" class="avatar" />
+              <div>
+                <div class="name">super-wingwing</div>
+                <div class="rating">PH (2244)</div>
+              </div>
+            </div>
+            <div class="timer">10:00</div>
+          </div>
+
+          <!-- CHESSBOARD -->
+          <div class="d-flex justify-center mb-0">
+            <chess-board
+              ref="boardRef"
+              style="width: 500px;"
+            ></chess-board>
+          </div>
+
+          <!-- BOTTOM PLAYER -->
+          <div class="player mb-0">
+            <div class="left">
+              <img src="/images/pic1.jpg" class="avatar" />
+              <div>
+                <div class="name">bandera-7</div>
+                <div class="rating">UA (2211)</div>
+              </div>
+            </div>
+            <div class="timer">10:00</div>
+          </div>
+
+          <!-- CONTROLS -->
+          <div class="mb-4">
+            <v-btn class="mr-2" @click="prevMove">⬅️ Back</v-btn>
+            <v-btn @click="nextMove">Forward ➡️</v-btn>
+          </div>
+
+          <!-- FILE INPUT -->
           <input
             ref="fileInput"
             type="file"
@@ -102,30 +144,123 @@ function prevMove() {
             style="display:none"
           />
 
-          <!-- buttons -->
-          <button @click="openFile">Select PGN</button>
-          <span v-if="fileName">📄 {{ fileName }}</span>
-          <br /><br />
-
-          <button @click="uploadPGN" :disabled="loading">
-            {{ loading ? "Loading..." : "Load Game" }}
-          </button>
-
-          <!-- chessboard -->
-          <chess-board
-            ref="boardRef"
-            style="width: 500px; margin: 20px auto;"
-          ></chess-board>
-
-          <!-- controls -->
-          <div>
-            <button @click="prevMove">⬅️ Back </button>
-            <button @click="nextMove">Forward ➡️</button>
+          <!-- FILE BUTTONS -->
+          <div class="mb-2">
+            <v-btn color="primary" @click="openFile">
+              Select PGN
+            </v-btn>
           </div>
-      </div>
-      <div class="v-col">
-        <StyleClassification />
-      </div>
- </div>
 
+          <div v-if="fileName" class="mb-2">
+            📄 {{ fileName }}
+          </div>
+
+          <v-btn
+            color="success"
+            :loading="loading"
+            :disabled="loading"
+            @click="uploadPGN"
+          >
+            Load Game
+          </v-btn>
+
+        </div>
+      </v-col>
+
+      <!-- 🧠 RIGHT: STYLE CLASSIFIER -->
+      <v-col cols="3">
+        <StyleClassification />
+      </v-col>
+
+    </v-row>
+  </v-container>
 </template>
+
+<style scoped>
+.layout {
+  display: flex;
+  background: #1e1e1e;
+  min-height: 100vh;
+  color: white;
+}
+
+/* CENTER */
+.center {
+  flex: 1;
+  text-align: center;
+  padding: 20px;
+}
+
+/* PLAYER */
+.player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2c2c2c;
+  padding: 10px;
+  border-radius: 10px;
+  width: 500px;
+  margin: 10px auto;
+}
+
+.player .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.name {
+  font-weight: bold;
+}
+
+.rating {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.timer {
+  background: #3a3a3a;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+/* CONTROLS */
+.controls {
+  margin-top: 15px;
+}
+
+.controls button {
+  margin: 5px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  background: #4b5563;
+  color: white;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: #6b7280;
+}
+
+/* UPLOAD */
+.upload button {
+  margin: 5px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.upload button:hover {
+  background: #3b82f6;
+}
+</style>

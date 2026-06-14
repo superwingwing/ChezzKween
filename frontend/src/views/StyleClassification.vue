@@ -14,6 +14,14 @@ const handleFiles = (event) => {
 </script>
 
 <template><br>
+  
+  <div class="row">
+      <div class="col">
+            
+      </div>
+      <div class="col"></div>
+  </div>
+
   <div class="card">
     <h2>Multi-File PGN Style Classifier</h2>
 

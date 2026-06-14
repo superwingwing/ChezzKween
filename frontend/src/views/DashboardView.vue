@@ -98,7 +98,7 @@ function prevMove() {
         <div style="max-width: 600px; width: 100%;" class="text-center">
 
           <!-- TOP PLAYER -->
-          <div class="player mb-2">
+          <div class="player mb-1">
             <div class="left">
               <img src="/images/pic1.jpg" class="avatar" />
               <div>
@@ -118,7 +118,7 @@ function prevMove() {
           </div>
 
           <!-- BOTTOM PLAYER -->
-          <div class="player mb-0">
+          <div class="player mb-0 mt-0">
             <div class="left">
               <img src="/images/pic1.jpg" class="avatar" />
               <div>

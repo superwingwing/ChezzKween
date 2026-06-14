@@ -118,7 +118,7 @@ function prevMove() {
           </div>
 
           <!-- BOTTOM PLAYER -->
-          <div class="player mb-0 mt-0">
+          <div class="player mb-0 mt-0 mt-n3">
             <div class="left">
               <img src="/images/pic1.jpg" class="avatar" />
               <div>

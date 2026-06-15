@@ -17,7 +17,7 @@ export default {
 
     // Separate drawer states for SideNavigation and StyleClassification
     const navigationDrawer = ref(isLargeScreen.value) // SideNavigation drawer state
-    const STDrawer = ref(isLargeScreen.value) // STYLE CLASS drawer state
+    const STDrawer = ref(isLargeScreen.value) // STYLE CLASSIFICATION drawer state
 
     return { navigationDrawer, STDrawer, isLargeScreen }
   }

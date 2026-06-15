@@ -64,7 +64,7 @@ export default {
 
         <!-- Style Classification -->
         <v-col cols="12" sm="3" md="3" class="pa-2">
-          <SideNews
+          <StyleClassification
             :model-value="STDrawer"
             :permanent="isLargeScreen"
             @update:model-value="STDrawer = $event"

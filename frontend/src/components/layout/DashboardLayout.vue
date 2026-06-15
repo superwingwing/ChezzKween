@@ -1,23 +1,23 @@
 <script>
 import SideNavigation from '@/components/layout/SideNavigation.vue'
-import SideNews from '@/components/layout/SideNews.vue'
+import StyleClassification from '@/components/layout/StyleClassification.vue'
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
 export default {
   components: {
     SideNavigation,
-    SideNews
+    StyleClassification
   },
   setup() {
     const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
     const isLargeScreen = computed(() => mdAndUp.value) // True if the screen size is medium or larger
 
-    // Separate drawer states for SideNavigation and SideNews
+    // Separate drawer states for SideNavigation and StyleClassification
     const navigationDrawer = ref(isLargeScreen.value) // SideNavigation drawer state
-    const newsDrawer = ref(isLargeScreen.value) // SideNews drawer state
+    const STDrawer = ref(isLargeScreen.value) // STYLE CLASS drawer state
 
-    return { navigationDrawer, newsDrawer, isLargeScreen }
+    return { navigationDrawer, STDrawer, isLargeScreen }
   }
 }
 </script>
@@ -38,8 +38,8 @@ export default {
 
       <v-img src="/images/logo.png" class="pa-6 mx-auto" max-width="120" contain />
 
-      <!-- Toggle Button for SideNews -->
-      <v-btn icon color="light-green-darken-3" @click="newsDrawer = !newsDrawer" class="pa-4">
+      <!-- Toggle Button for StyleClassification -->
+      <v-btn icon color="light-green-darken-3" @click="STDrawer = !STDrawer" class="pa-4">
         <v-icon>mdi-newspaper-variant-outline</v-icon>
       </v-btn>
     </v-app-bar>
@@ -62,12 +62,12 @@ export default {
           </v-container>
         </v-col>
 
-        <!-- Side News -->
+        <!-- Style Classification -->
         <v-col cols="12" sm="3" md="3" class="pa-2">
           <SideNews
-            :model-value="newsDrawer"
+            :model-value="STDrawer"
             :permanent="isLargeScreen"
-            @update:model-value="newsDrawer = $event"
+            @update:model-value="STDrawer = $event"
           />
         </v-col>
       </v-row>

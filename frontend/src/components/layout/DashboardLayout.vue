@@ -1,13 +1,15 @@
 <script>
 import SideNavigation from '@/components/layout/SideNavigation.vue'
 import StyleClassification from '@/components/layout/StyleClassification.vue'
+import ChessboardView from '@/components/layout/ChessboardView.vue'
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
 export default {
   components: {
     SideNavigation,
-    StyleClassification
+    StyleClassification,
+    ChessboardView
   },
   setup() {
     const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
@@ -58,7 +60,8 @@ export default {
         <!-- Main Content -->
         <v-col cols="12" sm="6" md="6" class="pa-2">
           <v-container>
-            <slot name="content"></slot>
+            <!-- <slot name="content"></slot> -->
+            <ChessboardView />
           </v-container>
         </v-col>
 

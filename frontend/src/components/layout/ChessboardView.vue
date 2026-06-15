@@ -120,3 +120,92 @@
 
   </div>
 </template>
+
+<style scoped>
+.layout {
+  display: flex;
+  background: #1e1e1e;
+  min-height: 100vh;
+  color: white;
+}
+
+/* CENTER */
+.center {
+  flex: 1;
+  text-align: center;
+  padding: 20px;
+}
+
+/* PLAYER */
+.player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2c2c2c;
+  padding: 10px;
+  border-radius: 10px;
+  width: 500px;
+  margin: 10px auto;
+}
+
+.player .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.name {
+  font-weight: bold;
+}
+
+.rating {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.timer {
+  background: #3a3a3a;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+/* CONTROLS */
+.controls {
+  margin-top: 15px;
+}
+
+.controls button {
+  margin: 5px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  background: #4b5563;
+  color: white;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background: #6b7280;
+}
+
+/* UPLOAD */
+.upload button {
+  margin: 5px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.upload button:hover {
+  background: #3b82f6;
+}
+</style>

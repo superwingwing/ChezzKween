@@ -1,81 +1,81 @@
 <script setup>
-    import { ref } from "vue"
-    import axios from "axios"
-    import { Chess } from "chess.js"
-    import "chessboard-element"
+import { ref } from "vue"
+import axios from "axios"
+import { Chess } from "chess.js"
+import "chessboard-element"
 
-    const boardRef = ref(null)
-    const fileInput = ref(null)
-    const file = ref(null)
-    const fileName = ref("")
-    const loading = ref(false)
+const boardRef = ref(null)
+const fileInput = ref(null)
+const file = ref(null)
+const fileName = ref("")
+const loading = ref(false)
 
-    const chess = new Chess()
-    const moves = ref([])
-    const moveIndex = ref(0)
+const chess = new Chess()
+const moves = ref([])
+const moveIndex = ref(0)
 
-    function openFile() {
-    fileInput.value.click()
+function openFile() {
+  fileInput.value.click()
+}
+
+function selectFile(e) {
+  file.value = e.target.files[0]
+  fileName.value = file.value.name
+}
+
+async function uploadPGN() {
+  if (!file.value) return alert("Upload a PGN first")
+
+  loading.value = true
+  const formData = new FormData()
+  formData.append("file", file.value)
+
+  try {
+    const res = await axios.post("http://127.0.0.1:8000/upload_pgn", formData)
+
+    moves.value = res.data.moves || []
+    moveIndex.value = 0
+    chess.reset()
+    updateBoard()
+  } catch (err) {
+    console.error(err)
+    alert("Failed to load PGN")
+  }
+
+  loading.value = false
+}
+
+function updateBoard() {
+  boardRef.value?.setPosition(chess.fen())
+}
+
+function nextMove() {
+  if (moveIndex.value < moves.value.length) {
+    chess.move(moves.value[moveIndex.value])
+    moveIndex.value++
+    updateBoard()
+  }
+}
+
+function prevMove() {
+  if (moveIndex.value > 0) {
+    moveIndex.value--
+    chess.reset()
+
+    for (let i = 0; i < moveIndex.value; i++) {
+      chess.move(moves.value[i])
     }
 
-    function selectFile(e) {
-    file.value = e.target.files[0]
-    fileName.value = file.value.name
-    }
-
-    async function uploadPGN() {
-    if (!file.value) return alert("Upload a PGN first")
-
-    loading.value = true
-    const formData = new FormData()
-    formData.append("file", file.value)
-
-    try {
-        const res = await axios.post("http://127.0.0.1:8000/upload_pgn", formData)
-
-        moves.value = res.data.moves || []
-        moveIndex.value = 0
-        chess.reset()
-        updateBoard()
-    } catch (err) {
-        console.error(err)
-        alert("Failed to load PGN")
-    }
-
-    loading.value = false
-    }
-
-    function updateBoard() {
-    boardRef.value?.setPosition(chess.fen())
-    }
-
-    function nextMove() {
-    if (moveIndex.value < moves.value.length) {
-        chess.move(moves.value[moveIndex.value])
-        moveIndex.value++
-        updateBoard()
-    }
-    }
-
-    function prevMove() {
-    if (moveIndex.value > 0) {
-        moveIndex.value--
-        chess.reset()
-
-        for (let i = 0; i < moveIndex.value; i++) {
-        chess.move(moves.value[i])
-        }
-
-        updateBoard()
-    }
+    updateBoard()
+  }
 }
 </script>
 
 <template>
   <div class="text-center">
 
-    <!-- TOP PLAYER -->
-    <div class="player mb-1">
+    <!-- TOP PLAYER (normal) -->
+    <div class="player mb-0">
       <div class="left">
         <img src="/images/pic1.jpg" class="avatar" />
         <div>
@@ -86,19 +86,24 @@
       <div class="timer">10:00</div>
     </div>
 
-    <!-- BOARD -->
-    <chess-board ref="boardRef" style="width: 500px;" />
+    <!-- BOARD + OVERLAY -->
+    <div class="board-wrapper">
 
-    <!-- BOTTOM PLAYER -->
-    <div class="player">
-      <div class="left">
-        <img src="/images/pic1.jpg" class="avatar" />
-        <div>
-          <div class="name">bandera-7</div>
-          <div class="rating">UA (2211)</div>
+      <!-- BOARD -->
+      <chess-board ref="boardRef" class="board" />
+
+      <!-- BOTTOM PLAYER (overlay) -->
+      <div class="player bottom-player">
+        <div class="left">
+          <img src="/images/pic1.jpg" class="avatar" />
+          <div>
+            <div class="name">bandera-7</div>
+            <div class="rating">UA (2211)</div>
+          </div>
         </div>
+        <div class="timer">10:00</div>
       </div>
-      <div class="timer">10:00</div>
+
     </div>
 
     <!-- CONTROLS -->
@@ -122,46 +127,67 @@
 </template>
 
 <style scoped>
-.layout {
-  display: flex;
-  background: #1e1e1e;
-  min-height: 100vh;
-  color: white;
+/* BOARD WRAPPER */
+.board-wrapper {
+  position: relative;
+  width: fit-content;
+  margin: 20px auto;
 }
 
-/* CENTER */
-.center {
-  flex: 1;
-  text-align: center;
-  padding: 20px;
+/* BOARD */
+.board {
+  width: 600px;
+  max-width: 95vw;
 }
 
-/* PLAYER */
+/* PLAYER (TOP NORMAL) */
 .player {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  width: 600px;
+  margin: 10px auto;
+
   background: #2c2c2c;
   padding: 10px;
-  border-radius: 10px;
-  width: 500px;
-  margin: 10px auto;
+  border-radius: 8px;
 }
 
+/* OVERLAY PLAYER (BOTTOM ONLY) */
+.bottom-player {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  width: 100%;
+  margin: 0;
+
+  background: rgba(44, 44, 44, 0.9);
+  backdrop-filter: blur(6px);
+
+  border-radius: 0 0 8px 8px;
+}
+
+/* PLAYER LEFT */
 .player .left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+/* AVATAR */
 .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
 }
 
+/* TEXT */
 .name {
   font-weight: bold;
+  font-size: 14px;
 }
 
 .rating {
@@ -169,43 +195,11 @@
   color: #aaa;
 }
 
+/* TIMER */
 .timer {
   background: #3a3a3a;
   padding: 5px 10px;
   border-radius: 6px;
-}
-
-/* CONTROLS */
-.controls {
-  margin-top: 15px;
-}
-
-.controls button {
-  margin: 5px;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  background: #4b5563;
-  color: white;
-  cursor: pointer;
-}
-
-.controls button:hover {
-  background: #6b7280;
-}
-
-/* UPLOAD */
-.upload button {
-  margin: 5px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: none;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-.upload button:hover {
-  background: #3b82f6;
+  font-size: 13px;
 }
 </style>

@@ -3,6 +3,7 @@ import { ref } from "vue"
 import axios from "axios"
 import { Chess } from "chess.js"
 import "chessboard-element"
+//nxt task create a modal for upload pgn and put it in top
 
 const boardRef = ref(null)
 const fileInput = ref(null)

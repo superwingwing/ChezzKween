@@ -1,73 +1,127 @@
-<template>
-  <div class="side-nav" :class="{ open: modelValue }">
-    <div class="profile">
-      <!-- <img :src="profile_pic || avatar_url" class="avatar" />
-      <p>{{ firstName ? firstName + ' ' + lastName : full_name }}</p> -->
-      <img :src="'/images/pic1.jpg'" class="avatar" />
-      <p>superwingwing</p>
-    </div>
-
-    <button @click="navigateTo('search')">Search</button>
-    <button @click="navigateTo('dashboard')">Home</button>
-    <button @click="navigateTo('save')">Saved</button>
-    <button @click="navigateTo('profile')">Profile</button>
-    <button @click="navigateTo('about')">About ChessKween</button>
-
-    <button class="signout" @click="onLogout">Sign out</button>
-  </div>
-</template>
-
 <script setup>
-import { defineProps, defineEmits } from "vue"
+import { defineProps, defineEmits, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { supabase } from '@/utils/supabase'
+import { useAuthStore } from '@/stores/authUser'
 
-const props = defineProps({
-  modelValue: Boolean,
-  profile_pic: String,
-  avatar_url: { type: String, default: "default-avatar.png" },
-  firstName: String,
-  lastName: String,
-  full_name: String,
+defineProps({
+  modelValue: {
+    type: Boolean,
+    required: true
+  },
+  permanent: {
+    type: Boolean,
+    default: false
+  }
 })
-const emit = defineEmits(["update:modelValue"])
 
-function navigateTo(page) {
-  alert("Navigate to " + page)
+const emit = defineEmits(['update:modelValue'])
+
+// Router and navigation logic
+const router = useRouter()
+const currentRoute = ref(router.currentRoute.value.name)
+
+const navigateTo = (routeName) => {
+  router.push({ name: routeName })
+  currentRoute.value = routeName
 }
-function onLogout() {
-  alert("Logout clicked")
+
+const onLogout = async () => {
+  await supabase.auth.signOut()
+  const authStore = useAuthStore()
+  authStore.logout()
+  router.replace('/')
 }
 </script>
 
+
+<template>
+  <v-navigation-drawer
+    class="bg-light-green-darken-3 rounded-e-xl pa-6"
+    :width="350"
+    elevation="16"
+    :model-value="modelValue"
+    :permanent="permanent"
+    @update:modelValue="emit('update:modelValue', $event)"
+  >
+    <v-list color="transparent">
+      <v-list class="text-center">
+        <div class="profile-section">
+          <v-avatar size="150" class="mx-auto" color="white">
+            <!-- If profile_pic exists and is not null or empty, or if it's a file name -->
+            <v-img
+               v-if="profile_pic && typeof profile_pic === 'string' && profile_pic !== '' && profile_pic !== null"
+                      :src="profile_pic.startsWith('http') ? profile_pic : profileUrl + profile_pic"
+                      alt="User Avatar"
+                      class="mx-auto"
+                      height="200"
+                      width="200"
+                />
+            <!-- Fallback image if profile_pic is not provided or is invalid -->
+            <v-img
+              v-else
+              :src="'/images/pic1.jpg'"
+              alt="User Avatar"
+              class="mx-auto"
+              height="200"
+              width="200"
+            />
+          </v-avatar>
+          <p class="text-center font-weight-bold mt-2">superwingwing</p>
+        </div>
+      </v-list>
+
+      <v-list-item @click="navigateTo('search')">
+        <v-btn class="rounded-pill text-light-green-darken-3" append-icon="mdi-magnify" block>
+          Search
+        </v-btn>
+      </v-list-item>
+      <v-list-item
+        @click="navigateTo('dashboard')"
+        :class="{ 'active-item': currentRoute === 'dashboard' }"
+      >
+        <v-list-item-title class="text-center">Home</v-list-item-title>
+      </v-list-item>
+      <v-list-item @click="navigateTo('save')" :class="{ 'active-item': currentRoute === 'save' }">
+        <v-list-item-title class="text-center">Saved</v-list-item-title>
+      </v-list-item>
+      <v-list-item
+        @click="navigateTo('profile')"
+        :class="{ 'active-item': currentRoute === 'profile' }"
+      >
+        <v-list-item-title class="text-center">Profile</v-list-item-title>
+      </v-list-item>
+      <v-list-item
+        @click="navigateTo('about')"
+        :class="{ 'active-item': currentRoute === 'about' }"
+      >
+        <v-list-item-title class="text-center">About ChessKween</v-list-item-title>
+      </v-list-item>
+    </v-list>
+
+    <template v-slot:append>
+      <div class="pa-2">
+        <v-btn
+          class="rounded-pill text-light-green-darken-3 font-weight-black"
+          block
+          @click="onLogout"
+        >
+          Sign out
+        </v-btn>
+      </div>
+    </template>
+  </v-navigation-drawer>
+</template>
+
+
 <style scoped>
-.side-nav {
-  width: 250px;
-  background-color: #2e7d32;
-  color: white;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
+.active-item {
+  background-color: rgba(255, 255, 255, 0.196);
+  padding: 0.5rem 1rem;
+  transition: background-color 0.3s ease;
 }
-.side-nav button {
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-.side-nav .signout {
-  margin-top: auto;
-  background: rgba(255, 0, 0, 0.7);
-}
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: block;
-  margin: 0 auto 1rem;
+
+.active-item:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 </style>

@@ -1,53 +1,25 @@
 <script setup>
 import { ref } from "vue"
-import axios from "axios"
 import { Chess } from "chess.js"
 import "chessboard-element"
-//nxt task create a modal for upload pgn and put it in top
+
+import UploadPGNModal from "@/components/layout/UploadPgnModal.vue"
 
 const boardRef = ref(null)
-const fileInput = ref(null)
-const file = ref(null)
-const fileName = ref("")
-const loading = ref(false)
 
 const chess = new Chess()
 const moves = ref([])
 const moveIndex = ref(0)
 
-function openFile() {
-  fileInput.value.click()
-}
-
-function selectFile(e) {
-  file.value = e.target.files[0]
-  fileName.value = file.value.name
-}
-
-async function uploadPGN() {
-  if (!file.value) return alert("Upload a PGN first")
-
-  loading.value = true
-  const formData = new FormData()
-  formData.append("file", file.value)
-
-  try {
-    const res = await axios.post("http://127.0.0.1:8000/upload_pgn", formData)
-
-    moves.value = res.data.moves || []
-    moveIndex.value = 0
-    chess.reset()
-    updateBoard()
-  } catch (err) {
-    console.error(err)
-    alert("Failed to load PGN")
-  }
-
-  loading.value = false
-}
-
 function updateBoard() {
   boardRef.value?.setPosition(chess.fen())
+}
+
+function loadMoves(newMoves) {
+  moves.value = newMoves
+  moveIndex.value = 0
+  chess.reset()
+  updateBoard()
 }
 
 function nextMove() {
@@ -75,7 +47,10 @@ function prevMove() {
 <template>
   <div class="text-center">
 
-    <!-- TOP PLAYER (normal) -->
+    <!-- 🔥 MODAL BUTTON HERE -->
+    <UploadPGNModal @loaded="loadMoves" />
+
+    <!-- TOP PLAYER -->
     <div class="player mb-0">
       <div class="left">
         <img src="/images/pic1.jpg" class="avatar" />
@@ -87,13 +62,11 @@ function prevMove() {
       <div class="timer">10:00</div>
     </div>
 
-    <!-- BOARD + OVERLAY -->
+    <!-- BOARD -->
     <div class="board-wrapper">
-
-      <!-- BOARD -->
       <chess-board ref="boardRef" class="board" />
 
-      <!-- BOTTOM PLAYER (overlay) -->
+      <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">
         <div class="left">
           <img src="/images/pic1.jpg" class="avatar" />
@@ -104,7 +77,6 @@ function prevMove() {
         </div>
         <div class="timer">10:00</div>
       </div>
-
     </div>
 
     <!-- CONTROLS -->
@@ -112,17 +84,6 @@ function prevMove() {
       <v-btn @click="prevMove">⬅️ Back</v-btn>
       <v-btn @click="nextMove">Forward ➡️</v-btn>
     </div>
-
-    <!-- FILE -->
-    <input ref="fileInput" type="file" accept=".pgn" @change="selectFile" hidden />
-
-    <v-btn @click="openFile">Select PGN</v-btn>
-
-    <div v-if="fileName">📄 {{ fileName }}</div>
-
-    <v-btn :loading="loading" @click="uploadPGN">
-      Load Game
-    </v-btn>
 
   </div>
 </template>

@@ -48,7 +48,10 @@ function prevMove() {
   <div class="text-center">
 
     <!-- 🔥 MODAL BUTTON HERE -->
-    <UploadPGNModal @loaded="loadMoves" />
+       <!-- TOP BAR -->
+    <div style="margin-bottom: 20px;">
+      <UploadPGNModal @loaded="loadMoves" />
+    </div>
 
     <!-- TOP PLAYER -->
     <div class="player mb-0">

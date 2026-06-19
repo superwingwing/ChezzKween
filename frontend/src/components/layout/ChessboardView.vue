@@ -1,10 +1,9 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref } from "vue"
 import { Chess } from "chess.js"
 import "chessboard-element"
 
-import { supabase } from "@/utils/supabase"
-import UploadPGNModal from "@/components/layout/UploadPgnModal.vue"
+import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
 const boardRef = ref(null)
 
@@ -12,7 +11,6 @@ const chess = new Chess()
 const moves = ref([])
 const moveIndex = ref(0)
 
-const games = ref([])
 const currentGame = ref(null)
 
 // =====================
@@ -50,98 +48,21 @@ function prevMove() {
 }
 
 // =====================
-// PGN HELPERS
+// FROM BACKEND (UPLOAD)
 // =====================
-function extractResult(pgn) {
-  return pgn.match(/\[Result "(.*?)"\]/)?.[1] || null
-}
+function loadMoves(response) {
+  console.log("BACKEND RESPONSE:", response)
 
-function extractGameInfo(pgn) {
-  return {
-    white_name: pgn.match(/\[White "(.*?)"\]/)?.[1] || "White",
-    black_name: pgn.match(/\[Black "(.*?)"\]/)?.[1] || "Black",
+  const game = response.data[0]   // 🔥 IMPORTANT
 
-    white_elo: Number(pgn.match(/\[WhiteElo "(.*?)"\]/)?.[1]) || null,
-    black_elo: Number(pgn.match(/\[BlackElo "(.*?)"\]/)?.[1]) || null,
-
-    white_country: pgn.match(/\[WhiteCountry "(.*?)"\]/)?.[1] || null,
-    black_country: pgn.match(/\[BlackCountry "(.*?)"\]/)?.[1] || null
-  }
-}
-
-// =====================
-// FROM UPLOAD MODAL
-// =====================
-async function loadMoves(newMoves, rawPGN) {
-  try {
-    moves.value = newMoves || []
-    resetBoard()
-
-    const info = extractGameInfo(rawPGN)
-
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
-
-    // 1. INSERT GAME
-    const { data: inserted, error } = await supabase
-      .from("uploaded_games")
-      .insert([
-        {
-          user_id: user.id,
-          pgn: rawPGN,
-          result: extractResult(rawPGN),
-          ...info
-        }
-      ])
-      .select()
-      .single()
-
-    if (error) throw error
-
-    // 2. SET CURRENT GAME (IMPORTANT FIX)
-    currentGame.value = inserted
-
-    // 3. REFRESH LIST
-    await fetchGames()
-  } catch (err) {
-    console.error("Upload error:", err)
-  }
-}
-
-// =====================
-// LOAD FROM DATABASE
-// =====================
-function loadFromGame(game) {
   currentGame.value = game
 
   chess.reset()
-
-  // IMPORTANT: load PGN properly
   chess.loadPgn(game.pgn)
 
   moves.value = chess.history()
   resetBoard()
 }
-
-// =====================
-// FETCH GAMES
-// =====================
-async function fetchGames() {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
-  const { data, error } = await supabase
-    .from("uploaded_games")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-
-  if (!error) games.value = data || []
-}
-
-onMounted(fetchGames)
 </script>
 
 <template>
@@ -160,7 +81,7 @@ onMounted(fetchGames)
             {{ currentGame?.white_name || "White" }}
           </div>
           <div class="rating">
-            {{ currentGame?.white_country }} {{ currentGame?.white_elo || "--" }}
+            {{ currentGame?.white_elo || "--" }}
           </div>
         </div>
       </div>
@@ -178,7 +99,7 @@ onMounted(fetchGames)
               {{ currentGame?.black_name || "Black" }}
             </div>
             <div class="rating">
-              {{ currentGame?.black_country }} {{ currentGame?.black_elo || "--" }}
+              {{ currentGame?.black_elo || "--" }}
             </div>
           </div>
         </div>
@@ -191,36 +112,21 @@ onMounted(fetchGames)
       <v-btn @click="nextMove">Forward ➡️</v-btn>
     </div>
 
-    <!-- GAME LIST -->
-    <div class="mt-4">
-      <h3>Your Games</h3>
-
-      <div v-for="game in games" :key="game.id">
-        <v-btn @click="loadFromGame(game)">
-          {{ game.white_name }} vs {{ game.black_name }}
-          ({{ game.result }})
-        </v-btn>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <style scoped>
-/* BOARD WRAPPER */
 .board-wrapper {
   position: relative;
   width: fit-content;
   margin: 20px auto;
 }
 
-/* BOARD */
 .board {
   width: 600px;
   max-width: 95vw;
 }
 
-/* PLAYER (TOP NORMAL) */
 .player {
   display: flex;
   justify-content: space-between;
@@ -234,7 +140,6 @@ onMounted(fetchGames)
   border-radius: 8px;
 }
 
-/* OVERLAY PLAYER (BOTTOM ONLY) */
 .bottom-player {
   position: absolute;
   bottom: 0;
@@ -250,21 +155,12 @@ onMounted(fetchGames)
   border-radius: 0 0 8px 8px;
 }
 
-/* PLAYER LEFT */
 .player .left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* AVATAR */
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-}
-
-/* TEXT */
 .name {
   font-weight: bold;
   font-size: 14px;
@@ -273,13 +169,5 @@ onMounted(fetchGames)
 .rating {
   font-size: 12px;
   color: #aaa;
-}
-
-/* TIMER */
-.timer {
-  background: #3a3a3a;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 13px;
 }
 </style>

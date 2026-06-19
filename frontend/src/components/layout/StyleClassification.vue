@@ -22,6 +22,7 @@ const handleFiles = (event) => {
       <div class="col"></div>
   </div>
 
+   <br> <br>
   <div class="card">
     <h2>Multi-File PGN Style Classifier</h2>
 

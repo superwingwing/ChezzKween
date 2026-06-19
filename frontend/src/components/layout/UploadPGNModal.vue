@@ -15,33 +15,40 @@ function open() {
 }
 
 function openFile() {
-  fileInput.value.click()
+  fileInput.value?.click()
 }
 
 function selectFile(e) {
-  file.value = e.target.files[0]
-  fileName.value = file.value?.name || ""
+  const selected = e.target.files[0]
+  if (!selected) return
+
+  file.value = selected
+  fileName.value = selected.name
 }
 
 async function uploadPGN() {
   if (!file.value) return alert("Upload a PGN first")
 
   loading.value = true
-  const formData = new FormData()
-  formData.append("file", file.value)
 
   try {
-    const res = await axios.post("http://127.0.0.1:8000/upload_pgn", formData)
+    const rawPGN = await file.value.text()
 
-    emit("loaded", res.data.moves || [])
+    const res = await axios.post("http://127.0.0.1:8000/upload_pgn", {
+      pgn: rawPGN
+    })
+
+    console.log("BACKEND RESPONSE:", res.data)
+
+    emit("loaded", res.data)
+
     dialog.value = false
-
-    // reset
     file.value = null
     fileName.value = ""
+
   } catch (err) {
-    console.error(err)
-    alert("Failed to load PGN")
+    console.error(err.response?.data || err)
+    alert("Failed to connect to backend")
   }
 
   loading.value = false
@@ -49,14 +56,12 @@ async function uploadPGN() {
 </script>
 
 <template>
-  <!-- ONE BUTTON -->
   <div style="position: relative; z-index: 9999;">
-  <v-btn color="#4CAF50" @click="open">
-    Analyze Your Game
-  </v-btn>
-</div>
+    <v-btn color="primary" @click="open">
+      Analyze Your Game
+    </v-btn>
+  </div>
 
-  <!-- MODAL -->
   <v-dialog v-model="dialog" max-width="500">
     <v-card>
       <v-card-title>Upload PGN</v-card-title>
@@ -66,8 +71,8 @@ async function uploadPGN() {
           ref="fileInput"
           type="file"
           accept=".pgn"
-          @change="selectFile"
           hidden
+          @change="selectFile"
         />
 
         <v-btn @click="openFile">Select PGN</v-btn>
@@ -78,12 +83,12 @@ async function uploadPGN() {
 
         <v-btn
           class="mt-3"
+          color="primary"
           :loading="loading"
           :disabled="!file"
           @click="uploadPGN"
-          color="primary"
         >
-          Load Game
+          Analyze Game
         </v-btn>
       </v-card-text>
 

@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { Chess } from "chess.js"
 import "chessboard-element"
 
+import { supabase } from "@/utils/supabase"
 import UploadPGNModal from "@/components/layout/UploadPgnModal.vue"
 
 const boardRef = ref(null)
@@ -11,14 +12,19 @@ const chess = new Chess()
 const moves = ref([])
 const moveIndex = ref(0)
 
+const games = ref([])
+const currentGame = ref(null)
+
+// =====================
+// BOARD
+// =====================
 function updateBoard() {
   boardRef.value?.setPosition(chess.fen())
 }
 
-function loadMoves(newMoves) {
-  moves.value = newMoves
-  moveIndex.value = 0
+function resetBoard() {
   chess.reset()
+  moveIndex.value = 0
   updateBoard()
 }
 
@@ -42,26 +48,122 @@ function prevMove() {
     updateBoard()
   }
 }
+
+// =====================
+// PGN HELPERS
+// =====================
+function extractResult(pgn) {
+  return pgn.match(/\[Result "(.*?)"\]/)?.[1] || null
+}
+
+function extractGameInfo(pgn) {
+  return {
+    white_name: pgn.match(/\[White "(.*?)"\]/)?.[1] || "White",
+    black_name: pgn.match(/\[Black "(.*?)"\]/)?.[1] || "Black",
+
+    white_elo: Number(pgn.match(/\[WhiteElo "(.*?)"\]/)?.[1]) || null,
+    black_elo: Number(pgn.match(/\[BlackElo "(.*?)"\]/)?.[1]) || null,
+
+    white_country: pgn.match(/\[WhiteCountry "(.*?)"\]/)?.[1] || null,
+    black_country: pgn.match(/\[BlackCountry "(.*?)"\]/)?.[1] || null
+  }
+}
+
+// =====================
+// FROM UPLOAD MODAL
+// =====================
+async function loadMoves(newMoves, rawPGN) {
+  try {
+    moves.value = newMoves || []
+    resetBoard()
+
+    const info = extractGameInfo(rawPGN)
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    // 1. INSERT GAME
+    const { data: inserted, error } = await supabase
+      .from("uploaded_games")
+      .insert([
+        {
+          user_id: user.id,
+          pgn: rawPGN,
+          result: extractResult(rawPGN),
+          ...info
+        }
+      ])
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // 2. SET CURRENT GAME (IMPORTANT FIX)
+    currentGame.value = inserted
+
+    // 3. REFRESH LIST
+    await fetchGames()
+  } catch (err) {
+    console.error("Upload error:", err)
+  }
+}
+
+// =====================
+// LOAD FROM DATABASE
+// =====================
+function loadFromGame(game) {
+  currentGame.value = game
+
+  chess.reset()
+
+  // IMPORTANT: load PGN properly
+  chess.loadPgn(game.pgn)
+
+  moves.value = chess.history()
+  resetBoard()
+}
+
+// =====================
+// FETCH GAMES
+// =====================
+async function fetchGames() {
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
+
+  const { data, error } = await supabase
+    .from("uploaded_games")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  if (!error) games.value = data || []
+}
+
+onMounted(fetchGames)
 </script>
 
 <template>
   <div class="text-center">
 
-    <!-- 🔥 MODAL BUTTON HERE -->
+    <!-- UPLOAD MODAL -->
     <div style="margin-bottom: 20px;">
       <UploadPGNModal @loaded="loadMoves" />
     </div>
 
     <!-- TOP PLAYER -->
-    <div class="player mb-0">
+    <div class="player">
       <div class="left">
-        <img src="/images/pic1.jpg" class="avatar" />
         <div>
-          <div class="name">super-wingwing</div>
-          <div class="rating">PH (2244)</div>
+          <div class="name">
+            {{ currentGame?.white_name || "White" }}
+          </div>
+          <div class="rating">
+            {{ currentGame?.white_country }} {{ currentGame?.white_elo || "--" }}
+          </div>
         </div>
       </div>
-      <div class="timer">10:00</div>
     </div>
 
     <!-- BOARD -->
@@ -71,13 +173,15 @@ function prevMove() {
       <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">
         <div class="left">
-          <img src="/images/pic1.jpg" class="avatar" />
           <div>
-            <div class="name">bandera-7</div>
-            <div class="rating">UA (2211)</div>
+            <div class="name">
+              {{ currentGame?.black_name || "Black" }}
+            </div>
+            <div class="rating">
+              {{ currentGame?.black_country }} {{ currentGame?.black_elo || "--" }}
+            </div>
           </div>
         </div>
-        <div class="timer">10:00</div>
       </div>
     </div>
 
@@ -85,6 +189,18 @@ function prevMove() {
     <div class="mb-4">
       <v-btn @click="prevMove">⬅️ Back</v-btn>
       <v-btn @click="nextMove">Forward ➡️</v-btn>
+    </div>
+
+    <!-- GAME LIST -->
+    <div class="mt-4">
+      <h3>Your Games</h3>
+
+      <div v-for="game in games" :key="game.id">
+        <v-btn @click="loadFromGame(game)">
+          {{ game.white_name }} vs {{ game.black_name }}
+          ({{ game.result }})
+        </v-btn>
+      </div>
     </div>
 
   </div>

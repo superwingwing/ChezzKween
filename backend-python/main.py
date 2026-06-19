@@ -1,44 +1,92 @@
-# main.py
-import io
-import chess.pgn
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from supabase import create_client
+from dotenv import load_dotenv
+import chess.pgn
+import io
+import os
 
-app = FastAPI(title="ChessBuddy AI")
+# =========================
+# LOAD ENV
+# =========================
+load_dotenv()
 
-# --- CORS ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# =========================
+# APP
+# =========================
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"message": "Backend is alive"}
+# =========================
+# REQUEST MODEL
+# =========================
+class PGNRequest(BaseModel):
+    pgn: str
 
+# =========================
+# PARSE PGN
+# =========================
+def parse_pgn(pgn_text):
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+
+    return {
+        "white": game.headers.get("White", "Unknown"),
+        "black": game.headers.get("Black", "Unknown"),
+        "result": game.headers.get("Result", "*"),
+        "white_elo": game.headers.get("WhiteElo"),
+        "black_elo": game.headers.get("BlackElo"),
+    }
+
+# =========================
+# EXTRACT MOVES
+# =========================
+def extract_moves(pgn_text):
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    board = game.board()
+
+    moves = []
+
+    for move in game.mainline_moves():
+        san = board.san(move)
+        moves.append({"move": san})
+        board.push(move)
+
+    return moves
+
+# =========================
+# ENDPOINT
+# =========================
 @app.post("/upload_pgn")
-async def upload_pgn(file: UploadFile = File(...)):
-    try:
-        content = (await file.read()).decode("utf-8").strip()
-        if not content:
-            return JSONResponse({"error": "Empty PGN"}, status_code=400)
+async def upload_pgn(data: PGNRequest):
+    pgn_text = data.pgn
 
-        pgn_io = io.StringIO(content)
-        game = chess.pgn.read_game(pgn_io)
-        if not game:
-            return JSONResponse({"error": "Invalid PGN"}, status_code=400)
+    info = parse_pgn(pgn_text)
+    moves = extract_moves(pgn_text)
 
-        board = game.board()
-        moves_list = []
-        for move in game.mainline_moves():
-            moves_list.append(board.san(move))  # ✅ Use SAN for frontend
-            board.push(move)
+    result = supabase.table("review_games").insert({
+        "pgn": pgn_text,
+        "white_name": info["white"],
+        "black_name": info["black"],
+        "result": info["result"],
+        "white_elo": info["white_elo"],
+        "black_elo": info["black_elo"],
+        "moves": moves
+    }).execute()
 
-        return {"moves": moves_list}
-
-    except Exception as e:
-        return JSONResponse({"error": f"Failed to parse PGN: {str(e)}"}, status_code=400)
+    return {
+        "message": "Game stored successfully",
+        "data": result.data
+    }

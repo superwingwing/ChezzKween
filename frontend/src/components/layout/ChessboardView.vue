@@ -6,6 +6,7 @@ import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
 // ongoing to fix rotate board bug:
+//keep going
 const chess = new Chess()
 
 const moves = ref([])

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, computed } from "vue"
 import { Chess } from "chess.js"
 import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
@@ -7,32 +7,45 @@ import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
 const chess = new Chess()
 
-let boardAPI = null
-
 const moves = ref([])
 const moveIndex = ref(0)
 const currentGame = ref(null)
 
-// =====================
-// BOARD CONTROL (NEW)
-// =====================
-function updateBoard() {
-  if (boardAPI) {
-    boardAPI.setPosition(chess.fen())
-  }
-}
+const orientation = ref("white")
 
-function resetBoard() {
-  chess.reset()
-  moveIndex.value = 0
-  updateBoard()
-}
+let boardAPI = null
 
+// =====================
+// PLAYER BASE DATA
+// =====================
+const whitePlayer = computed(() => ({
+  name: currentGame.value?.white_name,
+  elo: currentGame.value?.white_elo
+}))
+
+const blackPlayer = computed(() => ({
+  name: currentGame.value?.black_name,
+  elo: currentGame.value?.black_elo
+}))
+
+// =====================
+// DYNAMIC VIEW (Chess.com style)
+// =====================
+const topPlayer = computed(() =>
+  orientation.value === "white" ? blackPlayer.value : whitePlayer.value
+)
+
+const bottomPlayer = computed(() =>
+  orientation.value === "white" ? whitePlayer.value : blackPlayer.value
+)
+
+// =====================
+// BOARD NAVIGATION
+// =====================
 function nextMove() {
   if (moveIndex.value < moves.value.length) {
     chess.move(moves.value[moveIndex.value])
     moveIndex.value++
-    updateBoard()
   }
 }
 
@@ -44,13 +57,19 @@ function prevMove() {
     for (let i = 0; i < moveIndex.value; i++) {
       chess.move(moves.value[i])
     }
-
-    updateBoard()
   }
 }
 
 // =====================
-// LOAD FROM BACKEND
+// FLIP BOARD
+// =====================
+function flipBoard() {
+  orientation.value =
+    orientation.value === "white" ? "black" : "white"
+}
+
+// =====================
+// LOAD PGN
 // =====================
 function loadMoves(response) {
   const game = response.data[0]
@@ -61,49 +80,45 @@ function loadMoves(response) {
   chess.loadPgn(game.pgn)
 
   moves.value = chess.history()
-  resetBoard()
+
+  moveIndex.value = 0
+  orientation.value = "white"
 }
 </script>
 
 <template>
   <div class="text-center">
 
-    <!-- UPLOAD MODAL -->
-    <div style="margin-bottom: 20px;">
-      <UploadPGNModal @loaded="loadMoves" />
-    </div>
+    <UploadPGNModal @loaded="loadMoves" />
 
     <!-- TOP PLAYER -->
     <div class="player">
       <div class="left">
-        <div>
-          <div class="name">
-             {{ currentGame?.black_name || "Black" }}
-          </div>
-          <div class="rating">
-             {{ currentGame?.black_elo || "--" }}
-          </div>
+        <div class="name">
+          {{ topPlayer.name || "Player" }}
+        </div>
+        <div class="rating">
+          {{ topPlayer.elo || "--" }}
         </div>
       </div>
     </div>
 
     <!-- BOARD -->
-  <div class="board-wrapper">
-  <TheChessboard
-    class="board"
-    @board-created="(api) => (boardAPI = api)"
-  />
+    <div class="board-wrapper">
+      <TheChessboard
+        class="board"
+        :orientation="orientation"
+        @board-created="(api) => (boardAPI = api)"
+      />
 
+      <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">
         <div class="left">
-          <div>
-            <div class="name">
-              {{ currentGame?.white_name || "White" }}
-            </div>
-            <div class="rating">        
-              {{ currentGame?.white_elo || "--" }}
-            </div>
-
+          <div class="name">
+            {{ bottomPlayer.name || "Player" }}
+          </div>
+          <div class="rating">
+            {{ bottomPlayer.elo || "--" }}
           </div>
         </div>
       </div>
@@ -113,6 +128,7 @@ function loadMoves(response) {
     <div class="mb-4">
       <v-btn @click="prevMove">⬅️ Back</v-btn>
       <v-btn @click="nextMove">Forward ➡️</v-btn>
+      <v-btn @click="flipBoard">🔄 Flip</v-btn>
     </div>
 
   </div>
@@ -124,8 +140,6 @@ function loadMoves(response) {
   width: fit-content;
   margin: 20px auto;
 }
-
-
 
 .board {
   width: 600px;

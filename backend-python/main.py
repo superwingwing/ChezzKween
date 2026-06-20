@@ -7,6 +7,9 @@ import chess.pgn
 import io
 import os
 
+from services.analysis_service import analyze_pgn
+
+
 # =========================
 # LOAD ENV
 # =========================
@@ -21,6 +24,13 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # APP
 # =========================
 app = FastAPI()
+
+# ========================= for analyze stockfish endpoint =========================
+@app.post("/analyze")
+async def analyze(req: PGNRequest):
+    result = analyze_pgn(req.pgn)
+    return result
+# =========================
 
 app.add_middleware(
     CORSMiddleware,

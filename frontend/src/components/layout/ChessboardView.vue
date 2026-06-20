@@ -78,10 +78,10 @@ function loadMoves(response) {
       <div class="left">
         <div>
           <div class="name">
-            {{ currentGame?.white_name || "White" }}
+             {{ currentGame?.black_name || "Black" }}
           </div>
           <div class="rating">
-            {{ currentGame?.white_elo || "--" }}
+             {{ currentGame?.black_elo || "--" }}
           </div>
         </div>
       </div>
@@ -94,19 +94,20 @@ function loadMoves(response) {
     @board-created="(api) => (boardAPI = api)"
   />
 
-  <div class="player bottom-player">
-    <div class="left">
-      <div>
-        <div class="name">
-          {{ currentGame?.black_name || "Black" }}
-        </div>
-        <div class="rating">
-          {{ currentGame?.black_elo || "--" }}
+      <div class="player bottom-player">
+        <div class="left">
+          <div>
+            <div class="name">
+              {{ currentGame?.white_name || "White" }}
+            </div>
+            <div class="rating">        
+              {{ currentGame?.white_elo || "--" }}
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
     <!-- CONTROLS -->
     <div class="mb-4">

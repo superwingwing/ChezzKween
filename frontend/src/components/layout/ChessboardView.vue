@@ -1,23 +1,25 @@
 <script setup>
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { Chess } from "chess.js"
-import "chessboard-element"
-
+import { TheChessboard } from "vue3-chessboard"
+import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
-const boardRef = ref(null)
-
 const chess = new Chess()
+
+let boardAPI = null
+
 const moves = ref([])
 const moveIndex = ref(0)
-
 const currentGame = ref(null)
 
 // =====================
-// BOARD
+// BOARD CONTROL (NEW)
 // =====================
 function updateBoard() {
-  boardRef.value?.setPosition(chess.fen())
+  if (boardAPI) {
+    boardAPI.setPosition(chess.fen())
+  }
 }
 
 function resetBoard() {
@@ -48,12 +50,10 @@ function prevMove() {
 }
 
 // =====================
-// FROM BACKEND (UPLOAD)
+// LOAD FROM BACKEND
 // =====================
 function loadMoves(response) {
-  console.log("BACKEND RESPONSE:", response)
-
-  const game = response.data[0]   // 🔥 IMPORTANT
+  const game = response.data[0]
 
   currentGame.value = game
 
@@ -88,23 +88,25 @@ function loadMoves(response) {
     </div>
 
     <!-- BOARD -->
-    <div class="board-wrapper">
-      <chess-board ref="boardRef" class="board" />
+  <div class="board-wrapper">
+  <TheChessboard
+    class="board"
+    @board-created="(api) => (boardAPI = api)"
+  />
 
-      <!-- BOTTOM PLAYER -->
-      <div class="player bottom-player">
-        <div class="left">
-          <div>
-            <div class="name">
-              {{ currentGame?.black_name || "Black" }}
-            </div>
-            <div class="rating">
-              {{ currentGame?.black_elo || "--" }}
-            </div>
-          </div>
+  <div class="player bottom-player">
+    <div class="left">
+      <div>
+        <div class="name">
+          {{ currentGame?.black_name || "Black" }}
+        </div>
+        <div class="rating">
+          {{ currentGame?.black_elo || "--" }}
         </div>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- CONTROLS -->
     <div class="mb-4">
@@ -122,6 +124,8 @@ function loadMoves(response) {
   margin: 20px auto;
 }
 
+
+
 .board {
   width: 600px;
   max-width: 95vw;
@@ -138,21 +142,6 @@ function loadMoves(response) {
   background: #2c2c2c;
   padding: 10px;
   border-radius: 8px;
-}
-
-.bottom-player {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-
-  width: 100%;
-  margin: 0;
-
-  background: rgba(44, 44, 44, 0.9);
-  backdrop-filter: blur(6px);
-
-  border-radius: 0 0 8px 8px;
 }
 
 .player .left {

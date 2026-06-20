@@ -57,7 +57,7 @@ async function uploadPGN() {
 
 <template>
   <div style="position: relative; z-index: 9999;">
-    <v-btn color="primary" @click="open">
+    <v-btn color="#43A047" @click="open">
       Analyze Your Game
     </v-btn>
   </div>

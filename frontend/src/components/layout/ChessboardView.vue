@@ -5,6 +5,7 @@ import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
+// ongoing to fix rotate board bug:
 const chess = new Chess()
 
 const moves = ref([])
@@ -175,3 +176,4 @@ function loadMoves(response) {
   color: #aaa;
 }
 </style>
+

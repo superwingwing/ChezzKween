@@ -140,7 +140,7 @@ function loadMoves(response) {
   width: 600px;
   margin: 10px auto;
 
-  background: #2c2c2c;
+  background: #8D6E63;
   padding: 10px;
   border-radius: 8px;
 }

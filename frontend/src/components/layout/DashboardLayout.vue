@@ -60,13 +60,6 @@ export default {
         </v-col>
 
         <!-- Main Content -->
-        <!-- <v-col cols="12" sm="6" md="6" class="pa-2">
-          <v-container>
-            <ChessboardView />
-            <EvaluationBarView :score="0" />
-          </v-container>
-        </v-col> -->
-
         <v-col cols="12" sm="6" md="6" class="pa-2">
           <v-container>
                <div class="chess-wrap">
@@ -89,9 +82,10 @@ export default {
   </v-layout>
 </template>
 
-<style scoped>.chess-wrap {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-}
+<style scoped>
+  .chess-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+  }
 </style>

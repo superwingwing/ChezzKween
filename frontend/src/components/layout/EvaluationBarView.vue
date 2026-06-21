@@ -30,7 +30,7 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
 <style scoped>
 .eval-container {
   width: 18px;
-  height: 400px;
+  height: 650px;
   display: flex;
   flex-direction: column;
   border-radius: 6px;

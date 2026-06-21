@@ -1,5 +1,5 @@
 # Executable
-backend-python/stockfish.exe
+backend-python/engine/stockfish.exe
 
 # Dependencies
 node_modules/

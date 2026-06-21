@@ -5,20 +5,20 @@ import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
-// ongoing to fix rotate board bug:
-//keep going
 const chess = new Chess()
 
 const moves = ref([])
 const moveIndex = ref(0)
 const currentGame = ref(null)
-
 const orientation = ref("white")
 
 let boardAPI = null
 
+// prevent double move bug
+const isNavigating = ref(false)
+
 // =====================
-// PLAYER BASE DATA
+// PLAYER DATA
 // =====================
 const whitePlayer = computed(() => ({
   name: currentGame.value?.white_name,
@@ -30,9 +30,6 @@ const blackPlayer = computed(() => ({
   elo: currentGame.value?.black_elo
 }))
 
-// =====================
-// DYNAMIC VIEW (Chess.com style)
-// =====================
 const topPlayer = computed(() =>
   orientation.value === "white" ? blackPlayer.value : whitePlayer.value
 )
@@ -42,28 +39,68 @@ const bottomPlayer = computed(() =>
 )
 
 // =====================
-// BOARD NAVIGATION
+// CORE ENGINE (ONLY ONE WAY)
+// =====================
+function goToMove(index) {
+  isNavigating.value = true
+
+  chess.reset()
+
+  for (let i = 0; i < index; i++) {
+    chess.move(moves.value[i])
+  }
+
+  moveIndex.value = index
+
+  if (boardAPI) {
+    boardAPI.setPosition(chess.fen())
+  }
+
+  isNavigating.value = false
+}
+
+// =====================
+// NAVIGATION
 // =====================
 function nextMove() {
   if (moveIndex.value < moves.value.length) {
-    chess.move(moves.value[moveIndex.value])
-    moveIndex.value++
+    goToMove(moveIndex.value + 1)
   }
 }
 
 function prevMove() {
   if (moveIndex.value > 0) {
-    moveIndex.value--
-    chess.reset()
-
-    for (let i = 0; i < moveIndex.value; i++) {
-      chess.move(moves.value[i])
-    }
+    goToMove(moveIndex.value - 1)
   }
 }
 
 // =====================
-// FLIP BOARD
+// MANUAL MOVE
+// =====================
+function onMove(move) {
+  if (isNavigating.value) return
+
+  const result = chess.move({
+    from: move.from,
+    to: move.to,
+    promotion: "q"
+  })
+
+  if (result) {
+    // cut future moves if rewinding
+    if (moveIndex.value < moves.value.length) {
+      moves.value = moves.value.slice(0, moveIndex.value)
+    }
+
+    moves.value.push(result.san)
+
+    // 🔥 IMPORTANT: use same system
+    goToMove(moves.value.length)
+  }
+}
+
+// =====================
+// FLIP
 // =====================
 function flipBoard() {
   orientation.value =
@@ -83,7 +120,9 @@ function loadMoves(response) {
 
   moves.value = chess.history()
 
-  moveIndex.value = 0
+  // 🔥 ALWAYS start from 0 using same system
+  goToMove(0)
+
   orientation.value = "white"
 }
 </script>
@@ -96,12 +135,8 @@ function loadMoves(response) {
     <!-- TOP PLAYER -->
     <div class="player">
       <div class="left">
-        <div class="name">
-          {{ topPlayer.name || "Player" }}
-        </div>
-        <div class="rating">
-          {{ topPlayer.elo || "--" }}
-        </div>
+        <div class="name">{{ topPlayer.name || "Player" }}</div>
+        <div class="rating">{{ topPlayer.elo || "--" }}</div>
       </div>
     </div>
 
@@ -110,18 +145,15 @@ function loadMoves(response) {
       <TheChessboard
         class="board"
         :orientation="orientation"
+        @move="onMove"
         @board-created="(api) => (boardAPI = api)"
       />
 
       <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">
         <div class="left">
-          <div class="name">
-            {{ bottomPlayer.name || "Player" }}
-          </div>
-          <div class="rating">
-            {{ bottomPlayer.elo || "--" }}
-          </div>
+          <div class="name">{{ bottomPlayer.name || "Player" }}</div>
+          <div class="rating">{{ bottomPlayer.elo || "--" }}</div>
         </div>
       </div>
     </div>
@@ -177,4 +209,3 @@ function loadMoves(response) {
   color: #aaa;
 }
 </style>
-

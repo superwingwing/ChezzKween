@@ -1,36 +1,24 @@
-from engine.stockfish_engine import evaluate_game
+import chess.pgn
+import io
+from engine.stockfish_engine import evaluate_position
 
 
-def analyze_pgn(pgn: str):
-    evaluations = evaluate_game(pgn)
+def analyze_pgn(pgn_text: str):
+    game = chess.pgn.read_game(io.StringIO(pgn_text))
+    board = game.board()
 
-    # SIMPLE METRICS (you can improve later)
-    blunders = 0
-    mistakes = 0
-    inaccuracies = 0
+    evaluations = []
 
-    prev = None
+    for move in game.mainline_moves():
+        board.push(move)
 
-    for e in evaluations:
-        val = e["evaluation"]["value"]
+        eval_result = evaluate_position(board.fen())
 
-        if prev is not None:
-            diff = abs(val - prev)
-
-            if diff > 300:
-                blunders += 1
-            elif diff > 150:
-                mistakes += 1
-            elif diff > 80:
-                inaccuracies += 1
-
-        prev = val
+        evaluations.append({
+            "fen": board.fen(),
+            "evaluation": eval_result
+        })
 
     return {
-        "evaluations": evaluations,
-        "summary": {
-            "blunders": blunders,
-            "mistakes": mistakes,
-            "inaccuracies": inaccuracies
-        }
+        "evaluations": evaluations
     }

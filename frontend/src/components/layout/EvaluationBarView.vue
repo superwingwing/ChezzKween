@@ -8,55 +8,45 @@ const props = defineProps({
   }
 })
 
-// convert engine score → %
-function evalToPercent(score) {
-  const max = 5
-  const clamped = Math.max(Math.min(score, max), -max)
-  return ((clamped + max) / (2 * max)) * 100
-}
+/*
+  Clamp Stockfish eval between -5 and +5
+  Then convert to percentage for bar height
+*/
+const whiteHeight = computed(() => {
+  const clamped = Math.max(-5, Math.min(5, props.score))
+  return ((clamped + 5) / 10) * 100
+})
 
-const height = computed(() => evalToPercent(props.score))
+const blackHeight = computed(() => 100 - whiteHeight.value)
 </script>
 
 <template>
-  <div class="eval-bar">
-    <div
-      class="eval-fill"
-      :style="{ height: height + '%' }"
-    ></div>
-
-    <!-- optional text -->
-    <div class="eval-text">
-      {{ score > 0 ? "+" : "" }}{{ score.toFixed(1) }}
-    </div>
+  <div class="eval-container">
+    <div class="white" :style="{ height: whiteHeight + '%' }"></div>
+    <div class="black" :style="{ height: blackHeight + '%' }"></div>
   </div>
 </template>
 
 <style scoped>
-.eval-bar {
-  width: 20px;
-  height: 600px;
-  background: black;
+.eval-container {
+  width: 18px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
   border-radius: 6px;
   overflow: hidden;
-  position: relative;
+  border: 2px solid #333;
 }
 
-/* white advantage */
-.eval-fill {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: white;
-  transition: height 0.3s ease;
+/* White advantage */
+.white {
+  background: #ffffff;
+  transition: height 0.2s ease;
 }
 
-/* score label */
-.eval-text {
-  position: absolute;
-  top: 5px;
-  left: 25px;
-  font-size: 12px;
-  color: white;
+/* Black advantage */
+.black {
+  background: #000000;
+  transition: height 0.2s ease;
 }
 </style>

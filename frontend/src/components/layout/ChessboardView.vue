@@ -6,13 +6,15 @@ import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
 const chess = new Chess()
-
+const evaluation = ref(0)
 const moves = ref([])
 const moveIndex = ref(0)
 const currentGame = ref(null)
 const orientation = ref("white")
 
 let boardAPI = null
+
+const emit = defineEmits(["update-eval"])
 
 // prevent double move bug
 const isNavigating = ref(false)
@@ -110,7 +112,7 @@ function flipBoard() {
 // =====================
 // LOAD PGN
 // =====================
-function loadMoves(response) {
+  async function loadMoves(response) {
   const game = response.data[0]
 
   currentGame.value = game
@@ -120,10 +122,29 @@ function loadMoves(response) {
 
   moves.value = chess.history()
 
-  // 🔥 ALWAYS start from 0 using same system
   goToMove(0)
 
   orientation.value = "white"
+
+  // 🔥 ADD THIS: call backend Stockfish
+  try {
+    const res = await fetch("http://localhost:8000/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        pgn: game.pgn
+      })
+    })
+
+    const data = await res.json()
+
+    evaluation.value = data.evaluation   // ✅ THIS powers your bar
+
+  } catch (err) {
+    console.error("Engine error:", err)
+  }
 }
 </script>
 

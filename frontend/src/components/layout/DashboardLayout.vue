@@ -2,6 +2,7 @@
 import SideNavigation from '@/components/layout/SideNavigation.vue'
 import StyleClassification from '@/components/layout/StyleClassification.vue'
 import ChessboardView from '@/components/layout/ChessboardView.vue'
+import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
@@ -9,7 +10,8 @@ export default {
   components: {
     SideNavigation,
     StyleClassification,
-    ChessboardView
+    ChessboardView,
+    EvaluationBarView
   },
   setup() {
     const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
@@ -58,10 +60,19 @@ export default {
         </v-col>
 
         <!-- Main Content -->
+        <!-- <v-col cols="12" sm="6" md="6" class="pa-2">
+          <v-container>
+            <ChessboardView />
+            <EvaluationBarView :score="0" />
+          </v-container>
+        </v-col> -->
+
         <v-col cols="12" sm="6" md="6" class="pa-2">
           <v-container>
-            <!-- <slot name="content"></slot> -->
-            <ChessboardView />
+               <div class="chess-wrap">
+              <ChessboardView />
+              <EvaluationBarView :score="0" />
+            </div>
           </v-container>
         </v-col>
 
@@ -77,3 +88,10 @@ export default {
     </v-container>
   </v-layout>
 </template>
+
+<style scoped>.chess-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+</style>

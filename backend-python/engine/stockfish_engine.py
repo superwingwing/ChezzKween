@@ -1,7 +1,7 @@
 import chess
 import chess.engine
 
-STOCKFISH_PATH = "engine/stockfish.exe"  # adjust path if needed
+STOCKFISH_PATH = "engine/stockfish.exe"
 
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
@@ -11,12 +11,19 @@ def evaluate_position(fen: str):
 
     info = engine.analyse(
         board,
-        chess.engine.Limit(time=0.5)  # ⏱ fast but accurate
+        chess.engine.Limit(time=0.5)
     )
 
-    score = info["score"].relative
+    # ✅ ALWAYS from White perspective
+    score = info["score"].white()
 
     if score.is_mate():
-        return {"type": "mate", "value": score.mate()}
+        return {
+            "type": "mate",
+            "value": score.mate()
+        }
     else:
-        return {"type": "cp", "value": score.score()}
+        return {
+            "type": "cp",
+            "value": score.score() / 100  # ✅ convert to pawn units
+        }

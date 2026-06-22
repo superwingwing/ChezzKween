@@ -9,6 +9,13 @@ def analyze_pgn(pgn_text: str):
 
     evaluations = []
 
+    # ✅ include starting position
+    first_eval = evaluate_position(board.fen())
+    evaluations.append({
+        "fen": board.fen(),
+        "value": first_eval["value"]
+    })
+
     for move in game.mainline_moves():
         board.push(move)
 
@@ -16,7 +23,7 @@ def analyze_pgn(pgn_text: str):
 
         evaluations.append({
             "fen": board.fen(),
-            "evaluation": eval_result
+            "value": eval_result["value"]
         })
 
     return {

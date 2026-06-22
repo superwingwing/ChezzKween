@@ -1,150 +1,164 @@
 <script setup>
-import { ref, computed } from "vue"
-import { Chess } from "chess.js"
-import { TheChessboard } from "vue3-chessboard"
-import "vue3-chessboard/style.css"
-import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
+  import { ref, computed } from "vue"
+  import { Chess } from "chess.js"
+  import { TheChessboard } from "vue3-chessboard"
+  import "vue3-chessboard/style.css"
+  import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 
-const chess = new Chess()
-const evaluation = ref(0)
-const moves = ref([])
-const moveIndex = ref(0)
-const currentGame = ref(null)
-const orientation = ref("white")
+  const chess = new Chess()
+  const moves = ref([])
+  const moveIndex = ref(0)
+  const currentGame = ref(null)
+  const orientation = ref("white")
+  const evaluations = ref([])
 
-let boardAPI = null
+  let boardAPI = null
 
-const emit = defineEmits(["update-eval"])
+  const emit = defineEmits(["update-eval"])
 
-// prevent double move bug
-const isNavigating = ref(false)
+  // prevent double move bug
+  const isNavigating = ref(false)
 
-// =====================
-// PLAYER DATA
-// =====================
-const whitePlayer = computed(() => ({
-  name: currentGame.value?.white_name,
-  elo: currentGame.value?.white_elo
-}))
+  // =====================
+  // PLAYER DATA
+  // =====================
+  const whitePlayer = computed(() => ({
+    name: currentGame.value?.white_name,
+    elo: currentGame.value?.white_elo
+  }))
 
-const blackPlayer = computed(() => ({
-  name: currentGame.value?.black_name,
-  elo: currentGame.value?.black_elo
-}))
+  const blackPlayer = computed(() => ({
+    name: currentGame.value?.black_name,
+    elo: currentGame.value?.black_elo
+  }))
 
-const topPlayer = computed(() =>
-  orientation.value === "white" ? blackPlayer.value : whitePlayer.value
-)
+  const topPlayer = computed(() =>
+    orientation.value === "white" ? blackPlayer.value : whitePlayer.value
+  )
 
-const bottomPlayer = computed(() =>
-  orientation.value === "white" ? whitePlayer.value : blackPlayer.value
-)
+  const bottomPlayer = computed(() =>
+    orientation.value === "white" ? whitePlayer.value : blackPlayer.value
+  )
 
-// =====================
-// CORE ENGINE (ONLY ONE WAY)
-// =====================
-function goToMove(index) {
-  isNavigating.value = true
+  // =====================
+  // CORE ENGINE (ONLY ONE WAY)
+  // =====================
+  function goToMove(index) {
+        isNavigating.value = true
 
-  chess.reset()
+        chess.reset()
 
-  for (let i = 0; i < index; i++) {
-    chess.move(moves.value[i])
+        for (let i = 0; i < index; i++) {
+          chess.move(moves.value[i])
+        }
+
+        moveIndex.value = index
+
+        if (boardAPI) {
+          boardAPI.setPosition(chess.fen())
+        }
+
+    // 🔥 sync evaluation with move
+      if (evaluations.value.length > 0) {
+        const evalData = evaluations.value[index]
+
+        if (evalData) {
+          emit("update-eval", evalData.value)
+        }
+      }
+
+    isNavigating.value = false
   }
 
-  moveIndex.value = index
-
-  if (boardAPI) {
-    boardAPI.setPosition(chess.fen())
-  }
-
-  isNavigating.value = false
-}
-
-// =====================
-// NAVIGATION
-// =====================
-function nextMove() {
-  if (moveIndex.value < moves.value.length) {
-    goToMove(moveIndex.value + 1)
-  }
-}
-
-function prevMove() {
-  if (moveIndex.value > 0) {
-    goToMove(moveIndex.value - 1)
-  }
-}
-
-// =====================
-// MANUAL MOVE
-// =====================
-function onMove(move) {
-  if (isNavigating.value) return
-
-  const result = chess.move({
-    from: move.from,
-    to: move.to,
-    promotion: "q"
-  })
-
-  if (result) {
-    // cut future moves if rewinding
+  // =====================
+  // NAVIGATION
+  // =====================
+  function nextMove() {
     if (moveIndex.value < moves.value.length) {
-      moves.value = moves.value.slice(0, moveIndex.value)
+      goToMove(moveIndex.value + 1)
     }
-
-    moves.value.push(result.san)
-
-    // 🔥 IMPORTANT: use same system
-    goToMove(moves.value.length)
   }
-}
 
-// =====================
-// FLIP
-// =====================
-function flipBoard() {
-  orientation.value =
-    orientation.value === "white" ? "black" : "white"
-}
+  function prevMove() {
+    if (moveIndex.value > 0) {
+      goToMove(moveIndex.value - 1)
+    }
+  }
 
-// =====================
-// LOAD PGN
-// =====================
-  async function loadMoves(response) {
-  const game = response.data[0]
+  // =====================
+  // MANUAL MOVE
+  // =====================
+  function onMove(move) {
+    if (isNavigating.value) return
 
-  currentGame.value = game
-
-  chess.reset()
-  chess.loadPgn(game.pgn)
-
-  moves.value = chess.history()
-
-  goToMove(0)
-
-  orientation.value = "white"
-
-  // 🔥 ADD THIS: call backend Stockfish
-  try {
-    const res = await fetch("http://localhost:8000/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        pgn: game.pgn
-      })
+    const result = chess.move({
+      from: move.from,
+      to: move.to,
+      promotion: "q"
     })
 
-    const data = await res.json()
+    if (result) {
+      // cut future moves if rewinding
+      if (moveIndex.value < moves.value.length) {
+        moves.value = moves.value.slice(0, moveIndex.value)
+      }
 
-    evaluation.value = data.evaluation   // ✅ THIS powers your bar
+      moves.value.push(result.san)
 
-  } catch (err) {
-    console.error("Engine error:", err)
+      // 🔥 IMPORTANT: use same system
+      goToMove(moves.value.length)
+    }
   }
+
+  // =====================
+  // FLIP
+  // =====================
+  function flipBoard() {
+    orientation.value =
+      orientation.value === "white" ? "black" : "white"
+  }
+
+  // =====================
+  // LOAD PGN
+  // =====================
+    async function loadMoves(response) {
+    const game = response.data[0]
+
+    currentGame.value = game
+
+    chess.reset()
+    chess.loadPgn(game.pgn)
+
+    moves.value = chess.history()
+
+    goToMove(0)
+
+    orientation.value = "white"
+
+    // 🔥 ADD THIS: call backend Stockfish
+    try {
+      const res = await fetch("http://localhost:8000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          pgn: game.pgn
+        })
+      })
+
+      const data = await res.json()
+
+    // ✅ THIS powers your bar
+      evaluations.value = data.evaluations
+      // set initial eval (move 0)
+        if (evaluations.value.length > 0) {
+          emit("update-eval", evaluations.value[0].value)
+        }
+
+    } catch (err) {
+      console.error("Engine error:", err)
+    }
 }
 </script>
 

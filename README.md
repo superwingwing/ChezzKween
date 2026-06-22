@@ -1,9 +1,9 @@
 <<<<<<< HEAD
 KWAYNN
 =======
-# kwaynn
+# hello world
 
-kwaynnnn 
+HELLO WORLD!!
 
 
 >>>>>>> df8c083 (fix the size of the chessboard)

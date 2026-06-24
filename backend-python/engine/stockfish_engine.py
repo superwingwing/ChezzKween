@@ -6,24 +6,26 @@ STOCKFISH_PATH = "engine/stockfish.exe"
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
 
-def evaluate_position(fen: str):
-    board = chess.Board(fen)
-
+def evaluate_position(board: chess.Board):
     info = engine.analyse(
         board,
-        chess.engine.Limit(time=0.5)
+        chess.engine.Limit(time=0.3)
     )
 
-    # ✅ ALWAYS from White perspective
     score = info["score"].white()
 
+    # ✅ numeric eval
     if score.is_mate():
-        return {
-            "type": "mate",
-            "value": score.mate()
-        }
+        eval_value = 100 if score.mate() > 0 else -100
     else:
-        return {
-            "type": "cp",
-            "value": score.score() / 100  # ✅ convert to pawn units
-        }
+        eval_value = score.score() / 100
+
+    # ✅ best move (for arrows)
+    best_move = None
+    if "pv" in info and len(info["pv"]) > 0:
+        best_move = info["pv"][0].uci()
+
+    return {
+        "evaluation": eval_value,   # 🔥 NUMBER ONLY
+        "best_move": best_move
+    }

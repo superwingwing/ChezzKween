@@ -20,6 +20,10 @@ const emit = defineEmits(["update-eval"])
 
 const isNavigating = ref(false)
 
+const currentQuality = computed(() => {
+  const current = evaluations.value[moveIndex.value - 1]
+  return current?.quality || ""
+})
 // =====================
 // PLAYERS
 // =====================
@@ -59,10 +63,12 @@ function goToMove(index) {
     boardAPI.setPosition(chess.fen())
 
     const current = evaluations.value[index - 1]
+  console.log("ENGINE DATA:", current) // 👈 ADD IT HERE
 
     if (current) {
       // ✅ update eval bar
-      emit("update-eval", current.evaluation)
+      // emit("update-eval", current.evaluation)
+      emit("update-eval", current.evaluation.value)
 
       // ✅ draw best move arrow
       if (current.best_move) {
@@ -158,7 +164,8 @@ async function loadMoves(response) {
 
     // initial eval
     if (evaluations.value.length > 0) {
-      emit("update-eval", evaluations.value[0].evaluation)
+      // emit("update-eval", evaluations.value[0].evaluation)
+      emit("update-eval", evaluations.value[0].evaluation.value)
     }
 
   } catch (err) {
@@ -204,6 +211,14 @@ async function loadMoves(response) {
       <v-btn @click="nextMove">Forward ➡️</v-btn>
       <v-btn @click="flipBoard">🔄 Flip</v-btn>
     </div>
+
+      <div class="quality-icon">
+        <span v-if="currentQuality === 'best'">⭐ Best</span>
+        <span v-if="currentQuality === 'good'">👍 Good</span>
+        <span v-if="currentQuality === 'inaccuracy'">⚠️ Inaccuracy</span>
+        <span v-if="currentQuality === 'mistake'">❌ Mistake</span>
+        <span v-if="currentQuality === 'blunder'">💀 Blunder</span>
+      </div>
 
   </div>
 </template>

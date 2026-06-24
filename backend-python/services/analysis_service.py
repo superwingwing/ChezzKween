@@ -37,7 +37,8 @@ def analyze_pgn(pgn_text: str):
             "fen": board.fen(),
             "evaluation": current_eval,
             "best_move": eval_result["best_move"],
-            "quality": quality
+            "quality": quality,
+            "move": move.uci()
         })
 
         prev_eval = current_eval

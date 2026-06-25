@@ -197,9 +197,10 @@ async function loadMoves(response) {
         @board-created="(api) => (boardAPI = api)"
       />
 
-        <MoveQuality
-          :quality="currentQuality"
-        />
+       <MoveQuality
+        :quality="currentQuality"
+        :square="qualityPosition"
+      />
 
       <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">

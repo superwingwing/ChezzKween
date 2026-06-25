@@ -1,64 +1,76 @@
 <script setup>
-    defineProps({
-      quality: {
-        type: String,
-        default: ""
-      }
-    })
+import { computed } from "vue"
+
+const props = defineProps({
+  quality: String,
+  square: String
+})
+
+const styleObject = computed(() => {
+  if (!props.square) return {}
+
+  const file = props.square.charCodeAt(0) - 97
+  const rank = parseInt(props.square[1])
+
+  const squareSize = 75
+
+  return {
+    left: `${file * squareSize + 4}px`,
+    top: `${(8 - rank) * squareSize + 4}px`
+  }
+})
 </script>
 
 <template>
-    <div
-      v-if="quality"
-      class="quality-badge"
-      :class="quality"
-    >
-      <span v-if="quality === 'best'">⭐</span>
-      <span v-else-if="quality === 'good'">👍</span>
-      <span v-else-if="quality === 'inaccuracy'">⚠️</span>
-      <span v-else-if="quality === 'mistake'">❌</span>
-      <span v-else-if="quality === 'blunder'">💀</span>
-    </div>
+  <div
+    v-if="quality && square"
+    class="quality-badge"
+    :class="quality"
+    :style="styleObject"
+  >
+    <span v-if="quality === 'best'">⭐</span>
+    <span v-else-if="quality === 'good'">👍</span>
+    <span v-else-if="quality === 'inaccuracy'">⚠️</span>
+    <span v-else-if="quality === 'mistake'">❌</span>
+    <span v-else-if="quality === 'blunder'">💀</span>
+  </div>
 </template>
 
 <style scoped>
-    .quality-badge {
-      position: absolute;
-      width: 42px;
-      height: 42px;
+.quality-badge {
+  position: absolute;
+  width: 32px;
+  height: 32px;
 
-      border-radius: 50%;
+  border-radius: 50%;
 
-      display: flex;
-      align-items: center;
-      justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-      font-size: 20px;
-      font-weight: bold;
+  z-index: 9999;
 
-      bottom: 8px;
-      right: 8px;
+  font-size: 18px;
+  pointer-events: none;
+}
 
-      z-index: 999;
-    }
+.best {
+  background: #4caf50;
+}
 
-    .best {
-      background: #4caf50;
-    }
+.good {
+  background: #8bc34a;
+}
 
-    .good {
-      background: #8bc34a;
-    }
+.inaccuracy {
+  background: #ff9800;
+}
 
-    .inaccuracy {
-      background: #ff9800;
-    }
+.mistake {
+  background: #f44336;
+}
 
-    .mistake {
-      background: #f44336;
-    }
-
-    .blunder {
-      background: #9c27b0;
-    }
+.blunder {
+  background: #9c27b0;
+}
 </style>

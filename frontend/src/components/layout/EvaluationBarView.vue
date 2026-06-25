@@ -31,16 +31,12 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
 <style scoped>
   .eval-container {
       position: relative;
-
       width: 18px;
       height: 650px;
-
       display: flex;
       flex-direction: column;
-
       border-radius: 6px;
       overflow: hidden;
-
       border: 2px solid #333;
   }
 
@@ -57,17 +53,12 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
     /* 0.00 marker */
     .center-line {
       position: absolute;
-
       top: 50%;
       left: 0;
-
       width: 100%;
       height: 2px;
-
       background: red;
-
       transform: translateY(-50%);
-
       z-index: 10;
     }
 </style>

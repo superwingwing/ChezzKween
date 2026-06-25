@@ -86,6 +86,14 @@ function goToMove(index) {
   isNavigating.value = false
 }
 
+const qualityPosition = computed(() => {
+  const current = evaluations.value[moveIndex.value - 1]
+
+  if (!current?.move) return null
+
+  return current.move.slice(2, 4) // e2e4 -> e4
+})
+
 // =====================
 // NAVIGATION
 // =====================

@@ -21,7 +21,7 @@
 
    <br> <br>
   <div class="card">
-    <h2>Multi-File PGN Style Classifier</h2>
+    <h2>Style Classifier</h2>
     <div class="drop-zone" @click="browseFile">
         <div class="icon">📄⬆️</div>
         <p>

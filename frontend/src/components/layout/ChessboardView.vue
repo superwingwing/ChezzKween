@@ -55,8 +55,11 @@
 
         if (current) {
           // ✅ update eval bar
-          // emit("update-eval", current.evaluation)
-          emit("update-eval", current.evaluation.value)
+          emit("update-eval", current.evaluation)
+           console.log("current =", current)
+            console.log("current eval =", current.evaluation)
+            console.log("type =", typeof current.evaluation)
+          // emit("update-eval", current.evaluation.value)
 
           // ✅ draw best move arrow
           if (current.best_move) {
@@ -140,8 +143,8 @@
 
         // initial eval
         if (evaluations.value.length > 0) {
-          // emit("update-eval", evaluations.value[0].evaluation)
-          emit("update-eval", evaluations.value[0].evaluation.value)
+          emit("update-eval", evaluations.value[0].evaluation)
+          // emit("update-eval", evaluations.value[0].evaluation.value)
         }
         } catch (err) {
           console.error("Engine error:", err)

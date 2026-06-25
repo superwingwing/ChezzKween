@@ -32,7 +32,7 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
   .eval-container {
       position: relative;
       width: 18px;
-      height: 650px;
+      height: 600px;
       display: flex;
       flex-direction: column;
       border-radius: 6px;

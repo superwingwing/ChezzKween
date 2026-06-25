@@ -21,33 +21,53 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
 </script>
 
 <template>
-  <div class="eval-container">
-    <div class="black" :style="{ height: blackHeight + '%' }"></div>
-    <div class="white" :style="{ height: whiteHeight + '%' }"></div>
-    
-  </div>
+    <div class="eval-container">
+        <div class="black" :style="{ height: blackHeight + '%' }"></div>
+        <div class="center-line"></div>
+        <div class="white" :style="{ height: whiteHeight + '%' }"></div>
+    </div>
 </template>
 
 <style scoped>
-.eval-container {
-  width: 18px;
-  height: 650px;
-  display: flex;
-  flex-direction: column;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 2px solid #333;
-}
+  .eval-container {
+      position: relative;
 
-/* White advantage */
-.white {
-  background: #ffffff;
-  transition: height 0.2s ease;
-}
+      width: 18px;
+      height: 650px;
 
-/* Black advantage */
-.black {
-  background: #000000;
-  transition: height 0.2s ease;
-}
+      display: flex;
+      flex-direction: column;
+
+      border-radius: 6px;
+      overflow: hidden;
+
+      border: 2px solid #333;
+  }
+
+    .white {
+      background: #ffffff;
+      transition: height 0.2s ease;
+    }
+
+    .black {
+      background: #000000;
+      transition: height 0.2s ease;
+    }
+
+    /* 0.00 marker */
+    .center-line {
+      position: absolute;
+
+      top: 50%;
+      left: 0;
+
+      width: 100%;
+      height: 2px;
+
+      background: red;
+
+      transform: translateY(-50%);
+
+      z-index: 10;
+    }
 </style>

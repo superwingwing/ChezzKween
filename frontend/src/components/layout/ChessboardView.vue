@@ -7,27 +7,21 @@
     import MoveQuality from "@/components/layout/MoveQuality.vue"
 
     const chess = new Chess()
-
     const moves = ref([])
     const moveIndex = ref(0)
     const currentGame = ref(null)
     const orientation = ref("white")
-
     const evaluations = ref([])
-
     let boardAPI = null
-
     const emit = defineEmits(["update-eval"])
-
     const isNavigating = ref(false)
-
+    
     const currentQuality = computed(() => {
       const current = evaluations.value[moveIndex.value - 1]
       return current?.quality || ""
     })
-    // =====================
+
     // PLAYERS
-    // =====================
     const whitePlayer = computed(() => ({
       name: currentGame.value?.white_name,
       elo: currentGame.value?.white_elo
@@ -46,25 +40,18 @@
       orientation.value === "white" ? whitePlayer.value : blackPlayer.value
     )
 
-    // =====================
     // GO TO MOVE (CORE)
-    // =====================
     function goToMove(index) {
       isNavigating.value = true
-
       chess.reset()
-
       for (let i = 0; i < index; i++) {
         chess.move(moves.value[i])
       }
-
       moveIndex.value = index
-
       if (boardAPI) {
         boardAPI.setPosition(chess.fen())
-
         const current = evaluations.value[index - 1]
-      console.log("ENGINE DATA:", current) // 👈 ADD IT HERE
+        console.log("ENGINE DATA:", current) // 👈 ADD IT HERE
 
         if (current) {
           // ✅ update eval bar
@@ -82,21 +69,16 @@
           }
         }
       }
-
       isNavigating.value = false
     }
 
     const qualityPosition = computed(() => {
       const current = evaluations.value[moveIndex.value - 1]
-
       if (!current?.move) return null
-
       return current.move.slice(2, 4) // e2e4 -> e4
     })
 
-    // =====================
     // NAVIGATION
-    // =====================
     function nextMove() {
       if (moveIndex.value < moves.value.length) {
         goToMove(moveIndex.value + 1)
@@ -109,51 +91,37 @@
       }
     }
 
-    // =====================
     // MANUAL MOVE
-    // =====================
     function onMove(move) {
       if (isNavigating.value) return
-
-      const result = chess.move({
+       const result = chess.move({
         from: move.from,
         to: move.to,
         promotion: "q"
       })
-
-      if (result) {
+     if (result) {
         if (moveIndex.value < moves.value.length) {
           moves.value = moves.value.slice(0, moveIndex.value)
         }
-
-        moves.value.push(result.san)
-        goToMove(moves.value.length)
+          moves.value.push(result.san)
+          goToMove(moves.value.length)
       }
     }
 
-    // =====================
     // FLIP BOARD
-    // =====================
     function flipBoard() {
       orientation.value =
         orientation.value === "white" ? "black" : "white"
     }
 
-    // =====================
     // LOAD PGN + ENGINE
-    // =====================
     async function loadMoves(response) {
       const game = response.data[0]
-
       currentGame.value = game
-
       chess.reset()
       chess.loadPgn(game.pgn)
-
       moves.value = chess.history()
-
       goToMove(0)
-
       orientation.value = "white"
 
       try {
@@ -168,7 +136,6 @@
         })
 
         const data = await res.json()
-
         evaluations.value = data.evaluations
 
         // initial eval
@@ -176,18 +143,15 @@
           // emit("update-eval", evaluations.value[0].evaluation)
           emit("update-eval", evaluations.value[0].evaluation.value)
         }
-
-      } catch (err) {
-        console.error("Engine error:", err)
-      }
+        } catch (err) {
+          console.error("Engine error:", err)
+        }
     }
 </script>
 
 <template>
     <div class="text-center">
-
       <UploadPGNModal @loaded="loadMoves" />
-
       <!-- TOP PLAYER -->
       <div class="player">
         <div class="left">
@@ -225,7 +189,6 @@
         <v-btn @click="nextMove">Forward ➡️</v-btn>
         <v-btn @click="flipBoard">🔄 Flip</v-btn>
       </div>
-
     </div>
 </template>
 

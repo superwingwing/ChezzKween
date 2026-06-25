@@ -4,6 +4,7 @@ import { Chess } from "chess.js"
 import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
+import MoveQuality from "@/components/layout/MoveQuality.vue"
 
 const chess = new Chess()
 
@@ -196,6 +197,10 @@ async function loadMoves(response) {
         @board-created="(api) => (boardAPI = api)"
       />
 
+        <MoveQuality
+          :quality="currentQuality"
+        />
+
       <!-- BOTTOM PLAYER -->
       <div class="player bottom-player">
         <div class="left">
@@ -211,14 +216,6 @@ async function loadMoves(response) {
       <v-btn @click="nextMove">Forward ➡️</v-btn>
       <v-btn @click="flipBoard">🔄 Flip</v-btn>
     </div>
-
-      <div class="quality-icon">
-        <span v-if="currentQuality === 'best'">⭐ Best</span>
-        <span v-if="currentQuality === 'good'">👍 Good</span>
-        <span v-if="currentQuality === 'inaccuracy'">⚠️ Inaccuracy</span>
-        <span v-if="currentQuality === 'mistake'">❌ Mistake</span>
-        <span v-if="currentQuality === 'blunder'">💀 Blunder</span>
-      </div>
 
   </div>
 </template>

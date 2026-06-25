@@ -22,8 +22,9 @@ const blackHeight = computed(() => 100 - whiteHeight.value)
 
 <template>
   <div class="eval-container">
-    <div class="white" :style="{ height: whiteHeight + '%' }"></div>
     <div class="black" :style="{ height: blackHeight + '%' }"></div>
+    <div class="white" :style="{ height: whiteHeight + '%' }"></div>
+    
   </div>
 </template>
 

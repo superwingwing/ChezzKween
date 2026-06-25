@@ -1,28 +1,28 @@
 <script>
-import SideNavigation from '@/components/layout/SideNavigation.vue'
-import StyleClassification from '@/components/layout/StyleClassification.vue'
-import ChessboardView from '@/components/layout/ChessboardView.vue'
-import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
-import { ref, computed } from 'vue'
-import { useDisplay } from 'vuetify'
+    import SideNavigation from '@/components/layout/SideNavigation.vue'
+    import StyleClassification from '@/components/layout/StyleClassification.vue'
+    import ChessboardView from '@/components/layout/ChessboardView.vue'
+    import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
+    import { ref, computed } from 'vue'
+    import { useDisplay } from 'vuetify'
 
-export default {
-  components: {
-    SideNavigation,
-    StyleClassification,
-    ChessboardView,
-    EvaluationBarView
-  },
-  setup() {
-    const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
-    const isLargeScreen = computed(() => mdAndUp.value) // True if the screen size is medium or larger
-    // Separate drawer states for SideNavigation and StyleClassification
-    const navigationDrawer = ref(isLargeScreen.value) // SideNavigation drawer state
-    const STDrawer = ref(isLargeScreen.value) // STYLE CLASSIFICATION drawer state
-    const evalScore = ref(0)
-    return { navigationDrawer, STDrawer, isLargeScreen, evalScore }
-  }
-}
+    export default {
+      components: {
+        SideNavigation,
+        StyleClassification,
+        ChessboardView,
+        EvaluationBarView
+      },
+      setup() {
+        const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
+        const isLargeScreen = computed(() => mdAndUp.value) // True if the screen size is medium or larger
+        // Separate drawer states for SideNavigation and StyleClassification
+        const navigationDrawer = ref(isLargeScreen.value) // SideNavigation drawer state
+        const STDrawer = ref(isLargeScreen.value) // STYLE CLASSIFICATION drawer state
+        const evalScore = ref(0)
+        return { navigationDrawer, STDrawer, isLargeScreen, evalScore }
+      }
+    }
 </script>
 
 <template>
@@ -62,9 +62,11 @@ export default {
         <v-col cols="12" sm="6" md="6" class="pa-2">
           <v-container>
                <div class="chess-wrap">
-              <ChessboardView @update-eval="evalScore = $event" />
-              <EvaluationBarView :score="evalScore" />
-            </div>
+                  <ChessboardView @update-eval="evalScore = $event" />
+                  <div class="eval-wrapper">
+                      <EvaluationBarView :score="evalScore" />
+                 </div>
+              </div>
           </v-container>
         </v-col>
 
@@ -86,5 +88,9 @@ export default {
     display: flex;
     align-items: stretch;
     gap: 10px;
+  }
+
+  .eval-wrapper {
+    margin-top: 52px;
   }
 </style>

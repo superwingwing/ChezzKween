@@ -1,210 +1,108 @@
-# ==========================================
-# feature_extractor.py
-# ==========================================
-
-import os
-import io
 import chess
 import chess.pgn
 
+from aggressive import extract_aggressive_features
+from tactical import extract_tactical_features
+from positional import extract_positional_features
 
-# ------------------------------------------
-# Detect if move gives check
-# ------------------------------------------
-def gives_check(board, move):
-    board.push(move)
-    check = board.is_check()
-    board.pop()
-    return check
+from helpers import material_difference
 
 
-# ------------------------------------------
-# Detect development move
-# (Knight/Bishop leaves starting square)
-# ------------------------------------------
-def is_development(board, move):
-
-    piece = board.piece_at(move.from_square)
-
-    if piece is None:
-        return False
-
-    if piece.piece_type == chess.KNIGHT:
-
-        return move.from_square in [
-            chess.B1,
-            chess.G1,
-            chess.B8,
-            chess.G8
-        ]
-
-    if piece.piece_type == chess.BISHOP:
-
-        return move.from_square in [
-            chess.C1,
-            chess.F1,
-            chess.C8,
-            chess.F8
-        ]
-
-    return False
-
-
-# ------------------------------------------
-# Pawn advance
-# ------------------------------------------
-def pawn_advance(board, move):
-
-    piece = board.piece_at(move.from_square)
-
-    if piece and piece.piece_type == chess.PAWN:
-        return 1
-
-    return 0
-
-
-# ------------------------------------------
-# Center control
-# ------------------------------------------
-CENTER = {
-    chess.D4,
-    chess.D5,
-    chess.E4,
-    chess.E5
-}
-
-
-def controls_center(move):
-
-    if move.to_square in CENTER:
-        return 1
-
-    return 0
-
-
-# ------------------------------------------
-# Extract one game's features
-# ------------------------------------------
-def extract_features(game):
+def extract_game_features(game):
+    """
+    Extract every feature from one chess game.
+    Returns a single dictionary.
+    """
 
     board = game.board()
 
-    captures = 0
-    checks = 0
-    castles = 0
-    developments = 0
-    pawn_advances = 0
-    center_control = 0
+    # -------------------------
+    # Merge all feature groups
+    # -------------------------
+    features = {}
+
+    features.update(
+        extract_aggressive_features(game)
+    )
+
+    features.update(
+        extract_tactical_features(game)
+    )
+
+    features.update(
+        extract_positional_features(game)
+    )
+
+    # -------------------------
+    # General Features
+    # -------------------------
 
     total_moves = 0
+
+    exchanges = 0
 
     for move in game.mainline_moves():
 
         if board.is_capture(move):
-            captures += 1
-
-        if gives_check(board, move):
-            checks += 1
-
-        if board.is_castling(move):
-            castles += 1
-
-        if is_development(board, move):
-            developments += 1
-
-        pawn_advances += pawn_advance(board, move)
-
-        center_control += controls_center(move)
+            exchanges += 1
 
         board.push(move)
 
         total_moves += 1
 
-    winner = game.headers.get("Result", "*")
+    features["total_moves"] = total_moves
 
-    return {
+    features["material_balance"] = material_difference(board)
 
-        "white": game.headers.get("White", ""),
+    features["result"] = game.headers.get("Result", "*")
 
-        "black": game.headers.get("Black", ""),
+    features["white_player"] = game.headers.get("White", "")
 
-        "result": winner,
+    features["black_player"] = game.headers.get("Black", "")
 
-        "moves": total_moves,
+    features["white_elo"] = game.headers.get("WhiteElo", "0")
 
-        "captures": captures,
+    features["black_elo"] = game.headers.get("BlackElo", "0")
 
-        "checks": checks,
+    features["eco"] = game.headers.get("ECO", "")
 
-        "castles": castles,
-
-        "developments": developments,
-
-        "pawn_advances": pawn_advances,
-
-        "center_control": center_control
-
-    }
+    return features
 
 
-# ------------------------------------------
-# Read one PGN file
-# (supports MANY games)
-# ------------------------------------------
-def read_pgn_file(path):
+def extract_pgn_features(filepath):
+    """
+    Reads a PGN file containing
+    one or many games.
+    """
 
-    games = []
+    dataset = []
 
-    with open(path, encoding="utf-8", errors="ignore") as f:
+    with open(filepath, encoding="utf-8", errors="ignore") as pgn:
 
         while True:
 
-            game = chess.pgn.read_game(f)
+            game = chess.pgn.read_game(pgn)
 
             if game is None:
                 break
 
-            features = extract_features(game)
+            features = extract_game_features(game)
 
-            games.append(features)
-
-    return games
-
-
-# ------------------------------------------
-# Read an entire folder
-# ------------------------------------------
-def read_dataset(folder):
-
-    dataset = []
-
-    for file in os.listdir(folder):
-
-        if file.lower().endswith(".pgn"):
-
-            full_path = os.path.join(folder, file)
-
-            print("Reading:", file)
-
-            games = read_pgn_file(full_path)
-
-            dataset.extend(games)
+            dataset.append(features)
 
     return dataset
 
 
 # ------------------------------------------
-# Testing
+# TEST
 # ------------------------------------------
 if __name__ == "__main__":
 
-    folder = "dataset/pgn"
+    data = extract_pgn_features(
+        "../dataset/pgn/sample.pgn"
+    )
 
-    data = read_dataset(folder)
-
-    print()
-
-    print("Games loaded:", len(data))
+    print("Games:", len(data))
 
     print()
 

@@ -57,22 +57,18 @@ def compute_scores(features):
     tactical = 0
 
     for feature, value in features.items():
-
         aggressive += (
             value *
             AGGRESSIVE_WEIGHTS.get(feature, 0)
         )
-
         positional += (
             value *
             POSITIONAL_WEIGHTS.get(feature, 0)
         )
-
         tactical += (
             value *
             TACTICAL_WEIGHTS.get(feature, 0)
         )
-
     return {
         "aggressive_score": round(aggressive, 2),
         "positional_score": round(positional, 2),

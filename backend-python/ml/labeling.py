@@ -1,44 +1,59 @@
-"""
-labeling.py
+# ==========================================
+# labeling.py
+#
+# Chess Style Labeling
+#
+# Thesis:
+# Chess Playing Style Classification
+#
+# Converts normalized style scores
+# into the final ML label.
+#
+# FINAL VERSION
+# ==========================================
 
-Assign the final chess playing style based on
-the highest heuristic score.
-"""
 
+# ==========================================
+# Main Label Builder
+# ==========================================
 
-def assign_label(aggressive_score, positional_score, tactical_score):
-    """
-    Returns the style with the highest score.
+def build_result(scores):
 
-    Parameters
-    ----------
-    aggressive_score : float
-    positional_score : float
-    tactical_score : float
+    aggressive = scores["Aggressive"]
+    positional = scores["Positional"]
 
-    Returns
-    -------
-    str
-        "Aggressive"
-        "Positional"
-        "Tactical"
-    """
+    # -------------------------
+    # Determine dominant style
+    # -------------------------
 
-    scores = {
-        "Aggressive": aggressive_score,
-        "Positional": positional_score,
-        "Tactical": tactical_score
+    dominant = max(
+        scores,
+        key=scores.get
+    )
+
+    return {
+
+        "AggressiveScore": aggressive,
+
+        "PositionalScore": positional,
+
+        "Label": dominant
+
     }
 
-    return max(scores, key=scores.get)
 
+# ==========================================
+# Testing
+# ==========================================
 
 if __name__ == "__main__":
 
-    label = assign_label(
-        aggressive_score=4.3,
-        positional_score=3.0,
-        tactical_score=4.0
-    )
+    sample = {
 
-    print(label)
+        "Aggressive": 62.8,
+
+        "Positional": 37.2
+
+    }
+
+    print(build_result(sample))

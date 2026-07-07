@@ -1,123 +1,152 @@
+# ==========================================
+# build_dataset.py
+#
+# Build Chess Style Dataset
+#
+# Reads every PGN
+# Extracts Features
+# Computes Scores
+# Assigns Labels
+# Saves CSV
+# ==========================================
+
 import os
 import csv
-import io
-import chess.pgn
 
-from feature_extractor import extract_features
+from feature_extractor import extract_games_from_pgn
 from scoring import compute_scores
-from labeling import assign_label
+from labeling import build_result
 
-# Folder containing PGN files
+
+# ==========================================
+# Paths
+# ==========================================
+
 PGN_FOLDER = "dataset/pgn"
 
-# Output CSV
-OUTPUT_FILE = "dataset/dataset.csv"
+OUTPUT_FILE = "dataset/chess_dataset.csv"
 
 
-FIELDNAMES = [
-    "white",
-    "black",
-    "event",
+# ==========================================
+# Process One PGN
+# ==========================================
 
-    # Features
-    "captures",
-    "checks",
-    "castles",
-    "queen_moves",
-    "rook_moves",
-    "bishop_moves",
-    "knight_moves",
-    "pawn_moves",
-    "king_moves",
-    "center_moves",
-    "promotion",
-    "piece_development",
+def process_pgn(path):
 
-    # Scores
-    "aggressive_score",
-    "positional_score",
-    "tactical_score",
+    print(f"Reading {os.path.basename(path)}")
 
-    # Final label
-    "label"
-]
+    rows = []
 
+    games = extract_games_from_pgn(path)
 
-def process_game(game):
+    for features in games:
 
-    features = extract_features(game)
+        scores = compute_scores(features)
 
-    aggressive, positional, tactical = compute_scores(features)
+        result = build_result(scores)
 
-    label = assign_label(
-        aggressive,
-        positional,
-        tactical
-    )
+        row = {}
 
-    row = {
-        "white": game.headers.get("White", ""),
-        "black": game.headers.get("Black", ""),
-        "event": game.headers.get("Event", ""),
+        row.update(features)
 
-        **features,
+        row.update(result)
 
-        "aggressive_score": aggressive,
-        "positional_score": positional,
-        "tactical_score": tactical,
+        rows.append(row)
 
-        "label": label
-    }
-
-    return row
+    return rows
 
 
-def process_pgn(filepath, writer):
+# ==========================================
+# Collect Dataset
+# ==========================================
 
-    print(f"Reading {filepath}")
+def collect_dataset():
 
-    with open(filepath, encoding="utf-8", errors="ignore") as f:
+    dataset = []
 
-        while True:
+    for filename in os.listdir(PGN_FOLDER):
 
-            game = chess.pgn.read_game(f)
+        if filename.lower().endswith(".pgn"):
 
-            if game is None:
-                break
+            path = os.path.join(
 
-            row = process_game(game)
+                PGN_FOLDER,
 
-            writer.writerow(row)
+                filename
+
+            )
+
+            rows = process_pgn(path)
+
+            dataset.extend(rows)
+
+    return dataset
 
 
-def main():
+# ==========================================
+# Save CSV
+# ==========================================
+
+def save_dataset(dataset):
+
+    if len(dataset) == 0:
+
+        print("No games found.")
+
+        return
+
+    columns = list(dataset[0].keys())
 
     with open(
+
         OUTPUT_FILE,
+
         "w",
+
         newline="",
+
         encoding="utf-8"
-    ) as csvfile:
+
+    ) as f:
 
         writer = csv.DictWriter(
-            csvfile,
-            fieldnames=FIELDNAMES
+
+            f,
+
+            fieldnames=columns
+
         )
 
         writer.writeheader()
 
-        for filename in os.listdir(PGN_FOLDER):
+        writer.writerows(dataset)
 
-            if filename.endswith(".pgn"):
+    print()
 
-                process_pgn(
-                    os.path.join(PGN_FOLDER, filename),
-                    writer
-                )
+    print("------------------------------------")
 
-    print("Dataset created!")
-    print("Saved as:", OUTPUT_FILE)
+    print("Dataset Created Successfully")
+
+    print("------------------------------------")
+
+    print(f"Games : {len(dataset)}")
+
+    print(f"Saved : {OUTPUT_FILE}")
+
+    print("------------------------------------")
+
+
+# ==========================================
+# Main
+# ==========================================
+
+def main():
+
+    dataset = collect_dataset()
+
+    save_dataset(dataset)
 
 
 if __name__ == "__main__":
+
     main()

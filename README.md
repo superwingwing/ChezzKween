@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-KWAYNN
-=======
+
 # hello world
 
 HELLO WORLD!!

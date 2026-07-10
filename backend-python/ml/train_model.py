@@ -10,8 +10,8 @@ from sklearn.metrics import (
 from sklearn.preprocessing import LabelEncoder
 
 DATASET = "dataset/chess_dataset.csv"
-MODEL = "models/style_classifier.pkl"
-ENCODER = "models/label_encoder.pkl"
+MODEL = "model/style_classifier.pkl"
+ENCODER = "model/label_encoder.pkl"
 
 
 # Load Dataset
@@ -33,6 +33,8 @@ DROP_COLUMNS = [
     "black",
     "result",
     "eco",
+    "AggressiveScore",
+    "PositionalScore",
     "Label"
 ]
 

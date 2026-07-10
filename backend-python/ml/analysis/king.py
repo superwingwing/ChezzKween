@@ -1,96 +1,52 @@
-# ==========================================
-# king.py
-#
-# King Analysis Module
-#
-# Thesis:
-# Chess Playing Style Classification
-#
-# Responsible for:
-# • King Zone
-# • Attackers
-# • Defenders
-# • Attack Pressure
-# • King Safety
-#
-# This module contains NO style logic.
-# It only analyzes board positions.
-# ==========================================
-
 import chess
 
-
-# ==========================================
-# King Square
-# ==========================================
-
 def king_square(board: chess.Board, color: chess.Color):
-
     """
     Returns the square occupied
     by the specified king.
     """
-
     return board.king(color)
 
 
-# ==========================================
 # King Zone
-# ==========================================
 
 def king_zone(board: chess.Board, color: chess.Color):
-
     """
     Returns all squares surrounding
     the king including the king square.
-
     Used for king attack analysis.
     """
-
     king = board.king(color)
-
     if king is None:
         return set()
-
     zone = {king}
-
     rank = chess.square_rank(king)
     file = chess.square_file(king)
 
     for dr in (-1, 0, 1):
-
         for df in (-1, 0, 1):
-
             if dr == 0 and df == 0:
                 continue
-
             r = rank + dr
             f = file + df
-
             if 0 <= r <= 7 and 0 <= f <= 7:
-
                 zone.add(
                     chess.square(f, r)
                 )
-
     return zone
 
 
-# ==========================================
 # Count Attackers
-# ==========================================
 
 def count_attackers(
     board: chess.Board,
     color: chess.Color,
     square: chess.Square
 ):
-
     """
     Number of pieces of 'color'
     attacking the square.
     """
-
     return len(
         board.attackers(
             color,
@@ -98,11 +54,7 @@ def count_attackers(
         )
     )
 
-
-# ==========================================
 # Count Defenders
-# ==========================================
-
 def count_defenders(
     board: chess.Board,
     color: chess.Color,
@@ -111,21 +63,15 @@ def count_defenders(
 
     """
     Alias for readability.
-
     Number of defending pieces.
     """
-
     return count_attackers(
         board,
         color,
         square
     )
 
-
-# ==========================================
 # Total King Attackers
-# ==========================================
-
 def king_attackers(
     board: chess.Board,
     attacking_color: chess.Color
@@ -135,70 +81,49 @@ def king_attackers(
     Counts how many DISTINCT attacking pieces
     attack any square in the enemy king zone.
     """
-
     enemy = not attacking_color
-
     zone = king_zone(board, enemy)
-
     attackers = set()
-
     for square in zone:
-
         attackers.update(
             board.attackers(
                 attacking_color,
                 square
             )
         )
-
     return len(attackers)
 
-
-# ==========================================
 # Total King Defenders
-# ==========================================
-
 def king_defenders(
     board: chess.Board,
     defending_color: chess.Color
 ):
-
     """
     Counts defending pieces around
     their own king.
     """
-
     zone = king_zone(
         board,
         defending_color
     )
-
     defenders = set()
-
     for square in zone:
-
         defenders.update(
             board.attackers(
                 defending_color,
                 square
             )
         )
-
     return len(defenders)
 
-
-# ==========================================
 # Attack Pressure
-# ==========================================
 
 def attack_pressure(
     board: chess.Board,
     attacking_color: chess.Color
 ):
-
     """
     Attack Pressure
-
     =
     attackers
     -
@@ -210,7 +135,6 @@ def attack_pressure(
     Negative:
         Well defended
     """
-
     enemy = not attacking_color
 
     attackers = king_attackers(
@@ -222,14 +146,9 @@ def attack_pressure(
         board,
         enemy
     )
-
     return attackers - defenders
 
-
-# ==========================================
 # Queen Participation
-# ==========================================
-
 def queen_participates(
     board: chess.Board,
     color: chess.Color
@@ -239,7 +158,7 @@ def queen_participates(
     Returns True if the queen attacks
     the enemy king zone.
     """
-
+    \
     queens = board.pieces(
         chess.QUEEN,
         color
@@ -256,21 +175,14 @@ def queen_participates(
     )
 
     for queen in queens:
-
         attacks = board.attacks(
             queen
         )
-
         if attacks & zone:
             return True
-
     return False
 
-
-# ==========================================
 # Rook Participation
-# ==========================================
-
 def rook_participation(
     board: chess.Board,
     color: chess.Color
@@ -294,22 +206,14 @@ def rook_participation(
         chess.ROOK,
         color
     ):
-
         attacks = board.attacks(
             rook
         )
-
         if attacks & zone:
-
             total += 1
-
     return total
 
-
-# ==========================================
 # King Safety
-# ==========================================
-
 def king_safety(
     board: chess.Board,
     color: chess.Color
@@ -318,9 +222,7 @@ def king_safety(
     """
     Higher value means
     safer king.
-
     Simple heuristic:
-
     defenders
     -
     attackers
@@ -339,22 +241,15 @@ def king_safety(
     return defenders - attackers
 
 
-# ==========================================
 # Testing
-# ==========================================
-
 if __name__ == "__main__":
 
     board = chess.Board()
-
     print("White Attackers:",
           king_attackers(board, chess.WHITE))
-
     print("Black Attackers:",
           king_attackers(board, chess.BLACK))
-
     print("Attack Pressure:",
           attack_pressure(board, chess.WHITE))
-
     print("White King Safety:",
           king_safety(board, chess.WHITE))

@@ -71,33 +71,21 @@ def open_files_to_king(
         return 0
 
     file = chess.square_file(king)
-
     total = 0
 
     for f in [
-
         file - 1,
-
         file,
-
         file + 1
-
     ]:
 
         if not (0 <= f <= 7):
             continue
-
         if is_open_file(board, f):
-
             total += 1
-
     return total
 
-
-# ==========================================
 # Center Control
-# ==========================================
-
 def center_control(
     board,
     color
@@ -107,18 +95,14 @@ def center_control(
     Number of center squares
     attacked by player.
     """
-
     score = 0
 
     for square in CENTER:
-
         if board.is_attacked_by(
             color,
             square
         ):
-
             score += 1
-
     return score
 
 # Extended Center
@@ -130,20 +114,14 @@ def extended_center_control(
     score = 0
 
     for square in EXTENDED_CENTER:
-
         if board.is_attacked_by(
             color,
             square
         ):
-
             score += 1
-
     return score
 
-
-# ==========================================
 # Space Advantage
-# ==========================================
 
 def space_advantage(
     board,
@@ -158,32 +136,21 @@ def space_advantage(
     total = 0
 
     for square in chess.SQUARES:
-
         rank = chess.square_rank(square)
-
         if color == chess.WHITE:
-
             if rank < 4:
                 continue
-
         else:
-
             if rank > 3:
                 continue
-
         if board.is_attacked_by(
             color,
             square
         ):
-
             total += 1
-
     return total
 
-
-# ==========================================
 # Occupied Open Files
-# ==========================================
 
 def rook_on_open_file(
     board,
@@ -210,16 +177,10 @@ def rook_on_open_file(
             board,
             file
         ):
-
             total += 1
-
     return total
 
-
-# ==========================================
 # Queen on Open File
-# ==========================================
-
 def queen_on_open_file(
     board,
     color
@@ -233,33 +194,21 @@ def queen_on_open_file(
     total = 0
 
     for queen in queens:
-
         file = chess.square_file(
             queen
         )
-
         if is_open_file(
             board,
             file
         ):
-
             total += 1
-
     return total
 
-
-# ==========================================
 # Testing
-# ==========================================
-
 if __name__ == "__main__":
-
     board = chess.Board()
-
     print(center_control(board, chess.WHITE))
-
     print(space_advantage(board, chess.WHITE))
-
     print(open_files_to_king(board, chess.BLACK))
 
 
@@ -271,9 +220,7 @@ def count_open_files_to_enemy_king(board):
     """
     Counts the number of open or semi-open
     files around BOTH kings.
-
     Used as an aggressive feature.
-
     Returns
     -------
     int
@@ -282,45 +229,27 @@ def count_open_files_to_enemy_king(board):
     total = 0
 
     for color in (chess.WHITE, chess.BLACK):
-
         king_square = board.king(color)
-
         if king_square is None:
             continue
-
         king_file = chess.square_file(
             king_square
         )
-
         attacker = not color
-
         for file in [
-
             king_file - 1,
-
             king_file,
-
             king_file + 1
-
         ]:
 
             if file < 0 or file > 7:
                 continue
-
             if is_open_file(board, file):
-
                 total += 1
-
             elif is_semi_open_file(
-
                 board,
-
                 file,
-
                 attacker
-
             ):
-
                 total += 1
-
     return total

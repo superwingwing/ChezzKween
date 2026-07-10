@@ -17,10 +17,8 @@ ENCODER = "model/label_encoder.pkl"
 # Load Dataset
 df = pd.read_csv(DATASET)
 print()
-print("--------------------------------")
 print("Dataset Loaded")
 print(df.shape)
-print("--------------------------------")
 
 
 # Features
@@ -73,7 +71,6 @@ prediction = model.predict(X_test)
 print()
 print("--------------------------------")
 print("Accuracy")
-print("--------------------------------")
 print(
     accuracy_score(
         y_test,
@@ -82,9 +79,7 @@ print(
 )
 
 print()
-print("--------------------------------")
 print("Classification Report")
-print("--------------------------------")
 print(
     classification_report(
         y_test,
@@ -94,9 +89,7 @@ print(
 )
 
 print()
-print("--------------------------------")
 print("Confusion Matrix")
-print("--------------------------------")
 print(
     confusion_matrix(
         y_test,
@@ -116,6 +109,5 @@ joblib.dump(
 )
 
 print()
-print("--------------------------------")
 print("Model Saved")
-print("--------------------------------")
+print(X.columns.tolist())

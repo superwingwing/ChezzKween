@@ -1,45 +1,19 @@
-# ==========================================
-# positional.py
-#
-# Positional Feature Extractor
-#
-# Thesis:
-# Chess Playing Style Classification
-#
-# FINAL VERSION
-# ==========================================
-
 import chess
-
 from analysis import board
 from analysis import piece
 
-
-# ==========================================
-# Initialize
-# ==========================================
-
 def initialize(features):
-
     features["center_control"] = 0
     features["extended_center_control"] = 0
     features["space_advantage"] = 0
-
     features["piece_activity"] = 0
     features["coordination"] = 0
-
     features["outposts"] = 0
     features["protected_pieces"] = 0
-
     features["rook_on_open_file"] = 0
     features["queen_on_open_file"] = 0
-
     features["_positions"] = 0
 
-
-# ==========================================
-# Update
-# ==========================================
 
 def update(
     board_state: chess.Board,
@@ -49,7 +23,6 @@ def update(
     """
     Called BEFORE board.push(move).
     """
-
     color = board_state.turn
 
     features["center_control"] += (
@@ -117,11 +90,6 @@ def update(
 
     features["_positions"] += 1
 
-
-# ==========================================
-# Finalize
-# ==========================================
-
 def finalize(
     board_state,
     features
@@ -130,24 +98,17 @@ def finalize(
     total = max(features["_positions"], 1)
 
     positional_features = [
-
         "center_control",
         "extended_center_control",
         "space_advantage",
-
         "piece_activity",
         "coordination",
-
         "outposts",
         "protected_pieces",
-
         "rook_on_open_file",
         "queen_on_open_file"
-
     ]
 
     for feature in positional_features:
-
         features[feature] /= total
-
     del features["_positions"]

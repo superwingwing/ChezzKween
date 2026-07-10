@@ -1,29 +1,10 @@
-
-# ==========================================
-# aggressive.py
-#
-# Aggressive Feature Extractor
-#
-# Thesis:
-# Chess Playing Style Classification
-#
-# FINAL VERSION
-# ==========================================
-
 import chess
-
 from analysis import board
 from analysis import king
 from analysis import piece
 from analysis import material
 
-
-# ==========================================
-# Initialize
-# ==========================================
-
 def initialize(features):
-
     features["sacrifices"] = 0
     features["king_attacks"] = 0
     features["open_files_to_king"] = 0
@@ -31,11 +12,7 @@ def initialize(features):
     features["rook_attack_participation"] = 0
     features["attacking_piece_concentration"] = 0
 
-
-# ==========================================
 # Update
-# ==========================================
-
 def update(
     board_state: chess.Board,
     move: chess.Move,
@@ -44,74 +21,49 @@ def update(
     """
     Called BEFORE board.push(move)
     """
-
     piece_moved = board_state.piece_at(
         move.from_square
     )
-
     if piece_moved is None:
         return
-
     color = piece_moved.color
 
-    # --------------------------------------
     # Sacrifice
-    # --------------------------------------
-
     if material.is_sacrifice(
         board_state,
         move
     ):
         features["sacrifices"] += 1
 
-    # --------------------------------------
     # King Attackers
-    # --------------------------------------
-
     features["king_attacks"] += (
         king.king_attackers(
             board_state,
             color
         )
     )
-
-    # --------------------------------------
     # Open Files Toward Enemy King
-    # --------------------------------------
-
     features["open_files_to_king"] += (
         board.open_files_to_king(
             board_state,
             not color
         )
     )
-
-    # --------------------------------------
     # Queen Participation
-    # --------------------------------------
-
     features["queen_attack_participation"] += (
         piece.queen_attack_participation(
             board_state,
             color
         )
     )
-
-    # --------------------------------------
     # Rook Participation
-    # --------------------------------------
-
     features["rook_attack_participation"] += (
         piece.rook_attack_participation(
             board_state,
             color
         )
     )
-
-    # --------------------------------------
     # Attacking Piece Concentration
-    # --------------------------------------
-
     features["attacking_piece_concentration"] += (
         piece.attacking_piece_concentration(
             board_state,
@@ -119,13 +71,8 @@ def update(
         )
     )
 
-
-# ==========================================
 # Finalize
-# ==========================================
-
 def finalize(features):
-
     total_moves = max(
         features["total_moves"],
         1

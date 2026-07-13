@@ -1,6 +1,6 @@
 import joblib
 import pandas as pd
-from feature_extractor import extract_games_from_pgn
+from ml.feature_extractor import extract_games_from_pgn
 
 MODEL = "models/style_classifier.pkl"
 ENCODER = "models/label_encoder.pkl"

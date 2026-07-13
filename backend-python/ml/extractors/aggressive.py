@@ -1,8 +1,8 @@
 import chess
-from analysis import board
-from analysis import king
-from analysis import piece
-from analysis import material
+from ml.analysis import board
+from ml.analysis import king
+from ml.analysis import piece
+from ml.analysis import material
 
 def initialize(features):
     features["sacrifices"] = 0

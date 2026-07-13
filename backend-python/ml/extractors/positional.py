@@ -1,6 +1,6 @@
 import chess
-from analysis import board
-from analysis import piece
+from ml.analysis import board
+from ml.analysis import piece
 
 def initialize(features):
     features["center_control"] = 0

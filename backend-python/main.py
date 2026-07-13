@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from routes.analysis import router as analysis_router
 from routes.upload_pgn import router as pgn_router
+from routes.style import router as style_router
 
 app = FastAPI()
 
 # ✅ REGISTER ROUTES
 app.include_router(analysis_router)
 app.include_router(pgn_router)
+app.include_router(style_router)
 
 # ✅ CORS
 app.add_middleware(

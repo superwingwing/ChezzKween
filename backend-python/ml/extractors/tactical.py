@@ -1,4 +1,4 @@
-from analysis import tactical
+from ml.analysis import tactical
 
 def initialize(features):
     features["tactical_captures"] = 0

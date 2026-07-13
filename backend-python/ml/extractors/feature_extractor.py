@@ -1,7 +1,7 @@
 import chess.pgn
-from extractors import aggressive
-from extractors import positional
-from extractors import tactical
+from ml.extractors import aggressive
+from ml.extractors import positional
+from ml.extractors import tactical
 
 def extract_features(game):
     board = game.board()

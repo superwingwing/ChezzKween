@@ -1,14 +1,51 @@
 <script setup>
-  import { ref } from "vue";
-  const fileInput = ref(null);
-  const browseFile = () => {
-    fileInput.value.click();
-  };
+import { ref } from "vue"
 
-  const handleFiles = (event) => {
-    const files = event.target.files;
-    console.log(files);
-  };
+const fileInput = ref(null)
+const selectedFiles = ref([])
+
+const browseFile = () => {
+  fileInput.value.click()
+}
+
+const selectFiles = (event) => {
+  selectedFiles.value = Array.from(event.target.files)
+}
+
+const uploadFiles = async () => {
+
+  if (selectedFiles.value.length === 0) {
+    alert("Please select a PGN file.")
+    return
+  }
+
+  const formData = new FormData()
+
+  selectedFiles.value.forEach(file => {
+    formData.append("files", file)
+  })
+
+  try {
+
+    const response = await fetch(
+      "http://localhost:8000/upload_style",
+      {
+        method: "POST",
+        body: formData
+      }
+    )
+
+    const result = await response.json()
+
+    console.log(result)
+
+  } catch (err) {
+
+    console.error(err)
+
+  }
+
+}
 </script>
 
 <template><br>
@@ -41,7 +78,7 @@
         />
     </div>
 
-    <button class="upload-btn">Upload & Classify</button>
+    <button class="upload-btn" @click="uploadFiles" >Classify</button>
     <p class="subtitle">Analyze a collection of your Chess Games.</p>
   </div>
 </template>

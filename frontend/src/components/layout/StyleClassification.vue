@@ -70,27 +70,15 @@
             📄⬆️
           </div>
           <p>
-            <strong>
-              Drag & Drop
+             <strong class="browse" @click="browseFiles">
+              Select PGN Files
             </strong>
             <br>
-            Multi-file PGNs here
+                 or
             <br>
-            or
-            <br>
-            <span 
-              class="browse"
-              @click="browseFiles"
-            >
-              [Select PGN Files]
-            </span>
-            <br>
-            <span 
-              class="browse"
-              @click="browseFolder"
-            >
-              [Select Folder]
-            </span>
+            <strong class="browse" @click="browseFolder">
+              Select Folder
+            </strong>
           </p>
           <p v-if="selectedFiles.length">
             {{ selectedFiles.length }} PGN file(s) selected

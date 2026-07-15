@@ -1,52 +1,62 @@
 <script setup>
-import { ref } from "vue"
-
-const fileInput = ref(null)
-const folderInput = ref(null)
-const selectedFiles = ref([])
-const browseFiles = () => {
-  fileInput.value.click()
-}
-const browseFolder = () => {
-  folderInput.value.click()
-}
-const selectFiles = (event) => {
-  const files = Array.from(event.target.files)
-  selectedFiles.value.push(...files)
-  console.log(selectedFiles.value)
-}
-const uploadFiles = async () => {
-  if (selectedFiles.value.length === 0) {
-    alert("Please select PGN files.")
-    return
-  }
-
-  const formData = new FormData()
-
-  selectedFiles.value.forEach(file => {
-    formData.append(
-      "files",
-      file
-    )
-  })
-
-  try {
-   const response = await fetch(
-      "http://127.0.0.1:8000/upload_style",
-      {
-        method: "POST",
-        body: formData
+      import { ref } from "vue"
+      const fileInput = ref(null)
+      const folderInput = ref(null)
+      const selectedFiles = ref([])
+      const uploading = ref(false)
+      const progress = ref(0)
+      const browseFiles = () => {
+        fileInput.value.click()
       }
-    )
-    const result = await response.json()
-    console.log(result)
-    alert(
-      `${result.games_uploaded} games uploaded`
-    )
-  } catch(error) {
-    console.error(error)
-  }
-}
+      const browseFolder = () => {
+        folderInput.value.click()
+      }
+      const selectFiles = (event) => {
+        const files = Array.from(event.target.files)
+        selectedFiles.value.push(...files)
+        console.log(selectedFiles.value)
+      }
+      const uploadFiles = async () => {
+        if (selectedFiles.value.length === 0) {
+          alert("Please select PGN files.")
+          return
+        }
+        uploading.value = true
+        progress.value = 0
+        const formData = new FormData()
+        selectedFiles.value.forEach(file => {
+          formData.append("files", file)
+        })
+        // Fake progress while waiting
+        const timer = setInterval(() => {
+          if (progress.value < 95) {
+            progress.value += 5
+          }
+        }, 300)
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:8000/upload_style",
+            {
+              method: "POST",
+              body: formData
+            }
+          )
+          clearInterval(timer)
+          progress.value = 100
+          const result = await response.json()
+          console.log(result)
+          alert(`${result.games_uploaded} games uploaded`)
+          setTimeout(() => {
+            uploading.value = false
+            progress.value = 0
+          }, 800)
+        } catch (error) {
+          clearInterval(timer)
+          uploading.value = false
+          progress.value = 0
+          console.error(error)
+        }
+    }
 </script>
 
 <template>
@@ -108,15 +118,25 @@ const uploadFiles = async () => {
           />
         </div>
         <button
-          class="upload-btn"
-          @click="uploadFiles"
-        >
-          Upload 
+            class="upload-btn"
+            @click="uploadFiles"
+            :disabled="uploading"
+          >
+            {{ uploading ? `Uploading... ${progress}%` : "Upload" }}
         </button>
 
-         <p class="subtitle">
-          Analyze a collection of your Chess Games.
-        </p>
+          <div
+            v-if="uploading"
+            class="progress-container"
+          >
+            <div
+              class="progress-bar"
+              :style="{ width: progress + '%' }"
+            ></div>
+          </div>
+          <p class="subtitle">
+            Analyze a collection of your Chess Games.
+          </p>
     </div>
 </template>
 
@@ -181,5 +201,26 @@ const uploadFiles = async () => {
       margin-top:10px;
       font-size:12px;
       opacity:0.8;
+    }
+
+    .progress-container{
+      margin-top:15px;
+      width:100%;
+      height:12px;
+      background:rgba(255,255,255,.3);
+      border-radius:20px;
+      overflow:hidden;
+    }
+
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:#ffffff;
+      transition:width .3s ease;
+    }
+
+    .upload-btn:disabled{
+      opacity:.7;
+      cursor:not-allowed;
     }
 </style>

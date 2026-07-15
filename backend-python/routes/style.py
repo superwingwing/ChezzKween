@@ -67,6 +67,8 @@ async def upload_style(
                     features = extract_features(game)
                     # Machine Learning Prediction
                     prediction = predict_features(features)
+                    print("Prediction:", prediction)
+
                     features["predicted_style"] = prediction["style"]
                     features["confidence"] = prediction["confidence"]
                     # Original PGN
@@ -85,6 +87,8 @@ async def upload_style(
                         .insert(features)
                         .execute()
                     )
+
+                    print("Saving to database...")
 
                     print("--------------------------------")
                     print("Game:", game_number)

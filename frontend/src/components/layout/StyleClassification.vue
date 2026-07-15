@@ -128,8 +128,6 @@
     </div>
 </template>
 
-
-
 <style scoped>
     .card {
       width: 320px;

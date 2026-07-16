@@ -3,15 +3,18 @@
     import StyleClassification from '@/components/layout/StyleClassification.vue'
     import ChessboardView from '@/components/layout/ChessboardView.vue'
     import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
+    import ChessCoach from '@/components/layout/ChessCoach.vue'
     import { ref, computed } from 'vue'
     import { useDisplay } from 'vuetify'
+    
 
     export default {
       components: {
         SideNavigation,
         StyleClassification,
         ChessboardView,
-        EvaluationBarView
+        EvaluationBarView,
+        ChessCoach
       },
       setup() {
         const { mdAndUp } = useDisplay() // Vuetify breakpoint utility
@@ -20,7 +23,8 @@
         const navigationDrawer = ref(isLargeScreen.value) // SideNavigation drawer state
         const STDrawer = ref(isLargeScreen.value) // STYLE CLASSIFICATION drawer state
         const evalScore = ref(0)
-        return { navigationDrawer, STDrawer, isLargeScreen, evalScore }
+        const coachData = ref(null)
+        return { navigationDrawer, STDrawer, isLargeScreen, evalScore, coachData }
       }
     }
 </script>
@@ -62,7 +66,7 @@
         <v-col cols="12" sm="6" md="6" class="pa-2">
           <v-container>
                <div class="chess-wrap">
-                  <ChessboardView @update-eval="evalScore = $event" />
+                  <ChessboardView @update-eval="evalScore = $event"  @update-coach="coachData = $event" />
                   <div class="eval-wrapper">
                       <EvaluationBarView :score="evalScore" />
                  </div>
@@ -72,6 +76,8 @@
 
         <!-- Style Classification -->
         <v-col cols="12" sm="3" md="3" class="pa-2">
+           <ChessCoach :analysis="coachData" />
+              <br>
           <StyleClassification
             :model-value="STDrawer"
             :permanent="isLargeScreen"

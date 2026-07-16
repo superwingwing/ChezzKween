@@ -253,3 +253,103 @@ if __name__ == "__main__":
           attack_pressure(board, chess.WHITE))
     print("White King Safety:",
           king_safety(board, chess.WHITE))
+    
+    
+ # ==========================================
+# Coaching Analysis
+# ==========================================
+
+def analyze_king(board: chess.Board, color: chess.Color):
+    """
+    Rich king analysis for the coaching system.
+    Uses existing functions without affecting
+    the style-classification pipeline.
+    """
+
+    king = king_square(board, color)
+
+    if king is None:
+        return None
+
+    # ----------------------------
+    # Castled?
+    # ----------------------------
+
+    if color == chess.WHITE:
+        castled = king in (chess.G1, chess.C1)
+    else:
+        castled = king in (chess.G8, chess.C8)
+
+    # ----------------------------
+    # Existing metrics
+    # ----------------------------
+
+    attackers = king_attackers(
+        board,
+        not color
+    )
+
+    defenders = king_defenders(
+        board,
+        color
+    )
+
+    pressure = attack_pressure(
+        board,
+        not color
+    )
+
+    safety = king_safety(
+        board,
+        color
+    )
+
+    queen_attack = queen_participates(
+        board,
+        not color
+    )
+
+    rook_attackers = rook_participation(
+        board,
+        not color
+    )
+
+    # ----------------------------
+    # Open file?
+    # ----------------------------
+
+    file = chess.square_file(king)
+
+    open_file = True
+
+    for rank in range(8):
+
+        square = chess.square(file, rank)
+
+        piece = board.piece_at(square)
+
+        if piece and piece.piece_type == chess.PAWN:
+
+            open_file = False
+
+            break
+
+    return {
+
+        "castled": castled,
+
+        "attackers": attackers,
+
+        "defenders": defenders,
+
+        "pressure": pressure,
+
+        "safety": safety,
+
+        "queen_attack": queen_attack,
+
+        "rook_attackers": rook_attackers,
+
+        "open_file": open_file
+
+    }

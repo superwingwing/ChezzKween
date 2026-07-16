@@ -13,7 +13,10 @@
     const orientation = ref("white")
     const evaluations = ref([])
     let boardAPI = null
-    const emit = defineEmits(["update-eval"])
+    const emit = defineEmits([
+      "update-eval",
+      "update-coach"
+      ])
     const isNavigating = ref(false)
     
     const currentQuality = computed(() => {
@@ -56,6 +59,7 @@
         if (current) {
           // ✅ update eval bar
           emit("update-eval", current.evaluation)
+          emit("update-coach", current)
            console.log("current =", current)
             console.log("current eval =", current.evaluation)
             console.log("type =", typeof current.evaluation)
@@ -145,6 +149,7 @@
         if (evaluations.value.length > 0) {
           emit("update-eval", evaluations.value[0].evaluation)
           // emit("update-eval", evaluations.value[0].evaluation.value)
+          emit("update-coach",evaluations.value[0])
         }
         } catch (err) {
           console.error("Engine error:", err)

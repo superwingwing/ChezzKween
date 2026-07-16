@@ -3,91 +3,99 @@ import chess.engine
 
 STOCKFISH_PATH = "engine/stockfish.exe"
 
-engine = chess.engine.SimpleEngine.popen_uci(
-    STOCKFISH_PATH
-)
+engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
 
-def evaluate_position(
-    board: chess.Board,
-    depth: int = 18
-):
+def score_to_eval(score):
 
-    info = engine.analyse(
-
-        board,
-
-        chess.engine.Limit(
-            depth=depth
-        )
-
-    )
-
-    score = info["score"].white()
-
-    # ==========================================
-    # Evaluation
-    # ==========================================
-
-    mate = None
+    score = score.white()
 
     if score.is_mate():
 
         mate = score.mate()
 
-        evaluation = (
-            100
-            if mate > 0
-            else -100
+        return {
+            "evaluation": 100 if mate > 0 else -100,
+            "mate": mate
+        }
+
+    return {
+        "evaluation": round(score.score() / 100, 2),
+        "mate": None
+    }
+
+
+def evaluate_position(
+
+    board,
+
+    depth=18,
+
+    multipv=3
+
+):
+
+    infos = engine.analyse(
+
+        board,
+
+        chess.engine.Limit(depth=depth),
+
+        multipv=multipv
+
+    )
+
+    candidates = []
+
+    for info in infos:
+
+        score = score_to_eval(
+            info["score"]
         )
 
-    else:
+        pv = []
 
-        evaluation = round(
-            score.score() / 100,
-            2
-        )
+        if "pv" in info:
 
-    # ==========================================
-    # Principal Variation
-    # ==========================================
+            pv = [
 
-    pv = []
+                move.uci()
 
-    if "pv" in info:
+                for move in info["pv"]
 
-        pv = [
+            ]
 
-            move.uci()
+        candidates.append({
 
-            for move in info["pv"]
+            "evaluation":
+                score["evaluation"],
 
-        ]
+            "mate":
+                score["mate"],
 
-    # ==========================================
-    # Best Move
-    # ==========================================
+            "best_move":
+                pv[0] if len(pv) else None,
 
-    best_move = None
+            "pv":
+                pv
 
-    if len(pv):
-
-        best_move = pv[0]
-
-    # ==========================================
-    # Return Rich Analysis
-    # ==========================================
+        })
 
     return {
 
-        "evaluation": evaluation,
+        "evaluation":
+            candidates[0]["evaluation"],
 
-        "best_move": best_move,
+        "best_move":
+            candidates[0]["best_move"],
 
-        "pv": pv,
+        "pv":
+            candidates[0]["pv"],
 
-        "mate": mate,
+        "mate":
+            candidates[0]["mate"],
 
-        "depth": depth
+        "candidates":
+            candidates
 
     }

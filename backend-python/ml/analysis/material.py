@@ -125,7 +125,6 @@ def is_sacrifice(
     material_loss = before - after
     return material_loss >= 3
 
-
 # Testing
 if __name__ == "__main__":
     board = chess.Board()
@@ -133,3 +132,77 @@ if __name__ == "__main__":
     print("Black Material:", material_count(board, chess.BLACK))
     print("Balance:", material_balance(board))
     print("White Bishop Pair:", has_bishop_pair(board, chess.WHITE))
+
+# ==========================================
+# Coaching Material Analysis
+# ==========================================
+
+def analyze_material(
+    before: chess.Board,
+    after: chess.Board
+):
+    """
+    Returns material facts for the coaching system.
+    Does NOT affect the style-classification pipeline.
+    """
+
+    white_before = material_count(
+        before,
+        chess.WHITE
+    )
+
+    black_before = material_count(
+        before,
+        chess.BLACK
+    )
+
+    white_after = material_count(
+        after,
+        chess.WHITE
+    )
+
+    black_after = material_count(
+        after,
+        chess.BLACK
+    )
+
+    return {
+
+        "white_before": white_before,
+
+        "black_before": black_before,
+
+        "white_after": white_after,
+
+        "black_after": black_after,
+
+        "white_change":
+            white_after - white_before,
+
+        "black_change":
+            black_after - black_before,
+
+        "balance_before":
+            material_balance(before),
+
+        "balance_after":
+            material_balance(after)
+
+    }
+
+if __name__ == "__main__":
+
+    board = chess.Board()
+
+    before = board.copy()
+
+    board.push_san("e4")
+
+    after = board.copy()
+
+    print(
+        analyze_material(
+            before,
+            after
+        )
+    )

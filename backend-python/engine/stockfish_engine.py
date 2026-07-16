@@ -3,29 +3,91 @@ import chess.engine
 
 STOCKFISH_PATH = "engine/stockfish.exe"
 
-engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
+engine = chess.engine.SimpleEngine.popen_uci(
+    STOCKFISH_PATH
+)
 
 
-def evaluate_position(board: chess.Board):
+def evaluate_position(
+    board: chess.Board,
+    depth: int = 18
+):
+
     info = engine.analyse(
+
         board,
-        chess.engine.Limit(time=0.3)
+
+        chess.engine.Limit(
+            depth=depth
+        )
+
     )
 
     score = info["score"].white()
 
-    # ✅ numeric eval
-    if score.is_mate():
-        eval_value = 100 if score.mate() > 0 else -100
-    else:
-        eval_value = score.score() / 100
+    # ==========================================
+    # Evaluation
+    # ==========================================
 
-    # ✅ best move (for arrows)
+    mate = None
+
+    if score.is_mate():
+
+        mate = score.mate()
+
+        evaluation = (
+            100
+            if mate > 0
+            else -100
+        )
+
+    else:
+
+        evaluation = round(
+            score.score() / 100,
+            2
+        )
+
+    # ==========================================
+    # Principal Variation
+    # ==========================================
+
+    pv = []
+
+    if "pv" in info:
+
+        pv = [
+
+            move.uci()
+
+            for move in info["pv"]
+
+        ]
+
+    # ==========================================
+    # Best Move
+    # ==========================================
+
     best_move = None
-    if "pv" in info and len(info["pv"]) > 0:
-        best_move = info["pv"][0].uci()
+
+    if len(pv):
+
+        best_move = pv[0]
+
+    # ==========================================
+    # Return Rich Analysis
+    # ==========================================
 
     return {
-        "evaluation": eval_value,   # 🔥 NUMBER ONLY
-        "best_move": best_move
+
+        "evaluation": evaluation,
+
+        "best_move": best_move,
+
+        "pv": pv,
+
+        "mate": mate,
+
+        "depth": depth
+
     }

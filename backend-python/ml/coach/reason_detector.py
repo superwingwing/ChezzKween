@@ -8,106 +8,54 @@ from ml.coach.modules.piece_reason import detect_piece_reason
 from ml.coach.modules.tactical_reason import detect_tactical_reason
 
 
-# ==========================================
-# Main Detector
-# ==========================================
-
-def detect_reason(
-    before,
-    after,
-    evaluation_before,
-    evaluation_after
-):
-
+def detect_reason(before, after, evaluation_before, evaluation_after):
     reasons = []
 
-    material = detect_material_reason(
-        before,
-        after
-    )
-
+    material = detect_material_reason(before, after)
     if material:
         reasons.append(material)
 
-
-    king = detect_king_reason(
-        before,
-        after
-    )
-
+    king = detect_king_reason(before, after)
     if king:
         reasons.append(king)
 
-
-    pawn = detect_pawn_reason(
-        before,
-        after
-    )
-
+    pawn = detect_pawn_reason(before, after)
     if pawn:
         reasons.append(pawn)
 
-
-    board = detect_board_reason(
-        before,
-        after
-    )
-
+    board = detect_board_reason(before, after)
     if board:
         reasons.append(board)
 
-
-    piece = detect_piece_reason(
-        before,
-        after
-    )
-
+    piece = detect_piece_reason(before, after)
     if piece:
         reasons.append(piece)
 
-
-    tactical = detect_tactical_reason(
-        before,
-        after
-    )
-
+    tactical = detect_tactical_reason(before, after)
     if tactical:
         reasons.append(tactical)
 
-
-    # --------------------------------------
-    # Nothing specific detected
-    # --------------------------------------
-
+    # No specific reason detected
     if not reasons:
-
-        return {
-
+        result = {
             "reason": "position_change",
-
             "confidence": 40,
-
             "details": {
-
-                "evaluation_change":
-                    round(
-                        evaluation_after -
-                        evaluation_before,
-                        2
-                    )
-
+                "evaluation_change": round(
+                    evaluation_after - evaluation_before,
+                    2
+                )
             }
-
         }
 
+        print("DETECTED REASON:", result)
+        return result
 
-    # --------------------------------------
-    # Return strongest reason
-    # --------------------------------------
-
+    # Return strongest detected reason
     reasons.sort(
         key=lambda x: x["confidence"],
         reverse=True
     )
 
+    print("DETECTED REASON:", reasons[0])
     return reasons[0]

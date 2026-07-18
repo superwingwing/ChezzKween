@@ -386,3 +386,48 @@ def tactical_summary(board, moves):
                 moves
             )
     }
+
+# ==========================================
+# Coaching Tactical Analysis
+# ==========================================
+
+def analyze_tactical(board: chess.Board, moves):
+
+    summary = tactical_summary(
+        board,
+        moves
+    )
+
+    score = (
+        summary["tactical_captures"] +
+        summary["hanging_captures"] +
+        summary["winning_exchanges"] +
+        summary["discovered_checks"] +
+        summary["double_checks"] +
+        summary["material_winning_combinations"]
+    )
+
+    return {
+
+        "tactical_captures":
+            summary["tactical_captures"],
+
+        "hanging_captures":
+            summary["hanging_captures"],
+
+        "winning_exchanges":
+            summary["winning_exchanges"],
+
+        "discovered_checks":
+            summary["discovered_checks"],
+
+        "double_checks":
+            summary["double_checks"],
+
+        "material_winning_combinations":
+            summary["material_winning_combinations"],
+
+        "score":
+            score
+
+    }

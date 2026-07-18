@@ -518,3 +518,81 @@ def aggressive_piece_score(
         color
     )
     return score
+
+# ==========================================
+# Coaching Piece Analysis
+# ==========================================
+
+def analyze_piece(
+    board: chess.Board,
+    color: chess.Color
+):
+
+    return {
+
+        "mobility":
+            average_mobility(
+                board,
+                color
+            ),
+
+        "coordination":
+            coordination_score(
+                board,
+                color
+            ),
+
+        "activity":
+            activity_score(
+                board,
+                color
+            ),
+
+        "hanging":
+            hanging_pieces(
+                board,
+                color
+            ),
+
+        "protected":
+            protected_pieces(
+                board,
+                color
+            ),
+
+        "outposts":
+            outposts(
+                board,
+                color
+            ),
+
+        "knight_outposts":
+            knight_outposts(
+                board,
+                color
+            ),
+
+        "bishop_outposts":
+            bishop_outposts(
+                board,
+                color
+            ),
+
+        "queen_attack":
+            queen_attack_participation(
+                board,
+                color
+            ),
+
+        "rook_attack":
+            rook_attack_participation(
+                board,
+                color
+            ),
+
+        "attack_concentration":
+            attacking_piece_concentration(
+                board,
+                color
+            )
+    }

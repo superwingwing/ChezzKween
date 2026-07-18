@@ -16,9 +16,28 @@ def analyze_pgn(pgn_text: str):
     prev_eval = 0
 
     for move in game.mainline_moves():
+        # Position before the move
+        before = board.copy()
         board.push(move)
+        after = board.copy()
+        eval_result = evaluate_position(after)
         eval_result = evaluate_position(board)
         current_eval = eval_result["evaluation"]
+
+        # Detect why the position changed
+        reason_data = detect_reason(
+            before,
+            after,
+            prev_eval,
+            current_eval
+        )
+
+        # Generate coaching text
+        coach = generate_explanation(
+            reason_data,
+            move.uci(),
+            eval_result["best_move"]
+        )
 
         # MOVE QUALITY
         diff = abs(current_eval - prev_eval)
@@ -40,8 +59,13 @@ def analyze_pgn(pgn_text: str):
             "pv": eval_result["pv"],
             "candidates": eval_result["candidates"],
             "quality": quality,
-            "move": move.uci()
+            "move": move.uci(),
+            "reason": reason_data["reason"],
+            "confidence": reason_data["confidence"],
+            "explanation": coach["explanation"],
+            "recommendation": coach["recommendation"]
         })
+        
         prev_eval = current_eval
     print(f"Finished analysis. Moves analyzed: {len(evaluations)}")
     return {

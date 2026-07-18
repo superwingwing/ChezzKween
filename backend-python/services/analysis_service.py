@@ -1,6 +1,8 @@
 import chess.pgn
 import io
 from engine.stockfish_engine import evaluate_position
+from ml.coach.reason_detector import detect_reason
+from ml.coach.explanation_engine import generate_explanation
 
 
 def analyze_pgn(pgn_text: str):

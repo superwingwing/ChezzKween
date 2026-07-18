@@ -11,6 +11,7 @@
     <div class="coach-card">
       <h3>🧠 Chess Kween</h3>
       <div v-if="analysis">
+          <!-- <pre>{{ analysis }}</pre> -->
         <p class="move">
           Move: <strong>{{ analysis.move }}</strong>
         </p>

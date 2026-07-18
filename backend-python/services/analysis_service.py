@@ -16,12 +16,11 @@ def analyze_pgn(pgn_text: str):
     prev_eval = 0
 
     for move in game.mainline_moves():
-        # Position before the move
-        before = board.copy()
-        board.push(move)
-        after = board.copy()
-        eval_result = evaluate_position(after)
-        eval_result = evaluate_position(board)
+        before = board.copy() # Position before the move
+        board.push(move)  # Play move
+        after = board.copy() # Position after move
+        eval_result = evaluate_position(after)  # Evaluate position
+        # eval_result = evaluate_position(board)
         current_eval = eval_result["evaluation"]
 
         # Detect why the position changed

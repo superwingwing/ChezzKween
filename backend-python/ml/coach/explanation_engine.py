@@ -12,22 +12,67 @@ def generate_explanation(reason_data, played_move, best_move):
     reason = reason_data["reason"]
     details = reason_data["details"]
 
+    result = None
+
     if reason in ("material_gain", "material_loss"):
-        return material(details, played_move, best_move)
+        result = material(
+            details,
+            played_move,
+            best_move
+        )
 
-    if reason == "king_safety":
-        return king(details, played_move, best_move)
+    elif reason == "king_safety":
+        result = king(
+            details,
+            played_move,
+            best_move
+        )
 
-    if reason.startswith("pawn_"):
-        return pawn(details, played_move, best_move)
+    elif reason.startswith("pawn_"):
+        result = pawn(
+            details,
+            played_move,
+            best_move
+        )
 
-    if reason.startswith("board_"):
-        return board(details, played_move, best_move)
+    elif reason.startswith("board_"):
+        result = board(
+            details,
+            played_move,
+            best_move
+        )
 
-    if reason.startswith("piece_"):
-        return piece(details, played_move, best_move)
+    elif reason.startswith("piece_"):
+        result = piece(
+            details,
+            played_move,
+            best_move
+        )
 
-    if reason.startswith("tactical_"):
-        return tactical(details, played_move, best_move)
+    elif reason.startswith("tactical_"):
+        result = tactical(
+            details,
+            played_move,
+            best_move
+        )
 
-    return default(details, played_move, best_move)
+    else:
+        result = default(
+            details,
+            played_move,
+            best_move
+        )
+
+
+    # Safety fallback
+    if result is None:
+        return {
+            "explanation":
+                f"{played_move} changed the position.",
+
+            "recommendation":
+                f"Try {best_move} instead."
+        }
+
+
+    return result

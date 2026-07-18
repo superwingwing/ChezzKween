@@ -3,9 +3,7 @@ def explain(details, played_move, best_move):
     issue = details.get("issue")
 
     if issue == "hanging":
-
         return {
-
             "explanation":
                 f"{played_move} left a piece hanging.",
 
@@ -14,9 +12,7 @@ def explain(details, played_move, best_move):
         }
 
     if issue == "fork":
-
         return {
-
             "explanation":
                 f"{played_move} allowed a tactical fork.",
 
@@ -25,9 +21,7 @@ def explain(details, played_move, best_move):
         }
 
     if issue == "pin":
-
         return {
-
             "explanation":
                 f"{played_move} created or allowed a pin.",
 
@@ -35,4 +29,11 @@ def explain(details, played_move, best_move):
                 "Evaluate whether pinned pieces can safely move."
         }
 
-    return None
+    # Default tactical explanation
+    return {
+        "explanation":
+            f"{played_move} caused a tactical weakness.",
+
+        "recommendation":
+            f"Look for tactical improvements. A stronger move was {best_move}."
+    }

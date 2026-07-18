@@ -18,33 +18,29 @@
       "update-coach"
       ])
     const isNavigating = ref(false)
-    
     const currentQuality = computed(() => {
       const current = evaluations.value[moveIndex.value - 1]
       return current?.quality || ""
     })
-
     // PLAYERS
     const whitePlayer = computed(() => ({
       name: currentGame.value?.white_name,
       elo: currentGame.value?.white_elo
     }))
-
     const blackPlayer = computed(() => ({
       name: currentGame.value?.black_name,
       elo: currentGame.value?.black_elo
     }))
-
     const topPlayer = computed(() =>
       orientation.value === "white" ? blackPlayer.value : whitePlayer.value
     )
-
     const bottomPlayer = computed(() =>
       orientation.value === "white" ? whitePlayer.value : blackPlayer.value
     )
 
-    // GO TO MOVE (CORE)
-    function goToMove(index) {
+    // GO TO MOVE 
+function goToMove(index) {
+      console.trace("goToMove called:", index)
       isNavigating.value = true
       chess.reset()
       for (let i = 0; i < index; i++) {
@@ -53,15 +49,27 @@
       moveIndex.value = index
       if (boardAPI) {
         boardAPI.setPosition(chess.fen())
+        if (index === 0) {
+            boardAPI.hideMoves()
+            emit("update-eval", 0)
+            isNavigating.value = false
+            return
+        }
+        // const current = evaluations.value[index - 1]
+        // console.log("ENGINE DATA:", current) // 👈 ADD IT HERE
+        console.log("index =", index)
+        console.log("evaluations length =", evaluations.value.length)
+        console.log("evaluations[0] =", evaluations.value[0])
+        console.log("evaluations[index - 1] =", evaluations.value[index - 1])
+
         const current = evaluations.value[index - 1]
-        console.log("ENGINE DATA:", current) // 👈 ADD IT HERE
+        console.log("ENGINE DATA:", current)
 
         if (current) {
           // ✅ update eval bar
           emit("update-eval", current.evaluation)
           emit("update-coach", current)
            console.log("current =", current)
-            console.log("current eval =", current.evaluation)
             console.log("type =", typeof current.evaluation)
           // emit("update-eval", current.evaluation.value)
 
@@ -128,7 +136,7 @@
       chess.reset()
       chess.loadPgn(game.pgn)
       moves.value = chess.history()
-      goToMove(0)
+      // goToMove(0)
       orientation.value = "white"
 
       try {
@@ -143,8 +151,10 @@
         })
 
         const data = await res.json()
+        console.log("BACKEND RESULT:", data)
         evaluations.value = data.evaluations
-
+        console.log("EVALUATIONS:", evaluations.value)
+        goToMove(0)
         // initial eval
         if (evaluations.value.length > 0) {
           emit("update-eval", evaluations.value[0].evaluation)

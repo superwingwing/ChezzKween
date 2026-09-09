@@ -1,5 +1,7 @@
+import chess
 import chess.pgn
 import io
+
 from engine.stockfish_engine import evaluate_position
 from ml.coach.reason_detector import detect_reason
 from ml.coach.explanation_engine import generate_explanation
@@ -7,23 +9,49 @@ from ml.coach.explanation_engine import generate_explanation
 
 def analyze_pgn(pgn_text: str):
     game = chess.pgn.read_game(io.StringIO(pgn_text))
+
     if game is None:
         return {
             "error": "Invalid PGN"
         }
+
     board = game.board()
     evaluations = []
-    prev_eval = 0
+
+    # ==========================================================
+    # EVALUATE THE INITIAL POSITION
+    # ==========================================================
+
+    initial_eval_result = evaluate_position(board)
+    prev_eval = initial_eval_result["evaluation"]
+
+    # ==========================================================
+    # ANALYZE EVERY MOVE
+    # ==========================================================
 
     for move in game.mainline_moves():
-        before = board.copy() # Position before the move
-        board.push(move)  # Play move
-        after = board.copy() # Position after move
-        eval_result = evaluate_position(after)  # Evaluate position
-        # eval_result = evaluate_position(board)
+
+        # Position BEFORE the move
+        before = board.copy()
+
+        # The player who is actually making the move
+        mover = board.turn
+
+        # Play the move
+        board.push(move)
+
+        # Position AFTER the move
+        after = board.copy()
+
+        # Evaluate the resulting position
+        eval_result = evaluate_position(after)
+
         current_eval = eval_result["evaluation"]
 
-        # Detect why the position changed
+        # ======================================================
+        # DETECT WHY THE POSITION CHANGED
+        # ======================================================
+
         reason_data = detect_reason(
             before,
             after,
@@ -31,7 +59,10 @@ def analyze_pgn(pgn_text: str):
             current_eval
         )
 
-        # Generate coaching text
+        # ======================================================
+        # GENERATE COACHING EXPLANATION
+        # ======================================================
+
         coach = generate_explanation(
             reason_data,
             move.uci(),
@@ -41,18 +72,89 @@ def analyze_pgn(pgn_text: str):
             after
         )
 
+        # ======================================================
         # MOVE QUALITY
-        diff = abs(current_eval - prev_eval)
-        if diff < 0.3:
+        # ======================================================
+
+        # ------------------------------------------------------
+        # CHECKMATE = ALWAYS BEST
+        # ------------------------------------------------------
+
+        if after.is_checkmate():
+
             quality = "best"
-        elif diff < 0.7:
-            quality = "good"
-        elif diff < 1.5:
-            quality = "inaccuracy"
-        elif diff < 3:
-            quality = "mistake"
+
         else:
-            quality = "blunder"
+
+            # --------------------------------------------------
+            # Convert evaluation change to the perspective
+            # of the player who actually made the move.
+            #
+            # Stockfish evaluation is White-perspective:
+            #
+            #   +3 = good for White
+            #   -3 = good for Black
+            #
+            # Therefore:
+            #
+            # White move:
+            #   current - previous
+            #
+            # Black move:
+            #   previous - current
+            # --------------------------------------------------
+
+            if mover == chess.WHITE:
+                eval_change = current_eval - prev_eval
+            else:
+                eval_change = prev_eval - current_eval
+
+            # --------------------------------------------------
+            # Only negative change means the player lost
+            # evaluation.
+            #
+            # Example:
+            #
+            # White:
+            # +2 → +3
+            # change = +1
+            # Good move
+            #
+            # White:
+            # +3 → +1
+            # change = -2
+            # Mistake
+            #
+            # Black:
+            # +2 → +3
+            # change = -1
+            # Bad for Black
+            # --------------------------------------------------
+
+            centipawn_loss = max(0, -eval_change)
+
+            # --------------------------------------------------
+            # CLASSIFY MOVE
+            # --------------------------------------------------
+
+            if centipawn_loss < 0.3:
+                quality = "best"
+
+            elif centipawn_loss < 0.7:
+                quality = "good"
+
+            elif centipawn_loss < 1.5:
+                quality = "inaccuracy"
+
+            elif centipawn_loss < 3:
+                quality = "mistake"
+
+            else:
+                quality = "blunder"
+
+        # ======================================================
+        # SAVE RESULT
+        # ======================================================
 
         evaluations.append({
             "fen": board.fen(),
@@ -67,9 +169,15 @@ def analyze_pgn(pgn_text: str):
             "explanation": coach["explanation"],
             "recommendation": coach["recommendation"]
         })
-        
+
+        # Current position becomes the previous position
+        # for the next move.
         prev_eval = current_eval
-    print(f"Finished analysis. Moves analyzed: {len(evaluations)}")
+
+    print(
+        f"Finished analysis. Moves analyzed: {len(evaluations)}"
+    )
+
     return {
         "evaluations": evaluations
     }

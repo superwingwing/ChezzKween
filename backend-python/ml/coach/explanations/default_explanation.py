@@ -1,4 +1,4 @@
-def explain(details, played_move, best_move):
+def explain(details, played_move, best_move, pv, before, after):
 
     return {
 

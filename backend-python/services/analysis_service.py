@@ -35,7 +35,10 @@ def analyze_pgn(pgn_text: str):
         coach = generate_explanation(
             reason_data,
             move.uci(),
-            eval_result["best_move"]
+            eval_result["best_move"],
+            eval_result["pv"],
+            before,
+            after
         )
 
         # MOVE QUALITY

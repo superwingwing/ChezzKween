@@ -2,8 +2,6 @@ import chess
 import chess.engine
 
 STOCKFISH_PATH = "engine/stockfish.exe"
-
-# One engine for the whole application
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
 
@@ -23,22 +21,6 @@ def score_to_eval(score, board):
 
     if score.is_mate():
         mate = score.mate()
-
-        # If the side to move is checkmated, the winner is the
-        # opposite side.
-        #
-        # Example:
-        # White plays Bc5#
-        # board.turn == BLACK
-        # Black is checkmated
-        # Therefore White has won -> +100
-        #
-        # Example:
-        # Black plays ...Qh2#
-        # board.turn == WHITE
-        # White is checkmated
-        # Therefore Black has won -> -100
-
         if board.is_checkmate():
             if board.turn == chess.BLACK:
                 return 100

@@ -3,8 +3,7 @@ import chess.pgn
 import io
 
 from engine.stockfish_engine import evaluate_position
-from ml.coach.reason_detector import detect_reason
-from ml.coach.explanation_engine import generate_explanation
+from ml.coach.move_explanation import explain_move
 
 
 def analyze_pgn(pgn_text: str):
@@ -59,64 +58,27 @@ def analyze_pgn(pgn_text: str):
         # ------------------------------------------------------
 
         eval_result = evaluate_position(after)
-
         current_eval = eval_result["evaluation"]
 
-        # ======================================================
-        # DETECT WHY THE POSITION CHANGED
-        # ======================================================
-
-        reason_data = detect_reason(
-            before,
-            after,
-            prev_eval,
-            current_eval
+        coach = explain_move(
+            before=before,
+            after=after,
+            move=move,
+            played_move=san_move,
+            best_move=eval_result["best_move"],
+            pv=eval_result["pv"],
+            evaluation_before=prev_eval,
+            evaluation_after=current_eval
         )
-
-        # ======================================================
-        # GENERATE COACHING TEXT
-        # ======================================================
-
-        coach = generate_explanation(
-            reason_data,
-            san_move,
-            eval_result["best_move"],
-            eval_result["pv"],
-            before,
-            after
-        )
-
-        # ======================================================
-        # MOVE QUALITY
-        # ======================================================
 
         # ------------------------------------------------------
         # CHECKMATE = ALWAYS BEST
         # ------------------------------------------------------
 
         if after.is_checkmate():
-
             quality = "best"
 
         else:
-
-            # --------------------------------------------------
-            # EVALUATION FROM THE PLAYER'S PERSPECTIVE
-            #
-            # Stockfish evaluation:
-            #
-            #   +3 = White is better
-            #   -3 = Black is better
-            #
-            # Therefore:
-            #
-            # White move:
-            #   current - previous
-            #
-            # Black move:
-            #   previous - current
-            # --------------------------------------------------
-
             if mover == chess.WHITE:
                 eval_change = current_eval - prev_eval
             else:
@@ -167,8 +129,6 @@ def analyze_pgn(pgn_text: str):
             "move": san_move,
 
             # Coaching information
-            "reason": reason_data["reason"],
-            "confidence": reason_data["confidence"],
             "explanation": coach["explanation"],
             "recommendation": coach["recommendation"]
         })

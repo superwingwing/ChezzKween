@@ -1,10 +1,8 @@
 import chess
 import chess.pgn
 import io
-
 from engine.stockfish_engine import evaluate_position
 from ml.coach.move_explanation import explain_move
-
 
 def analyze_pgn(pgn_text: str):
     game = chess.pgn.read_game(io.StringIO(pgn_text))
@@ -29,15 +27,10 @@ def analyze_pgn(pgn_text: str):
     # ==========================================================
 
     for move in game.mainline_moves():
-
-        # ------------------------------------------------------
         # POSITION BEFORE THE MOVE
-        # ------------------------------------------------------
-
         before = board.copy()
 
         # Convert UCI move to proper SAN notation
-        # Example:
         # d4c5 -> Bc5
         san_move = before.san(move)
 

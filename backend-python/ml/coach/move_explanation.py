@@ -1,10 +1,5 @@
 import chess
 
-
-# ==========================================================
-# PIECE INFORMATION
-# ==========================================================
-
 PIECE_NAMES = {
     chess.PAWN: "pawn",
     chess.KNIGHT: "knight",
@@ -22,7 +17,6 @@ PIECE_VALUES = {
     chess.QUEEN: 9,
     chess.KING: 0,
 }
-
 
 # ==========================================================
 # MAIN EXPLANATION FUNCTION

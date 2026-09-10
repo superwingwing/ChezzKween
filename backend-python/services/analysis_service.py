@@ -31,19 +31,33 @@ def analyze_pgn(pgn_text: str):
 
     for move in game.mainline_moves():
 
-        # Position BEFORE the move
+        # ------------------------------------------------------
+        # POSITION BEFORE THE MOVE
+        # ------------------------------------------------------
+
         before = board.copy()
+
+        # Convert UCI move to proper SAN notation
+        # Example:
+        # d4c5 -> Bc5
+        san_move = before.san(move)
 
         # The player who is actually making the move
         mover = board.turn
 
-        # Play the move
+        # ------------------------------------------------------
+        # PLAY THE MOVE
+        # ------------------------------------------------------
+
         board.push(move)
 
         # Position AFTER the move
         after = board.copy()
 
-        # Evaluate the resulting position
+        # ------------------------------------------------------
+        # STOCKFISH EVALUATION
+        # ------------------------------------------------------
+
         eval_result = evaluate_position(after)
 
         current_eval = eval_result["evaluation"]
@@ -60,12 +74,12 @@ def analyze_pgn(pgn_text: str):
         )
 
         # ======================================================
-        # GENERATE COACHING EXPLANATION
+        # GENERATE COACHING TEXT
         # ======================================================
 
         coach = generate_explanation(
             reason_data,
-            move.uci(),
+            san_move,
             eval_result["best_move"],
             eval_result["pv"],
             before,
@@ -87,13 +101,12 @@ def analyze_pgn(pgn_text: str):
         else:
 
             # --------------------------------------------------
-            # Convert evaluation change to the perspective
-            # of the player who actually made the move.
+            # EVALUATION FROM THE PLAYER'S PERSPECTIVE
             #
-            # Stockfish evaluation is White-perspective:
+            # Stockfish evaluation:
             #
-            #   +3 = good for White
-            #   -3 = good for Black
+            #   +3 = White is better
+            #   -3 = Black is better
             #
             # Therefore:
             #
@@ -109,28 +122,8 @@ def analyze_pgn(pgn_text: str):
             else:
                 eval_change = prev_eval - current_eval
 
-            # --------------------------------------------------
-            # Only negative change means the player lost
-            # evaluation.
-            #
-            # Example:
-            #
-            # White:
-            # +2 → +3
-            # change = +1
-            # Good move
-            #
-            # White:
-            # +3 → +1
-            # change = -2
-            # Mistake
-            #
-            # Black:
-            # +2 → +3
-            # change = -1
-            # Bad for Black
-            # --------------------------------------------------
-
+            # Only a negative change means the player
+            # lost evaluation.
             centipawn_loss = max(0, -eval_change)
 
             # --------------------------------------------------
@@ -158,21 +151,37 @@ def analyze_pgn(pgn_text: str):
 
         evaluations.append({
             "fen": board.fen(),
+
+            # Stockfish evaluation
             "evaluation": current_eval,
+
+            # Stockfish engine values remain UCI internally
             "best_move": eval_result["best_move"],
             "pv": eval_result["pv"],
             "candidates": eval_result["candidates"],
+
+            # Move quality
             "quality": quality,
-            "move": move.uci(),
+
+            # Displayed move uses professional SAN notation
+            "move": san_move,
+
+            # Coaching information
             "reason": reason_data["reason"],
             "confidence": reason_data["confidence"],
             "explanation": coach["explanation"],
             "recommendation": coach["recommendation"]
         })
 
-        # Current position becomes the previous position
-        # for the next move.
+        # ======================================================
+        # CURRENT POSITION BECOMES PREVIOUS POSITION
+        # ======================================================
+
         prev_eval = current_eval
+
+    # ==========================================================
+    # FINISHED
+    # ==========================================================
 
     print(
         f"Finished analysis. Moves analyzed: {len(evaluations)}"

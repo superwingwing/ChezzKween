@@ -224,15 +224,11 @@ def convert_pv_to_san(board, pv):
 
         try:
             move = chess.Move.from_uci(uci_move)
-
             if move not in temp_board.legal_moves:
                 result.append(uci_move)
                 break
-
             san = temp_board.san(move)
-
             result.append(san)
-
             temp_board.push(move)
 
         except Exception:

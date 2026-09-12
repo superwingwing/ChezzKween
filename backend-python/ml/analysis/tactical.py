@@ -365,53 +365,37 @@ def find_discovered_checks(board, moves):
 # ==========================================================
 
 def find_double_checks(board, moves):
-
     results = []
-
     for move in moves:
-
         if not board.is_legal(move):
             continue
-
         mover = board.piece_at(
             move.from_square
         )
-
         if mover is None:
             continue
-
         enemy = not mover.color
-
         temp = board.copy()
         temp.push(move)
-
         if not temp.is_check():
             continue
-
         king = temp.king(enemy)
-
         if king is None:
             continue
-
         attackers = temp.attackers(
             mover.color,
             king
         )
 
         if len(attackers) >= 2:
-
             results.append({
-
                 "move": move.uci(),
-
                 "from": square_name(
                     move.from_square
                 ),
-
                 "to": square_name(
                     move.to_square
                 ),
-
                 "moving_piece":
                     piece_name(mover),
 
@@ -419,7 +403,6 @@ def find_double_checks(board, moves):
                     "white"
                     if mover.color == chess.WHITE
                     else "black",
-
                 "king_square":
                     square_name(king),
 

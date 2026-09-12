@@ -36,72 +36,35 @@ def analyze_single_move(
             - explanation
             - recommendation
     """
-
-    # ==========================================================
     # VALIDATE MOVE
-    # ==========================================================
-
     if move not in before.legal_moves:
         return {
             "error": "Illegal move"
         }
 
-    # ==========================================================
     # POSITION BEFORE MOVE
-    # ==========================================================
-
     mover = before.turn
 
     # Convert UCI -> professional SAN
-    #
     # Example:
     # d2d4 -> d4
-    # g1f3 -> Nf3
-    # f1c4 -> Bc4
-    # e1g1 -> O-O
-    # c7c8q -> c8=Q
-    #
     san_move = before.san(move)
 
-    # ==========================================================
     # STOCKFISH EVALUATION BEFORE MOVE
-    # ==========================================================
-    #
-    # PGN analysis already has prev_eval, so we reuse it.
-    #
-    # Manual exploration does not have prev_eval, so evaluate
-    # the current position here.
-    #
-    # ==========================================================
-
     if prev_eval is None:
-
         before_eval_result = evaluate_position(before)
-
         prev_eval = before_eval_result["evaluation"]
 
-    # ==========================================================
     # PLAY THE MOVE
-    # ==========================================================
-
     after = before.copy()
-
     after.push(move)
 
-    # ==========================================================
     # STOCKFISH EVALUATION AFTER MOVE
-    # ==========================================================
-
     eval_result = evaluate_position(after)
-
     current_eval = eval_result["evaluation"]
 
-    # ==========================================================
     # MOVE EXPLANATION
-    # ==========================================================
-    #
     # The explanation system receives:
-    #
     # - position before
     # - position after
     # - actual move
@@ -110,8 +73,6 @@ def analyze_single_move(
     # - Stockfish PV
     # - evaluation before
     # - evaluation after
-    #
-    # ==========================================================
 
     coach = explain_move(
         before=before,
@@ -124,80 +85,44 @@ def analyze_single_move(
         evaluation_after=current_eval
     )
 
-    # ==========================================================
     # MOVE QUALITY
-    # ==========================================================
 
     # Checkmate is always the best move.
     if after.is_checkmate():
-
         quality = "best"
-
     else:
-
-        # ------------------------------------------------------
-        # Calculate evaluation change from the mover's
-        # perspective.
-        # ------------------------------------------------------
-
         if mover == chess.WHITE:
-
             eval_change = current_eval - prev_eval
-
         else:
-
             eval_change = prev_eval - current_eval
-
-        # ------------------------------------------------------
         # Only a negative change means the player lost
         # evaluation.
-        # ------------------------------------------------------
-
         centipawn_loss = max(0, -eval_change)
 
-        # ------------------------------------------------------
         # Classify move
-        # ------------------------------------------------------
-
         if centipawn_loss < 0.3:
-
             quality = "best"
-
         elif centipawn_loss < 0.7:
-
             quality = "good"
-
         elif centipawn_loss < 1.5:
-
             quality = "inaccuracy"
-
         elif centipawn_loss < 3:
-
             quality = "mistake"
-
         else:
-
             quality = "blunder"
 
-    # ==========================================================
     # RETURN ANALYSIS
-    # ==========================================================
-
     return {
         "fen": after.fen(),
 
-        # ------------------------------------------------------
         # Stockfish evaluation
-        # ------------------------------------------------------
-
         "evaluation": current_eval,
         "best_move": eval_result["best_move"],
         "pv": eval_result["pv"],
         "candidates": eval_result["candidates"],
-        # Move quality
 
+        # Move quality
         "quality": quality,
-        # Actual played move in SAN
         "move": san_move,
 
         # Coaching
@@ -206,13 +131,8 @@ def analyze_single_move(
     }
 
 
-# ==============================================================
 # ANALYZE UPLOADED PGN
-# ==============================================================
-
 def analyze_pgn(pgn_text: str):
-
-    # READ PGN
     game = chess.pgn.read_game(
         io.StringIO(pgn_text)
     )
@@ -224,7 +144,6 @@ def analyze_pgn(pgn_text: str):
 
     board = game.board()
     evaluations = []
-
     initial_eval_result = evaluate_position(board)
     prev_eval = initial_eval_result["evaluation"]
 

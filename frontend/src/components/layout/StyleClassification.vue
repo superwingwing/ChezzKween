@@ -133,7 +133,7 @@
       width: 320px;
       padding: 20px;
       border-radius: 20px;
-      background: #2e7d32;
+      background: #01579B;
       color:white;
       text-align:center;
       box-shadow:0 10px 25px rgba(0,0,0,0.2);
@@ -174,7 +174,7 @@
       border:none;
       border-radius:12px;
       background:white;
-      color:#2e7d32;
+      color:#01579B;
       font-weight:bold;
       cursor:pointer;
     }

@@ -44,7 +44,7 @@ const uploadPGN = async () => {
 
 <template>
   <v-btn
-    color="light-green-darken-2"
+    color="light-blue-darken-4"
     prepend-icon="mdi-chess-king"
     rounded="lg"
     @click="dialog = true"

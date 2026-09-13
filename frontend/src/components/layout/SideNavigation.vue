@@ -44,7 +44,7 @@ const onLogout = async () => {
 
 <template>
   <v-navigation-drawer
-    class="side-navigation bg-light-green-darken-3"
+    class="side-navigation bg-light-blue-darken-4"
     :width="270"
     elevation="12"
     :model-value="modelValue"
@@ -79,7 +79,7 @@ const onLogout = async () => {
         </div>
 
         <div class="profile-label">
-          ChessKween Player
+          ChessKween User
         </div>
       </div>
 

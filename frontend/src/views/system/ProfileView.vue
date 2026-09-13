@@ -1,3 +1,121 @@
+<script setup>
+import { ref, reactive } from "vue"
+
+const profile = reactive({
+  username: "Super WingWing",
+  email: "superwingwing@gmail123.com",
+  rating: 1200,
+  style: "Aggressive",
+  memberSince: "September 2026",
+  avatar: null
+})
+
+const statistics = [
+  {
+    label: "Games Analyzed",
+    value: 24,
+    icon: "mdi-chess-pawn"
+  },
+  {
+    label: "Wins",
+    value: 15,
+    icon: "mdi-trophy-outline"
+  },
+  {
+    label: "Losses",
+    value: 6,
+    icon: "mdi-chart-line"
+  },
+  {
+    label: "Draws",
+    value: 3,
+    icon: "mdi-equal"
+  }
+]
+
+const recentGames = [
+  {
+    id: 1,
+    opponent: "Player One",
+    result: "Win",
+    date: "Sep 12, 2026",
+    rating: 12
+  },
+  {
+    id: 2,
+    opponent: "Player Two",
+    result: "Loss",
+    date: "Sep 10, 2026",
+    rating: -9
+  },
+  {
+    id: 3,
+    opponent: "Player Three",
+    result: "Win",
+    date: "Sep 8, 2026",
+    rating: 14
+  },
+  {
+    id: 4,
+    opponent: "Player Four",
+    result: "Draw",
+    date: "Sep 6, 2026",
+    rating: 0
+  }
+]
+
+const styleConfidence = 82
+
+const styleDescription =
+  "Your games show a strong preference for active and attacking positions, including king pressure, tactical opportunities, and active piece coordination."
+
+const styleFeatures = [
+  "King Attacks",
+  "Tactical Play",
+  "Active Pieces",
+  "Sacrifices"
+]
+
+const editDialog = ref(false)
+
+const editForm = reactive({
+  username: profile.username,
+  email: profile.email
+})
+
+function editProfile() {
+  editForm.username = profile.username
+  editForm.email = profile.email
+  editDialog.value = true
+}
+
+function saveProfile() {
+  profile.username = editForm.username
+  profile.email = editForm.email
+  editDialog.value = false
+}
+
+function changePassword() {
+  console.log("Change password")
+}
+
+function signOut() {
+  console.log("Sign out")
+}
+
+function resultColor(result) {
+  if (result === "Win") return "success"
+  if (result === "Loss") return "error"
+  return "warning"
+}
+
+function ratingClass(rating) {
+  if (rating > 0) return "rating-positive"
+  if (rating < 0) return "rating-negative"
+  return "rating-neutral"
+}
+</script>
+
 <template>
   <v-container fluid class="profile-page py-8">
     <v-row justify="center">
@@ -28,7 +146,7 @@
               <v-col cols="12" sm>
                 <div class="text-center text-sm-start">
                   <div class="profile-label">
-                    CHESSKWEEN PLAYER
+                    CHESSKWEEN USER
                   </div>
 
                   <h1 class="profile-name">
@@ -484,123 +602,7 @@
   </v-container>
 </template>
 
-<script setup>
-import { ref, reactive } from "vue"
 
-const profile = reactive({
-  username: "ChessKween Player",
-  email: "player@example.com",
-  rating: 1200,
-  style: "Aggressive",
-  memberSince: "September 2026",
-  avatar: null
-})
-
-const statistics = [
-  {
-    label: "Games Analyzed",
-    value: 24,
-    icon: "mdi-chess-pawn"
-  },
-  {
-    label: "Wins",
-    value: 15,
-    icon: "mdi-trophy-outline"
-  },
-  {
-    label: "Losses",
-    value: 6,
-    icon: "mdi-chart-line"
-  },
-  {
-    label: "Draws",
-    value: 3,
-    icon: "mdi-equal"
-  }
-]
-
-const recentGames = [
-  {
-    id: 1,
-    opponent: "Player One",
-    result: "Win",
-    date: "Sep 12, 2026",
-    rating: 12
-  },
-  {
-    id: 2,
-    opponent: "Player Two",
-    result: "Loss",
-    date: "Sep 10, 2026",
-    rating: -9
-  },
-  {
-    id: 3,
-    opponent: "Player Three",
-    result: "Win",
-    date: "Sep 8, 2026",
-    rating: 14
-  },
-  {
-    id: 4,
-    opponent: "Player Four",
-    result: "Draw",
-    date: "Sep 6, 2026",
-    rating: 0
-  }
-]
-
-const styleConfidence = 82
-
-const styleDescription =
-  "Your games show a strong preference for active and attacking positions, including king pressure, tactical opportunities, and active piece coordination."
-
-const styleFeatures = [
-  "King Attacks",
-  "Tactical Play",
-  "Active Pieces",
-  "Sacrifices"
-]
-
-const editDialog = ref(false)
-
-const editForm = reactive({
-  username: profile.username,
-  email: profile.email
-})
-
-function editProfile() {
-  editForm.username = profile.username
-  editForm.email = profile.email
-  editDialog.value = true
-}
-
-function saveProfile() {
-  profile.username = editForm.username
-  profile.email = editForm.email
-  editDialog.value = false
-}
-
-function changePassword() {
-  console.log("Change password")
-}
-
-function signOut() {
-  console.log("Sign out")
-}
-
-function resultColor(result) {
-  if (result === "Win") return "success"
-  if (result === "Loss") return "error"
-  return "warning"
-}
-
-function ratingClass(rating) {
-  if (rating > 0) return "rating-positive"
-  if (rating < 0) return "rating-negative"
-  return "rating-neutral"
-}
-</script>
 
 <style scoped>
 .profile-page {

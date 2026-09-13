@@ -1,8 +1,8 @@
 <script setup>
-import { defineProps, defineEmits, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { supabase } from '@/utils/supabase'
-import { useAuthStore } from '@/stores/authUser'
+import { ref } from "vue"
+import { useRouter } from "vue-router"
+import { supabase } from "@/utils/supabase"
+import { useAuthStore } from "@/stores/authUser"
 
 defineProps({
   modelValue: {
@@ -15,10 +15,17 @@ defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"])
 
 const router = useRouter()
 const currentRoute = ref(router.currentRoute.value.name)
+
+const navigation = [
+  { name: "dashboard", title: "Home", icon: "mdi-home-outline" },
+  { name: "save", title: "Saved", icon: "mdi-bookmark-outline" },
+  { name: "profile", title: "Profile", icon: "mdi-account-outline" },
+  { name: "about", title: "About ChessKween", icon: "mdi-information-outline" }
+]
 
 const navigateTo = (routeName) => {
   router.push({ name: routeName })
@@ -31,25 +38,27 @@ const onLogout = async () => {
   const authStore = useAuthStore()
   authStore.logout()
 
-  router.replace('/')
+  router.replace("/")
 }
 </script>
 
 <template>
   <v-navigation-drawer
     class="side-navigation bg-light-green-darken-3"
-    :width="350"
-    elevation="16"
+    :width="270"
+    elevation="12"
     :model-value="modelValue"
     :permanent="permanent"
-    @update:modelValue="emit('update:modelValue', $event)"
+    @update:model-value="emit('update:modelValue', $event)"
   >
     <div class="navigation-content">
 
+      <!-- Profile -->
       <div class="profile-section">
         <v-avatar
-          size="150"
+          size="105"
           color="white"
+          class="profile-avatar"
         >
           <v-img
             v-if="profile_pic && typeof profile_pic === 'string' && profile_pic !== ''"
@@ -57,7 +66,6 @@ const onLogout = async () => {
             alt="User Avatar"
             cover
           />
-
           <v-img
             v-else
             src="/images/pic1.jpg"
@@ -66,66 +74,50 @@ const onLogout = async () => {
           />
         </v-avatar>
 
-        <p class="profile-name">
+        <div class="profile-name">
           superwingwing
-        </p>
+        </div>
+
+        <div class="profile-label">
+          ChessKween Player
+        </div>
       </div>
 
+      <v-divider class="my-4" color="white" opacity="0.15" />
+
+      <!-- Navigation -->
       <v-list
-        color="transparent"
+        nav
+        bg-color="transparent"
         class="navigation-list"
       >
-        <v-list-item @click="navigateTo('search')">
-          <v-btn
-            class="search-button rounded-pill text-light-green-darken-3"
-            append-icon="mdi-magnify"
-            block
-          >
-            Search
-          </v-btn>
-        </v-list-item>
-
         <v-list-item
-          @click="navigateTo('dashboard')"
-          :class="{ 'active-item': currentRoute === 'dashboard' }"
+          v-for="item in navigation"
+          :key="item.name"
+          :active="currentRoute === item.name"
+          active-class="active-item"
+          rounded="lg"
+          class="navigation-item"
+          @click="navigateTo(item.name)"
         >
-          <v-list-item-title class="text-center">
-            Home
-          </v-list-item-title>
-        </v-list-item>
+          <template #prepend>
+            <v-icon :icon="item.icon" />
+          </template>
 
-        <v-list-item
-          @click="navigateTo('save')"
-          :class="{ 'active-item': currentRoute === 'save' }"
-        >
-          <v-list-item-title class="text-center">
-            Saved
-          </v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
-          @click="navigateTo('profile')"
-          :class="{ 'active-item': currentRoute === 'profile' }"
-        >
-          <v-list-item-title class="text-center">
-            Profile
-          </v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
-          @click="navigateTo('about')"
-          :class="{ 'active-item': currentRoute === 'about' }"
-        >
-          <v-list-item-title class="text-center">
-            About ChessKween
+          <v-list-item-title>
+            {{ item.title }}
           </v-list-item-title>
         </v-list-item>
       </v-list>
 
+      <!-- Logout -->
       <div class="logout-section">
         <v-btn
-          class="rounded-pill text-light-green-darken-3 font-weight-black"
           block
+          rounded="lg"
+          variant="outlined"
+          color="white"
+          prepend-icon="mdi-logout"
           @click="onLogout"
         >
           Sign out
@@ -141,69 +133,118 @@ const onLogout = async () => {
   height: 100vh !important;
   top: 0 !important;
   bottom: 0 !important;
-  border-radius: 0 20px 20px 0 !important;
+  border-radius: 0 18px 18px 0 !important;
 }
 
 .navigation-content {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 24px;
+  padding: 18px;
+  box-sizing: border-box;
 }
 
 .profile-section {
   text-align: center;
-  padding-top: 10px;
+  padding-top: 4px;
+}
+
+.profile-avatar {
+  border: 3px solid rgba(255, 255, 255, 0.9);
 }
 
 .profile-name {
-  margin: 12px 0 20px;
-  font-weight: 700;
+  margin-top: 10px;
   color: white;
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.navigation-list {
-  flex: 1;
-  padding: 0;
+.profile-label {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 11px;
 }
 
 .search-button {
-  margin-bottom: 8px;
+  min-height: 42px;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.navigation-list {
+  padding: 10px 0;
+}
+
+.navigation-item {
+  min-height: 44px;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  transition: 0.2s ease;
+}
+
+.navigation-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navigation-item :deep(.v-icon) {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .active-item {
-  background-color: rgba(255, 255, 255, 0.196);
-  padding: 8px 16px;
-  margin-bottom: 4px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: white !important;
 }
 
-.active-item:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+.active-item :deep(.v-icon) {
+  color: white !important;
 }
 
 .logout-section {
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 12px;
+}
+
+.logout-section .v-btn {
+  min-height: 42px;
+  text-transform: none;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .navigation-content {
+    padding: 16px;
+  }
+
+  .profile-avatar {
+    width: 90px !important;
+    height: 90px !important;
+  }
 }
 
 @media (max-width: 600px) {
   .side-navigation {
-    width: 280px !important;
+    width: 250px !important;
   }
 
   .navigation-content {
-    padding: 18px;
+    padding: 14px;
   }
 
-  .profile-section {
-    padding-top: 5px;
+  .profile-avatar {
+    width: 82px !important;
+    height: 82px !important;
   }
 
-  .profile-section .v-avatar {
-    width: 110px !important;
-    height: 110px !important;
+  .profile-name {
+    font-size: 14px;
+  }
+
+  .navigation-item {
+    min-height: 42px;
   }
 }
 </style>

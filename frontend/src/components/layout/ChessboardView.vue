@@ -220,15 +220,6 @@ function goToPGN(index) {
 function nextMove() {
   if (isAnalyzingMove.value) return
 
-  /*
-    ==========================================================
-    EXPLORATION FORWARD
-    ==========================================================
-
-    If the user is inside a variation,
-    move forward inside that variation first.
-    */
-
   if (isExploring.value) {
     if (
       branchIndex.value <
@@ -251,25 +242,8 @@ function nextMove() {
       return
     }
 
-    /*
-      At the end of the exploration.
-
-      DO NOT automatically continue the PGN here.
-
-      The user must press Back until the
-      branch point is reached.
-    */
-
     return
   }
-
-  /*
-    ==========================================================
-    PGN FORWARD
-    ==========================================================
-
-    This ALWAYS reads the original uploaded PGN.
-    */
 
   if (
     pgnIndex.value <
@@ -284,23 +258,12 @@ function nextMove() {
 function prevMove() {
   if (isAnalyzingMove.value) return
 
-  /*
-    ==========================================================
-    EXPLORATION BACKWARD
-    ==========================================================
-    */
-
   if (isExploring.value) {
     if (branchIndex.value > 0) {
       branchIndex.value--
 
       rebuildBranch()
       setBoard()
-
-      /*
-        We are back at the branch position.
-        Show the PGN analysis for that position.
-        */
 
       if (branchIndex.value === 0) {
         if (branchStart.value === 0) {
@@ -327,15 +290,6 @@ function prevMove() {
 
       return
     }
-
-    /*
-      branchIndex === 0
-
-      We are exactly at the PGN branch point.
-
-      Remove exploration and return to
-      the actual PGN position.
-      */
 
     const returnIndex =
       branchStart.value
@@ -364,12 +318,6 @@ function prevMove() {
     return
   }
 
-  /*
-    ==========================================================
-    NORMAL PGN BACKWARD
-    ==========================================================
-    */
-
   if (pgnIndex.value > 0) {
     goToPGN(
       pgnIndex.value - 1
@@ -387,18 +335,6 @@ async function onMove(move) {
 
   const beforeFen =
     chess.fen()
-
-  /*
-    IMPORTANT:
-    Do not add "q" to normal moves.
-
-    e2e4
-    g1f3
-    e1g1
-
-    Promotion:
-    e7e8q
-    */
 
   const moveUci = move.promotion
     ? `${move.from}${move.to}${move.promotion}`
@@ -419,21 +355,6 @@ async function onMove(move) {
     return
   }
 
-  /*
-    ==========================================================
-    START A NEW EXPLORATION
-    ==========================================================
-
-    Example:
-
-    PGN:
-    e4 e5 Nf3 Nc6
-
-    User is at Nf3.
-
-    branchStart = 3
-    */
-
   if (!isExploring.value) {
     branchStart.value =
       pgnIndex.value
@@ -441,12 +362,6 @@ async function onMove(move) {
     branchMoves.value = []
     branchIndex.value = 0
   }
-
-  /*
-    If the user went backward inside a variation
-    and now chooses a different move, delete the
-    old continuation.
-    */
 
   if (
     branchIndex.value <
@@ -480,10 +395,6 @@ async function onMove(move) {
 
     const cacheKey =
       `${beforeFen}_${moveUci}`
-
-    /*
-      Use cached analysis if available.
-      */
 
     if (
       analysisCache.value[cacheKey]
@@ -563,13 +474,6 @@ async function loadMoves(response) {
       response
     )
 
-    /*
-      Your UploadPGNModal emits res.data,
-      NOT the Axios response.
-
-      Handle the array returned by /upload_pgn.
-      */
-
     let game = null
 
     if (Array.isArray(response)) {
@@ -608,12 +512,6 @@ async function loadMoves(response) {
     currentGame.value =
       game
 
-    /*
-      ========================================================
-      READ THE UPLOADED PGN
-      ========================================================
-      */
-
     const pgnChess =
       new Chess()
 
@@ -637,10 +535,6 @@ async function loadMoves(response) {
       return
     }
 
-    /*
-      This is now the permanent PGN main line.
-      */
-
     pgnMoves.value = [
       ...history
     ]
@@ -649,10 +543,6 @@ async function loadMoves(response) {
       "PGN MOVES STORED:",
       pgnMoves.value
     )
-
-    /*
-      Reset everything.
-      */
 
     pgnEvaluations.value = []
     pgnIndex.value = 0
@@ -676,12 +566,6 @@ async function loadMoves(response) {
 
       boardAPI.hideMoves()
     }
-
-    /*
-      ========================================================
-      SEND ORIGINAL PGN TO STOCKFISH BACKEND
-      ========================================================
-      */
 
     const res =
       await fetch(
@@ -723,11 +607,6 @@ async function loadMoves(response) {
     pgnEvaluations.value =
       data.evaluations || []
 
-    /*
-      Start at the beginning of
-      the uploaded PGN.
-      */
-
     goToPGN(0)
 
   } catch (error) {
@@ -740,13 +619,18 @@ async function loadMoves(response) {
 </script>
 
 <template>
-  <div class="text-center">
-    <UploadPGNModal
-      @loaded="loadMoves"
-    />
+  <div class="chessboard-container">
 
+    <!-- Upload -->
+    <div class="upload-container">
+      <UploadPGNModal
+        @loaded="loadMoves"
+      />
+    </div>
+
+    <!-- Top Player -->
     <div class="player">
-      <div class="left">
+      <div class="player-info">
         <div class="name">
           {{ topPlayer.name || "Player" }}
         </div>
@@ -757,7 +641,9 @@ async function loadMoves(response) {
       </div>
     </div>
 
+    <!-- Board -->
     <div class="board-wrapper">
+
       <TheChessboard
         class="board"
         :orientation="orientation"
@@ -772,8 +658,9 @@ async function loadMoves(response) {
         :square="qualityPosition"
       />
 
+      <!-- Bottom Player -->
       <div class="player bottom-player">
-        <div class="left">
+        <div class="player-info">
           <div class="name">
             {{ bottomPlayer.name || "Player" }}
           </div>
@@ -783,10 +670,14 @@ async function loadMoves(response) {
           </div>
         </div>
       </div>
+
     </div>
 
-    <div class="mb-4">
+    <!-- Controls -->
+    <div class="controls">
+
       <v-btn
+        class="control-btn"
         @click="prevMove"
         :disabled="isAnalyzingMove"
       >
@@ -794,17 +685,23 @@ async function loadMoves(response) {
       </v-btn>
 
       <v-btn
+        class="control-btn"
         @click="nextMove"
         :disabled="isAnalyzingMove"
       >
         Forward ➡️
       </v-btn>
 
-      <v-btn @click="flipBoard">
+      <v-btn
+        class="control-btn"
+        @click="flipBoard"
+      >
         🔄 Flip
       </v-btn>
+
     </div>
 
+    <!-- Exploration -->
     <div
       v-if="isExploring"
       class="exploration-status"
@@ -815,51 +712,160 @@ async function loadMoves(response) {
         — Analyzing...
       </span>
     </div>
+
   </div>
 </template>
 
 <style scoped>
+.chessboard-container {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.upload-container {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
 .board-wrapper {
   position: relative;
-  width: fit-content;
-  margin: 20px auto;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .board {
-  width: 600px;
-  max-width: 95vw;
+  width: min(600px, 100%);
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .player {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 600px;
+  width: min(600px, 100%);
+  min-height: 48px;
   margin: 10px auto;
+  padding: 10px 14px;
   background: #8D6E63;
-  padding: 10px;
   border-radius: 8px;
+  box-sizing: border-box;
 }
 
-.player .left {
+.player-info {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .name {
   font-weight: bold;
   font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rating {
+  flex-shrink: 0;
   font-size: 12px;
   color: #aaa;
 }
 
+.bottom-player {
+  margin-top: 10px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin: 16px auto;
+}
+
+.control-btn {
+  min-width: 90px;
+}
+
 .exploration-status {
+  width: 100%;
   margin: 10px auto;
   font-size: 13px;
   opacity: 0.75;
 }
+
+@media (max-width: 960px) {
+  .chessboard-container {
+    max-width: 100%;
+  }
+
+  .board {
+    width: min(600px, 100%);
+  }
+}
+
+@media (max-width: 600px) {
+  .chessboard-container {
+    padding: 0 4px;
+    box-sizing: border-box;
+  }
+
+  .player {
+    min-height: 42px;
+    margin: 7px auto;
+    padding: 8px 10px;
+  }
+
+  .name {
+    font-size: 13px;
+  }
+
+  .rating {
+    font-size: 11px;
+  }
+
+  .controls {
+    gap: 6px;
+    margin: 12px auto;
+  }
+
+  .control-btn {
+    min-width: 82px;
+    font-size: 12px;
+  }
+
+  .exploration-status {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .player {
+    padding: 7px 8px;
+  }
+
+  .player-info {
+    gap: 6px;
+  }
+
+  .name {
+    font-size: 12px;
+  }
+
+  .rating {
+    font-size: 10px;
+  }
+
+  .control-btn {
+    min-width: 75px;
+    padding: 0 8px;
+  }
+}
 </style>
+

@@ -45,7 +45,7 @@ defineProps({
       </template>
 
       <div v-else class="empty-state">
-        <v-icon icon="mdi-brain" size="42" />
+        <!-- <v-icon icon="mdi-brain" size="42" /> -->
         <p>Upload a game to receive coaching feedback.</p>
       </div>
     </v-card-text>

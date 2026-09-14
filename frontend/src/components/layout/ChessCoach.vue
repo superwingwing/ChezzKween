@@ -11,7 +11,7 @@ defineProps({
   <v-card class="coach-card" elevation="4">
     <v-card-title class="coach-header">
       <v-icon icon="mdi-brain" />
-      <span>ChessKween Coach</span>
+      <span>ChessKween</span>
     </v-card-title>
 
     <v-divider />

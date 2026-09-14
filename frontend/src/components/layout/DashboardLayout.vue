@@ -96,14 +96,18 @@ export default {
 }
 
 .app-bar {
-  z-index: 10;
+  z-index: 10 !important;
+  pointer-events: none;
+}
+
+.app-bar :deep(.v-btn) {
+  pointer-events: auto;
 }
 
 .main-content {
   min-height: 100vh;
   width: 100%;
-  /* padding-top: 64px; */
-  padding-top: 0 !important;
-  margin-top: -1px;
+  position: relative;
+  z-index: 1;
 }
 </style>

@@ -43,7 +43,6 @@ const uploadPGN = async () => {
 </script>
 
 <template>
-  <br>
   <v-btn
     color="light-blue-darken-4"
     prepend-icon="mdi-chess-king"

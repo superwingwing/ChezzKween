@@ -58,13 +58,41 @@ const currentQuality = computed(() =>
   currentAnalysis.value?.quality || ""
 )
 
-const qualityPosition = computed(() =>
-  currentAnalysis.value?.to_square || null
-)
+const qualityPosition = computed(() => {
+  const analysis = currentAnalysis.value
+
+  if (!analysis?.move) {
+    console.log("QUALITY POSITION: no move")
+    return null
+  }
+
+  // The analysis.move is the move that was played.
+  // For simple SAN moves such as d4, e5, Nf3, etc.,
+  // the destination is the last square in the move.
+  const move = analysis.move
+
+  const squareMatch = move.match(/[a-h][1-8]$/)
+
+  const square = squareMatch
+    ? squareMatch[0]
+    : null
+
+  console.log("QUALITY POSITION:", square)
+
+  return square
+})
+
 
 function updateAnalysis(analysis) {
+  console.log("========== MOVE QUALITY DEBUG ==========")
+  console.log("FULL ANALYSIS:", analysis)
+  console.log("QUALITY:", analysis?.quality)
+  console.log("MOVE:", analysis?.move)
+  console.log("TO SQUARE:", analysis?.to_square)
+  console.log("EVALUATION:", analysis?.evaluation)
+  console.log("BEST MOVE:", analysis?.best_move)
+  console.log("========================================")
   currentAnalysis.value = analysis || null
-
   if (!analysis) {
     evalScore.value = 0
     emit("update-eval", 0)
@@ -764,6 +792,7 @@ async function loadMoves(response) {
   width: 100%;
   margin: 0;
   padding: 0;
+  position: relative; /* ADD THIS ONLY */
 }
 
 .board {

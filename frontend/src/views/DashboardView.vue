@@ -2,11 +2,9 @@
 import { ref } from 'vue'
 import StyleClassification from '@/components/layout/StyleClassification.vue'
 import ChessboardView from '@/components/layout/ChessboardView.vue'
-import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
 import ChessCoach from '@/components/layout/ChessCoach.vue'
 
 const STDrawer = ref(true)
-const evalScore = ref(0)
 const coachData = ref(null)
 </script>
 
@@ -26,15 +24,8 @@ const coachData = ref(null)
         <div class="chess-wrap">
 
           <ChessboardView
-            @update-eval="evalScore = $event"
             @update-coach="coachData = $event"
           />
-
-          <div class="eval-wrapper">
-            <EvaluationBarView
-              :score="evalScore"
-            />
-          </div>
 
         </div>
       </v-col>
@@ -70,15 +61,11 @@ const coachData = ref(null)
 
 .chess-wrap {
   display: flex;
-  align-items: stretch;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 0;
   width: 100%;
 }
 
-.eval-wrapper {
-  /* margin-top: 105px; */
-  margin-top: 0;
-}
 
 .panel-spacing {
   height: 20px;
@@ -92,10 +79,6 @@ const coachData = ref(null)
   .chess-wrap {
     gap: 5px;
   }
-
-  .eval-wrapper {
-    margin-top: 50px;
-  }
 }
 
 @media (max-width: 600px) {
@@ -105,10 +88,6 @@ const coachData = ref(null)
 
   .chess-wrap {
     gap: 3px;
-  }
-
-  .eval-wrapper {
-    margin-top: 30px;
   }
 }
 </style>

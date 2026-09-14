@@ -5,22 +5,20 @@ import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
 import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
 import MoveQuality from "@/components/layout/MoveQuality.vue"
+import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
 
 const chess = new Chess()
 let boardAPI = null
-
+const evalScore = ref(0) //for the evaluation bar
 const pgnMoves = ref([])
 const pgnEvaluations = ref([])
 const pgnIndex = ref(0)
-
 const branchMoves = ref([])
 const branchIndex = ref(0)
 const branchStart = ref(null)
-
 const currentGame = ref(null)
 const currentAnalysis = ref(null)
 const analysisCache = ref({})
-
 const orientation = ref("white")
 const isNavigating = ref(false)
 const isAnalyzingMove = ref(false)
@@ -68,6 +66,7 @@ function updateAnalysis(analysis) {
   currentAnalysis.value = analysis || null
 
   if (!analysis) {
+    evalScore.value = 0
     emit("update-eval", 0)
     emit("update-coach", null)
 
@@ -78,15 +77,10 @@ function updateAnalysis(analysis) {
     return
   }
 
-  emit(
-    "update-eval",
-    Number(analysis.evaluation || 0)
-  )
+  evalScore.value = Number(analysis.evaluation || 0)
 
-  emit(
-    "update-coach",
-    analysis
-  )
+  emit("update-eval", evalScore.value)
+  emit("update-coach", analysis)
 
   if (
     boardAPI &&
@@ -641,33 +635,41 @@ async function loadMoves(response) {
 
     <!-- Board -->
     <div class="board-wrapper">
+        <!-- Chessboard + Evaluation Bar -->
+        <div class="board-row">
 
-      <TheChessboard
-        class="board"
-        :orientation="orientation"
-        @move="onMove"
-        @board-created="(api) => (boardAPI = api)"
-      />
+          <TheChessboard
+            class="board"
+            :orientation="orientation"
+            @move="onMove"
+            @board-created="(api) => (boardAPI = api)"
+          />
 
-      <MoveQuality
-        :quality="currentQuality"
-        :square="qualityPosition"
-      />
+          <EvaluationBarView
+            class="evaluation-bar"
+            :score="evalScore"
+          />
 
-      <!-- Bottom Player -->
-      <div class="player bottom-player">
-        <div class="player-info">
-          <span class="name">
-            {{ bottomPlayer.name || "Player" }}
-          </span>
+          <MoveQuality
+            :quality="currentQuality"
+            :square="qualityPosition"
+          />
 
-          <span class="rating">
-            {{ bottomPlayer.elo || "--" }}
-          </span>
         </div>
-      </div>
 
-    </div>
+        <!-- Bottom Player -->
+        <div class="player bottom-player">
+          <div class="player-info">
+            <span class="name">
+              {{ bottomPlayer.name || "Player" }}
+            </span>
+
+            <span class="rating">
+              {{ bottomPlayer.elo || "--" }}
+            </span>
+          </div>
+        </div>
+   </div>
 
     <!-- Controls -->
     <div class="controls">
@@ -746,11 +748,19 @@ async function loadMoves(response) {
 }
 
 /* =========================================
-   BOARD
+   BOARD + EVALUATION BAR
 ========================================= */
 
 .board-wrapper {
-  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.board-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -760,8 +770,20 @@ async function loadMoves(response) {
   display: block;
   width: min(600px, 100%);
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
+  flex: 0 1 600px;
+}
+
+/* Evaluation bar */
+.evaluation-bar {
+  width: 18px;
+  min-width: 18px;
+  flex: 0 0 18px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
 }
 
 /* =========================================
@@ -774,12 +796,11 @@ async function loadMoves(response) {
 
   width: min(600px, 100%);
 
-  /* THINNER */
-  height: 32px;
-  min-height: 32px;
+  height: 30px;
+  min-height: 30px;
 
-  margin: 3px auto;
-  padding: 4px 10px;
+  margin: 2px auto;
+  padding: 3px 9px;
 
   box-sizing: border-box;
 
@@ -795,7 +816,7 @@ async function loadMoves(response) {
   display: flex;
   align-items: center;
 
-  gap: 8px;
+  gap: 7px;
 
   min-width: 0;
   width: 100%;
@@ -810,7 +831,7 @@ async function loadMoves(response) {
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1;
 }
@@ -820,7 +841,7 @@ async function loadMoves(response) {
 .rating {
   flex-shrink: 0;
 
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
 
   color: rgba(255, 255, 255, 0.75);
@@ -829,7 +850,7 @@ async function loadMoves(response) {
 /* Bottom player */
 
 .bottom-player {
-  margin: 3px auto 0;
+  margin: 2px auto 0;
 }
 
 /* =========================================
@@ -847,7 +868,7 @@ async function loadMoves(response) {
 
   width: 100%;
 
-  margin: 6px auto 0;
+  margin: 5px auto 0;
   padding: 0;
 }
 
@@ -866,7 +887,7 @@ async function loadMoves(response) {
 .exploration-status {
   width: 100%;
 
-  margin: 5px auto 0;
+  margin: 4px auto 0;
   padding: 0;
 
   font-size: 12px;
@@ -887,11 +908,16 @@ async function loadMoves(response) {
     width: min(600px, 100%);
   }
 
-  .player {
-    height: 30px;
-    min-height: 30px;
+  .evaluation-bar {
+    width: 16px;
+    min-width: 16px;
+    flex-basis: 16px;
+  }
 
-    padding: 3px 9px;
+  .player {
+    height: 29px;
+    min-height: 29px;
+    padding: 3px 8px;
   }
 
   .name {
@@ -918,15 +944,30 @@ async function loadMoves(response) {
   }
 
   .upload-container {
-    margin-bottom: 3px;
+    margin-bottom: 2px;
+  }
+
+  .board-row {
+    width: 100%;
+  }
+
+  .board {
+    width: calc(100% - 14px);
+    flex: 1 1 auto;
+  }
+
+  .evaluation-bar {
+    width: 14px;
+    min-width: 14px;
+    flex: 0 0 14px;
   }
 
   .player {
-    height: 28px;
-    min-height: 28px;
+    height: 27px;
+    min-height: 27px;
 
     margin: 2px auto;
-    padding: 3px 8px;
+    padding: 3px 7px;
 
     border-radius: 4px;
   }
@@ -949,19 +990,18 @@ async function loadMoves(response) {
 
   .controls {
     gap: 4px;
-    margin-top: 5px;
+    margin-top: 4px;
   }
 
   .control-btn {
     min-width: 75px;
     height: 30px !important;
-
     font-size: 11px;
   }
 
   .exploration-status {
     font-size: 11px;
-    margin-top: 4px;
+    margin-top: 3px;
   }
 }
 
@@ -974,9 +1014,19 @@ async function loadMoves(response) {
     padding: 0;
   }
 
+  .board {
+    width: calc(100% - 12px);
+  }
+
+  .evaluation-bar {
+    width: 12px;
+    min-width: 12px;
+    flex-basis: 12px;
+  }
+
   .player {
-    height: 26px;
-    min-height: 26px;
+    height: 25px;
+    min-height: 25px;
 
     padding: 2px 6px;
   }
@@ -996,7 +1046,6 @@ async function loadMoves(response) {
   .control-btn {
     min-width: 70px;
     height: 28px !important;
-
     font-size: 10px;
   }
 }

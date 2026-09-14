@@ -102,6 +102,8 @@ export default {
 .main-content {
   min-height: 100vh;
   width: 100%;
-  padding-top: 64px;
+  /* padding-top: 64px; */
+  padding-top: 0 !important;
+  margin-top: -1px;
 }
 </style>

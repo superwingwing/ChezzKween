@@ -623,21 +623,19 @@ async function loadMoves(response) {
 
     <!-- Upload -->
     <div class="upload-container">
-      <UploadPGNModal
-        @loaded="loadMoves"
-      />
+      <UploadPGNModal @loaded="loadMoves" />
     </div>
 
     <!-- Top Player -->
     <div class="player">
       <div class="player-info">
-        <div class="name">
+        <span class="name">
           {{ topPlayer.name || "Player" }}
-        </div>
+        </span>
 
-        <div class="rating">
+        <span class="rating">
           {{ topPlayer.elo || "--" }}
-        </div>
+        </span>
       </div>
     </div>
 
@@ -648,9 +646,7 @@ async function loadMoves(response) {
         class="board"
         :orientation="orientation"
         @move="onMove"
-        @board-created="
-          (api) => (boardAPI = api)
-        "
+        @board-created="(api) => (boardAPI = api)"
       />
 
       <MoveQuality
@@ -661,13 +657,13 @@ async function loadMoves(response) {
       <!-- Bottom Player -->
       <div class="player bottom-player">
         <div class="player-info">
-          <div class="name">
+          <span class="name">
             {{ bottomPlayer.name || "Player" }}
-          </div>
+          </span>
 
-          <div class="rating">
+          <span class="rating">
             {{ bottomPlayer.elo || "--" }}
-          </div>
+          </span>
         </div>
       </div>
 
@@ -678,6 +674,9 @@ async function loadMoves(response) {
 
       <v-btn
         class="control-btn"
+        color="light-blue-darken-4"
+        size="small"
+        variant="flat"
         @click="prevMove"
         :disabled="isAnalyzingMove"
       >
@@ -686,6 +685,9 @@ async function loadMoves(response) {
 
       <v-btn
         class="control-btn"
+        color="light-blue-darken-4"
+        size="small"
+        variant="flat"
         @click="nextMove"
         :disabled="isAnalyzingMove"
       >
@@ -694,6 +696,9 @@ async function loadMoves(response) {
 
       <v-btn
         class="control-btn"
+        color="light-blue-darken-4"
+        size="small"
+        variant="flat"
         @click="flipBoard"
       >
         🔄 Flip
@@ -717,88 +722,161 @@ async function loadMoves(response) {
 </template>
 
 <style scoped>
+/* =========================================
+   MAIN CONTAINER
+========================================= */
+
 .chessboard-container {
   width: 100%;
   max-width: 620px;
   margin: 0 auto;
+  padding: 0;
   text-align: center;
+  box-sizing: border-box;
 }
+
+/* =========================================
+   UPLOAD
+========================================= */
 
 .upload-container {
   width: 100%;
-  margin-bottom: 10px;
+  margin: 0 0 4px;
+  padding: 0;
 }
+
+/* =========================================
+   BOARD
+========================================= */
 
 .board-wrapper {
   position: relative;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
+  padding: 0;
 }
 
 .board {
+  display: block;
   width: min(600px, 100%);
   max-width: 100%;
   margin: 0 auto;
+  padding: 0;
 }
+
+/* =========================================
+   PLAYER BAR
+========================================= */
 
 .player {
   display: flex;
   align-items: center;
+
   width: min(600px, 100%);
-  min-height: 48px;
-  margin: 10px auto;
-  padding: 10px 14px;
-  background: #8D6E63;
-  border-radius: 8px;
+
+  /* THINNER */
+  height: 32px;
+  min-height: 32px;
+
+  margin: 3px auto;
+  padding: 4px 10px;
+
   box-sizing: border-box;
+
+  background: #01579B;
+  color: white;
+
+  border-radius: 5px;
 }
+
+/* Player information */
 
 .player-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+
+  gap: 8px;
+
   min-width: 0;
-  max-width: 100%;
+  width: 100%;
 }
 
+/* Player name */
+
 .name {
-  font-weight: bold;
-  font-size: 14px;
+  min-width: 0;
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
 }
+
+/* Rating */
 
 .rating {
   flex-shrink: 0;
-  font-size: 12px;
-  color: #aaa;
+
+  font-size: 11px;
+  line-height: 1;
+
+  color: rgba(255, 255, 255, 0.75);
 }
 
+/* Bottom player */
+
 .bottom-player {
-  margin-top: 10px;
+  margin: 3px auto 0;
 }
+
+/* =========================================
+   CONTROLS
+========================================= */
 
 .controls {
   display: flex;
   justify-content: center;
   align-items: center;
+
   flex-wrap: wrap;
-  gap: 8px;
+
+  gap: 5px;
+
   width: 100%;
-  margin: 16px auto;
+
+  margin: 6px auto 0;
+  padding: 0;
 }
 
 .control-btn {
-  min-width: 90px;
+  min-width: 82px;
+  height: 32px !important;
+
+  font-size: 12px;
+  text-transform: none;
 }
+
+/* =========================================
+   EXPLORATION
+========================================= */
 
 .exploration-status {
   width: 100%;
-  margin: 10px auto;
-  font-size: 13px;
+
+  margin: 5px auto 0;
+  padding: 0;
+
+  font-size: 12px;
+
   opacity: 0.75;
 }
+
+/* =========================================
+   TABLET
+========================================= */
 
 @media (max-width: 960px) {
   .chessboard-container {
@@ -808,50 +886,12 @@ async function loadMoves(response) {
   .board {
     width: min(600px, 100%);
   }
-}
-
-@media (max-width: 600px) {
-  .chessboard-container {
-    padding: 0 4px;
-    box-sizing: border-box;
-  }
 
   .player {
-    min-height: 42px;
-    margin: 7px auto;
-    padding: 8px 10px;
-  }
+    height: 30px;
+    min-height: 30px;
 
-  .name {
-    font-size: 13px;
-  }
-
-  .rating {
-    font-size: 11px;
-  }
-
-  .controls {
-    gap: 6px;
-    margin: 12px auto;
-  }
-
-  .control-btn {
-    min-width: 82px;
-    font-size: 12px;
-  }
-
-  .exploration-status {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 400px) {
-  .player {
-    padding: 7px 8px;
-  }
-
-  .player-info {
-    gap: 6px;
+    padding: 3px 9px;
   }
 
   .name {
@@ -862,10 +902,102 @@ async function loadMoves(response) {
     font-size: 10px;
   }
 
+  .controls {
+    margin-top: 5px;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .chessboard-container {
+    width: 100%;
+    padding: 0 2px;
+  }
+
+  .upload-container {
+    margin-bottom: 3px;
+  }
+
+  .player {
+    height: 28px;
+    min-height: 28px;
+
+    margin: 2px auto;
+    padding: 3px 8px;
+
+    border-radius: 4px;
+  }
+
+  .player-info {
+    gap: 6px;
+  }
+
+  .name {
+    font-size: 11px;
+  }
+
+  .rating {
+    font-size: 9px;
+  }
+
+  .bottom-player {
+    margin-top: 2px;
+  }
+
+  .controls {
+    gap: 4px;
+    margin-top: 5px;
+  }
+
   .control-btn {
     min-width: 75px;
-    padding: 0 8px;
+    height: 30px !important;
+
+    font-size: 11px;
+  }
+
+  .exploration-status {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+}
+
+/* =========================================
+   VERY SMALL PHONES
+========================================= */
+
+@media (max-width: 400px) {
+  .chessboard-container {
+    padding: 0;
+  }
+
+  .player {
+    height: 26px;
+    min-height: 26px;
+
+    padding: 2px 6px;
+  }
+
+  .player-info {
+    gap: 5px;
+  }
+
+  .name {
+    font-size: 10px;
+  }
+
+  .rating {
+    font-size: 8px;
+  }
+
+  .control-btn {
+    min-width: 70px;
+    height: 28px !important;
+
+    font-size: 10px;
   }
 }
 </style>
-

@@ -65,7 +65,7 @@ const coachData = ref(null)
   width: 100%;
   max-width: 1800px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 4px !important;
 }
 
 .chess-wrap {
@@ -76,7 +76,8 @@ const coachData = ref(null)
 }
 
 .eval-wrapper {
-  margin-top: 105px;
+  /* margin-top: 105px; */
+  margin-top: 0;
 }
 
 .panel-spacing {

@@ -18,12 +18,9 @@ export default {
 
   setup() {
     const { mdAndUp } = useDisplay()
-
     const isLargeScreen = computed(() => mdAndUp.value)
-
     const navigationDrawer = ref(isLargeScreen.value)
     const STDrawer = ref(isLargeScreen.value)
-
     const evalScore = ref(0)
     const coachData = ref(null)
 

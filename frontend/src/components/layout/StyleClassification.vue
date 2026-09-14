@@ -1,212 +1,248 @@
 <script setup>
-      import { ref } from "vue"
-      const fileInput = ref(null)
-      const folderInput = ref(null)
-      const selectedFiles = ref([])
-      const uploading = ref(false)
-      const progress = ref(0)
-      const browseFiles = () => {
-        fileInput.value.click()
-      }
-      const browseFolder = () => {
-        folderInput.value.click()
-      }
-      const selectFiles = (event) => {
-        const files = Array.from(event.target.files)
-        selectedFiles.value.push(...files)
-        console.log(selectedFiles.value)
-      }
-      const uploadFiles = async () => {
-        if (selectedFiles.value.length === 0) {
-          alert("Please select PGN files.")
-          return
-        }
-        uploading.value = true
-        progress.value = 0
-        const formData = new FormData()
-        selectedFiles.value.forEach(file => {
-          formData.append("files", file)
-        })
-        // Fake progress while waiting
-        const timer = setInterval(() => {
-          if (progress.value < 95) {
-            progress.value += 5
-          }
-        }, 300)
-        try {
-          const response = await fetch(
-            "http://127.0.0.1:8000/upload_style",
-            {
-              method: "POST",
-              body: formData
-            }
-          )
-          clearInterval(timer)
-          progress.value = 100
-          const result = await response.json()
-          console.log(result)
-          alert(`${result.games_uploaded} games uploaded`)
-          setTimeout(() => {
-            uploading.value = false
-            progress.value = 0
-          }, 800)
-        } catch (error) {
-          clearInterval(timer)
-          uploading.value = false
-          progress.value = 0
-          console.error(error)
-        }
-    }
+import { ref } from "vue"
+
+const fileInput = ref(null)
+const folderInput = ref(null)
+const selectedFiles = ref([])
+const uploading = ref(false)
+const progress = ref(0)
+const browseFiles = () => fileInput.value?.click()
+const browseFolder = () => folderInput.value?.click()
+
+const selectFiles = (event) => {
+  const files = Array.from(event.target.files || [])
+  selectedFiles.value.push(...files)
+  event.target.value = ""
+}
+
+const uploadFiles = async () => {
+  if (!selectedFiles.value.length) {
+    alert("Please select PGN files.")
+    return
+  }
+
+  uploading.value = true
+  progress.value = 0
+
+  const formData = new FormData()
+  selectedFiles.value.forEach(file => formData.append("files", file))
+
+  const timer = setInterval(() => {
+    if (progress.value < 95) progress.value += 5
+  }, 300)
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/upload_style", {
+      method: "POST",
+      body: formData
+    })
+
+    clearInterval(timer)
+    progress.value = 100
+
+    const result = await response.json()
+
+    console.log(result)
+    alert(`${result.games_uploaded} games uploaded`)
+
+    setTimeout(() => {
+      uploading.value = false
+      progress.value = 0
+      selectedFiles.value = []
+    }, 800)
+  } catch (error) {
+    clearInterval(timer)
+    uploading.value = false
+    progress.value = 0
+    console.error(error)
+    alert("Failed to upload PGN files.")
+  }
+}
 </script>
 
 <template>
-    <br><br>
-    <div class="card">
-        <h2>
-          Style Classifier
-        </h2>
-        <div class="drop-zone">
-          <div class="icon">
-            📄⬆️
-          </div>
-          <p>
-             <strong class="browse" @click="browseFiles">
-              Select PGN Files
-            </strong>
-            <br>
-                 or
-            <br>
-            <strong class="browse" @click="browseFolder">
-              Select Folder
-            </strong>
-          </p>
-          <p v-if="selectedFiles.length">
-            {{ selectedFiles.length }} PGN file(s) selected
-          </p>
+  <v-card class="classifier-card" elevation="6">
+    <v-card-title class="text-center classifier-title">
+      <v-icon icon="mdi-chess-queen" class="mr-2" />
+      Style Classifier
+    </v-card-title>
 
-          <!-- Select Multiple PGN Files -->
-          <input
-            ref="fileInput"
-            type="file"
-            accept=".pgn"
-            multiple
-            @change="selectFiles"
-            style="display:none"
-          />
-          <!-- Select Folder -->
-          <input
-            ref="folderInput"
-            type="file"
-            accept=".pgn"
-            webkitdirectory
-            directory
-            multiple
-            @change="selectFiles"
-            style="display:none"
-          />
+    <v-card-text class="classifier-content">
+      <div class="drop-zone" @click="browseFiles">
+        <v-icon
+          icon="mdi-file-upload-outline"
+          size="42"
+          class="upload-icon"
+        />
+
+        <div class="upload-text">
+          <strong @click.stop="browseFiles">Select PGN Files</strong>
+          <span>or</span>
+          <strong @click.stop="browseFolder">Select Folder</strong>
         </div>
-        <button
-            class="upload-btn"
-            @click="uploadFiles"
-            :disabled="uploading"
-          >
-            {{ uploading ? `Uploading... ${progress}%` : "Upload" }}
-        </button>
 
-          <div
-            v-if="uploading"
-            class="progress-container"
-          >
-            <div
-              class="progress-bar"
-              :style="{ width: progress + '%' }"
-            ></div>
-          </div>
-          <p class="subtitle">
-            Analyze a collection of your Chess Games.
-          </p>
-    </div>
+        <div v-if="selectedFiles.length" class="file-count">
+          <v-icon icon="mdi-file-multiple-outline" size="16" />
+          {{ selectedFiles.length }} PGN file(s) selected
+        </div>
+      </div>
+
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".pgn"
+        multiple
+        hidden
+        @change="selectFiles"
+      />
+
+      <input
+        ref="folderInput"
+        type="file"
+        accept=".pgn"
+        webkitdirectory
+        directory
+        multiple
+        hidden
+        @change="selectFiles"
+      />
+
+      <v-btn
+        block
+        color="white"
+        class="upload-btn"
+        :loading="uploading"
+        :disabled="uploading || !selectedFiles.length"
+        @click="uploadFiles"
+      >
+        {{ uploading ? `Uploading ${progress}%` : "Upload Games" }}
+      </v-btn>
+
+      <v-progress-linear
+        v-if="uploading"
+        :model-value="progress"
+        color="white"
+        bg-color="white"
+        bg-opacity=".25"
+        rounded
+        height="6"
+        class="progress"
+      />
+
+      <div class="subtitle">
+        Analyze a collection of your chess games.
+      </div>
+    </v-card-text>
+  </v-card>
 </template>
 
 <style scoped>
-    .card {
-      width: 320px;
-      padding: 20px;
-      border-radius: 20px;
-      background: #01579B;
-      color:white;
-      text-align:center;
-      box-shadow:0 10px 25px rgba(0,0,0,0.2);
-    }
+.classifier-card {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 18px;
+  background: #01579b;
+  color: white;
+  overflow: hidden;
+}
 
-    h2 {
-      font-size:18px;
-      margin-bottom:15px;
-    }
+.classifier-title {
+  padding: 14px 16px 8px;
+  font-size: 18px;
+  font-weight: 700;
+}
 
-    .drop-zone {
-      border:2px dashed rgba(255,255,255,0.6);
-      border-radius:15px;
-      padding:25px;
-      cursor:pointer;
-    }
+.classifier-content {
+  padding: 10px 16px 14px;
+}
 
-    .drop-zone:hover {
-      background:rgba(255,255,255,0.1);
-    }
+.drop-zone {
+  border: 2px dashed rgba(255,255,255,.55);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: .2s ease;
+}
 
-    .icon {
-      font-size:40px;
-      margin-bottom:10px;
-    }
+.drop-zone:hover {
+  background: rgba(255,255,255,.08);
+  border-color: white;
+}
 
+.upload-icon {
+  margin-bottom: 4px;
+}
 
+.upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
 
-    .browse {
-      text-decoration:underline;
-      cursor:pointer;
-    }
+.upload-text strong {
+  text-decoration: underline;
+  cursor: pointer;
+}
 
-    .upload-btn {
-      margin-top:15px;
-      width:100%;
-      padding:10px;
-      border:none;
-      border-radius:12px;
-      background:white;
-      color:#01579B;
-      font-weight:bold;
-      cursor:pointer;
-    }
+.upload-text span {
+  opacity: .8;
+  font-size: 11px;
+}
 
-    .upload-btn:hover {
-      background:#f0f0f0;
-    }
+.file-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 11px;
+  opacity: .9;
+}
 
-    .subtitle {
-      margin-top:10px;
-      font-size:12px;
-      opacity:0.8;
-    }
+.upload-btn {
+  margin-top: 10px;
+  min-height: 38px;
+  color: #01579b !important;
+  font-weight: 700;
+  text-transform: none;
+  border-radius: 10px;
+}
 
-    .progress-container{
-      margin-top:15px;
-      width:100%;
-      height:12px;
-      background:rgba(255,255,255,.3);
-      border-radius:20px;
-      overflow:hidden;
-    }
+.progress {
+  margin-top: 9px;
+}
 
-    .progress-bar{
-      height:100%;
-      width:0%;
-      background:#ffffff;
-      transition:width .3s ease;
-    }
+.subtitle {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 11px;
+  opacity: .75;
+}
 
-    .upload-btn:disabled{
-      opacity:.7;
-      cursor:not-allowed;
-    }
+@media (max-width: 960px) {
+  .classifier-card {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .classifier-card {
+    border-radius: 14px;
+  }
+
+  .classifier-title {
+    font-size: 16px;
+    padding: 11px 12px 6px;
+  }
+
+  .classifier-content {
+    padding: 8px 12px 12px;
+  }
+
+  .drop-zone {
+    padding: 12px 8px;
+  }
+}
 </style>

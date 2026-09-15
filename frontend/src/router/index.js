@@ -10,12 +10,12 @@ const routes = [
   {
     path: '/',
     name: 'login',
-    component: LoginView
+    component: LoginView,
   },
   {
     path: '/register',
     name: 'register',
-    component: RegisterView
+    component: RegisterView,
   },
   {
     path: '/',
@@ -24,20 +24,26 @@ const routes = [
       {
         path: 'dashboard',
         name: 'dashboard',
-        component: DashboardView
+        component: DashboardView,
       },
       {
         path: 'profile',
         name: 'profile',
-        component: ProfileView
+        component: ProfileView,
       },
       {
         path: 'about',
         name: 'about',
-        component: AboutView
-      }
-    ]
-  }
+        component: AboutView,
+      },
+      // 404 ROUTE — KEEP THIS LAST
+      {
+        path: '/:pathMatch(.*)*',
+        name: 'not-found',
+        component: () => import('@/views/system/NotFoundView.vue'),
+      },
+    ],
+  },
 ]
 
 const router = createRouter({

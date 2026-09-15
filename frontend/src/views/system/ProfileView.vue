@@ -7,7 +7,7 @@
     const profile = reactive({
       username: "",
       email: "",
-      rating: 1200,
+      rating: 2200,
       style: "Aggressive",
       memberSince: "September 2026",
       avatar: null

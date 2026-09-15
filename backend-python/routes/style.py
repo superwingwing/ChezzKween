@@ -1,6 +1,6 @@
 from ml.feature_extractor import extract_features
 from ml.predict import predict_features
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form
 from supabase import create_client
 from dotenv import load_dotenv
 import chess.pgn
@@ -36,7 +36,8 @@ def extract_moves(game):
 # Upload Style PGNs
 @router.post("/upload_style")
 async def upload_style(
-    files: list[UploadFile] = File(...)
+    files: list[UploadFile] = File(...),
+    user_id: str = Form(...)
 ):
 
     upload_session_id = str(uuid.uuid4())
@@ -78,6 +79,7 @@ async def upload_style(
                     # Upload Information
                     features["upload_session_id"] = upload_session_id
                     features["game_number"] = game_number
+                    features["user_id"] = user_id
                     # Uncomment if your table has this column
                     # features["user_id"] = "<current_user_uuid>"
                     # Save to Supabase

@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from "vue"
+import { supabase } from "@/utils/supabase"
+
 
 const fileInput = ref(null)
 const folderInput = ref(null)
@@ -21,11 +23,23 @@ const uploadFiles = async () => {
     return
   }
 
+  // Get the currently logged-in Supabase user
+  const { data: { user }, error: userError } =
+    await supabase.auth.getUser()
+
+  if (userError || !user) {
+    alert("You must be logged in to upload games.")
+    return
+  }
+
+
   uploading.value = true
   progress.value = 0
 
   const formData = new FormData()
   selectedFiles.value.forEach(file => formData.append("files", file))
+  console.log("Logged-in User ID:", user.id)
+  formData.append("user_id", user.id)
 
   const timer = setInterval(() => {
     if (progress.value < 95) progress.value += 5

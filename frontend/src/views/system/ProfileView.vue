@@ -3,7 +3,7 @@
     import { supabase } from "@/utils/supabase"
 
     const profile = reactive({
-      username: "Super WingWing",
+      username: "",
       email: "",
       rating: 1200,
       style: "Aggressive",
@@ -19,6 +19,7 @@
       }
       if (user) {
         profile.email = user.email
+        profile.username = user.user_metadata.username
       }
     })
 

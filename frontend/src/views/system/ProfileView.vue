@@ -1,6 +1,7 @@
 <script setup>
-    import { ref, reactive } from "vue"
+    import { ref, reactive, onMounted } from "vue"
     import { useAuthStore } from "@/stores/authUser"
+    import { supabase } from "@/utils/supabase"
 
     const authStore = useAuthStore()
 
@@ -8,7 +9,7 @@
       username: "",
       email: "",
       rating: 2200,
-      style: "Aggressive",
+      // style: "Aggressive",
       memberSince: "September 2026",
       avatar: null
     })
@@ -19,28 +20,7 @@
       profile.email = authStore.user.email || ""
     }
 
-    const statistics = [
-      {
-        label: "Games Analyzed",
-        value: 24,
-        icon: "mdi-chess-pawn"
-      },
-      {
-        label: "Wins",
-        value: 15,
-        icon: "mdi-trophy-outline"
-      },
-      {
-        label: "Losses",
-        value: 6,
-        icon: "mdi-chart-line"
-      },
-      {
-        label: "Draws",
-        value: 3,
-        icon: "mdi-equal"
-      }
-    ]
+   
 
     const recentGames = [
       {
@@ -73,7 +53,67 @@
       }
     ]
 
-    const styleConfidence = 82
+    const aggressivePercentage = ref(0)
+    const positionalPercentage = ref(0)
+    const totalGames = ref(0)
+
+        async function loadStylePercentages() {
+          if (!authStore.user) return
+
+          const { data, error } = await supabase
+            .from("style")
+            .select("predicted_style")
+            .eq("user_id", authStore.user.id)
+
+          if (error) {
+            console.error("Error loading style percentages:", error)
+            return
+          }
+
+          const aggressive = data.filter(
+            game => game.predicted_style === "Aggressive"
+          ).length
+
+          const positional = data.filter(
+            game => game.predicted_style === "Positional"
+          ).length
+
+          totalGames.value = data.length
+
+          if (totalGames.value > 0) {
+            aggressivePercentage.value = Math.round(
+              (aggressive / totalGames.value) * 100
+            )
+
+            positionalPercentage.value = Math.round(
+              (positional / totalGames.value) * 100
+            )
+          }
+        }
+
+     const statistics = [
+      {
+        label: "Games Analyzed",
+        value: totalGames,
+        icon: "mdi-chess-pawn"
+      },
+      {
+        label: "Wins",
+        value: 15,
+        icon: "mdi-trophy-outline"
+      },
+      {
+        label: "Losses",
+        value: 6,
+        icon: "mdi-chart-line"
+      },
+      {
+        label: "Draws",
+        value: 3,
+        icon: "mdi-equal"
+      }
+    ]
+
 
     const styleDescription =
       "Your games show a strong preference for active and attacking positions, including king pressure, tactical opportunities, and active piece coordination."
@@ -122,7 +162,11 @@
       if (rating > 0) return "rating-positive"
       if (rating < 0) return "rating-negative"
       return "rating-neutral"
-    }
+}
+
+    onMounted(() => {
+      loadStylePercentages()
+    })
 </script>
 
 <template>
@@ -338,7 +382,7 @@
                   </v-list-item-title>
 
                   <v-list-item-subtitle>
-                    {{ profile.style }}
+                    {{ aggressivePercentage }}% Aggressive, {{ positionalPercentage }}% Positional
                   </v-list-item-subtitle>
                 </v-list-item>
               </v-list>
@@ -362,28 +406,58 @@
 
               <v-card-text class="pa-6">
 
-                <div class="style-header">
-                  <v-avatar
-                    color="primary"
-                    variant="tonal"
-                    size="58"
-                  >
-                    <v-icon size="30">
-                      mdi-fire
-                    </v-icon>
-                  </v-avatar>
+                
+        <div class="style-header">
+  <v-avatar
+    color="primary"
+    variant="tonal"
+    size="58"
+  >
+    <v-icon size="30">
+      mdi-chess-queen
+    </v-icon>
+  </v-avatar>
 
-                  <div>
-                    <div class="style-name">
-                      {{ profile.style }}
-                    </div>
+  <div>
+    <div class="style-name">
+      Playing Style Distribution
+    </div>
 
-                    <div class="style-confidence">
-                      {{ styleConfidence }}% confidence
-                    </div>
-                  </div>
-                </div>
+    <div class="style-confidence">
+      Based on {{ totalGames }} games
+    </div>
+  </div>
+</div>
 
+<!-- Aggressive -->
+<div class="mt-6">
+  <div class="d-flex justify-space-between mb-2">
+    <span>Aggressive</span>
+    <strong>{{ aggressivePercentage }}%</strong>
+  </div>
+
+  <v-progress-linear
+    :model-value="aggressivePercentage"
+    color="primary"
+    height="8"
+    rounded
+  />
+</div>
+
+<!-- Positional -->
+<div class="mt-5">
+  <div class="d-flex justify-space-between mb-2">
+    <span>Positional</span>
+    <strong>{{ positionalPercentage }}%</strong>
+  </div>
+
+  <v-progress-linear
+    :model-value="positionalPercentage"
+    color="primary"
+    height="8"
+    rounded
+  />
+</div>
                 <v-progress-linear
                   :model-value="styleConfidence"
                   color="primary"

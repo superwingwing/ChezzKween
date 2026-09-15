@@ -27,7 +27,6 @@
         }
 
     const emit = defineEmits(["update:modelValue"])
-
     const router = useRouter()
     const currentRoute = ref(router.currentRoute.value.name)
 
@@ -45,10 +44,8 @@
 
     const onLogout = async () => {
       await supabase.auth.signOut()
-
       const authStore = useAuthStore()
       authStore.logout()
-
       router.replace("/")
     }
 </script>

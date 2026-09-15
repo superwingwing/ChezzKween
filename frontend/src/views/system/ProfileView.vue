@@ -1,6 +1,8 @@
 <script setup>
-    import { ref, reactive, onMounted } from "vue"
-    import { supabase } from "@/utils/supabase"
+    import { ref, reactive } from "vue"
+    import { useAuthStore } from "@/stores/authUser"
+
+    const authStore = useAuthStore()
 
     const profile = reactive({
       username: "",
@@ -11,17 +13,11 @@
       avatar: null
     })
 
-    onMounted(async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (error) {
-        console.error("Error getting user:", error)
-        return
-      }
-      if (user) {
-        profile.email = user.email
-        profile.username = user.user_metadata.username
-      }
-    })
+        //come from  the data in authuser.js
+      if (authStore.user) {
+      profile.username = authStore.user.user_metadata?.username || ""
+      profile.email = authStore.user.email || ""
+    }
 
     const statistics = [
       {
@@ -163,7 +159,7 @@
                   </div>
 
                   <h1 class="profile-name">
-                    {{ profile.username }}
+                    {{ authStore.user?.user_metadata?.username }}
                   </h1>
 
                   <p class="profile-email">

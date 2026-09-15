@@ -1,131 +1,142 @@
 <script setup>
-import { ref } from "vue"
-import { useRouter } from "vue-router"
-import { supabase } from "@/utils/supabase"
-import { useAuthStore } from "@/stores/authUser"
+    import { ref,reactive } from "vue"
+    import { useRouter } from "vue-router"
+    import { supabase } from "@/utils/supabase"
+    import { useAuthStore } from "@/stores/authUser"
 
-defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  },
-  permanent: {
-    type: Boolean,
-    default: false
-  }
-})
+    defineProps({
+      modelValue: {
+        type: Boolean,
+        required: true
+      },
+      permanent: {
+        type: Boolean,
+        default: false
+      }
+    })
 
-const emit = defineEmits(["update:modelValue"])
+        const authStore = useAuthStore()
+        
+        const profile = reactive({
+          username: ""
+        })
 
-const router = useRouter()
-const currentRoute = ref(router.currentRoute.value.name)
+            //come from  the data in authuser.js
+          if (authStore.user) {
+          profile.username = authStore.user.user_metadata?.username || ""
+        }
 
-const navigation = [
-  { name: "dashboard", title: "Home", icon: "mdi-home-outline" },
-  { name: "save", title: "Saved", icon: "mdi-bookmark-outline" },
-  { name: "profile", title: "Profile", icon: "mdi-account-outline" },
-  { name: "about", title: "About ChessKween", icon: "mdi-information-outline" }
-]
+    const emit = defineEmits(["update:modelValue"])
 
-const navigateTo = (routeName) => {
-  router.push({ name: routeName })
-  currentRoute.value = routeName
-}
+    const router = useRouter()
+    const currentRoute = ref(router.currentRoute.value.name)
 
-const onLogout = async () => {
-  await supabase.auth.signOut()
+    const navigation = [
+      { name: "dashboard", title: "Home", icon: "mdi-home-outline" },
+      { name: "save", title: "Saved", icon: "mdi-bookmark-outline" },
+      { name: "profile", title: "Profile", icon: "mdi-account-outline" },
+      { name: "about", title: "About ChessKween", icon: "mdi-information-outline" }
+    ]
 
-  const authStore = useAuthStore()
-  authStore.logout()
+    const navigateTo = (routeName) => {
+      router.push({ name: routeName })
+      currentRoute.value = routeName
+    }
 
-  router.replace("/")
-}
+    const onLogout = async () => {
+      await supabase.auth.signOut()
+
+      const authStore = useAuthStore()
+      authStore.logout()
+
+      router.replace("/")
+    }
 </script>
 
 <template>
-  <v-navigation-drawer
-    class="side-navigation bg-light-blue-darken-4"
-    :width="270"
-    elevation="12"
-    :model-value="modelValue"
-    :permanent="permanent"
-    @update:model-value="emit('update:modelValue', $event)"
-  >
-    <div class="navigation-content">
+    <v-navigation-drawer
+      class="side-navigation bg-light-blue-darken-4"
+      :width="270"
+      elevation="12"
+      :model-value="modelValue"
+      :permanent="permanent"
+      @update:model-value="emit('update:modelValue', $event)"
+    >
+      <div class="navigation-content">
 
-      <!-- Profile -->
-      <div class="profile-section">
-        <v-avatar
-          size="105"
-          color="white"
-          class="profile-avatar"
-        >
-          <v-img
-            v-if="profile_pic && typeof profile_pic === 'string' && profile_pic !== ''"
-            :src="profile_pic.startsWith('http') ? profile_pic : profileUrl + profile_pic"
-            alt="User Avatar"
-            cover
-          />
-          <v-img
-            v-else
-            src="/images/pic1.jpg"
-            alt="User Avatar"
-            cover
-          />
-        </v-avatar>
+        <!-- Profile -->
+        <div class="profile-section">
+          <v-avatar
+            size="105"
+            color="white"
+            class="profile-avatar"
+          >
+            <v-img
+              v-if="profile_pic && typeof profile_pic === 'string' && profile_pic !== ''"
+              :src="profile_pic.startsWith('http') ? profile_pic : profileUrl + profile_pic"
+              alt="User Avatar"
+              cover
+            />
+            <v-img
+              v-else
+              src="/images/pic1.jpg"
+              alt="User Avatar"
+              cover
+            />
+          </v-avatar>
 
-        <div class="profile-name">
-          superwingwing
+          <div class="profile-name">
+              {{ authStore.user?.user_metadata?.username }}
+          </div>
+
+          <div class="profile-label">
+            ChessKween User
+          </div>
         </div>
 
-        <div class="profile-label">
-          ChessKween User
+        <v-divider class="my-4" color="white" opacity="0.15" />
+
+        <!-- Navigation -->
+        <v-list
+          nav
+          bg-color="transparent"
+          class="navigation-list"
+        >
+          <v-list-item
+            v-for="item in navigation"
+            :key="item.name"
+            :active="currentRoute === item.name"
+            active-class="active-item"
+            rounded="lg"
+            class="navigation-item"
+            @click="navigateTo(item.name)"
+          >
+            <template #prepend>
+              <v-icon :icon="item.icon" />
+            </template>
+
+            <v-list-item-title>
+              {{ item.title }}
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+
+        <!-- Logout -->
+        <div class="logout-section">
+          <v-btn
+            block
+            rounded="lg"
+            variant="outlined"
+            color="white"
+            prepend-icon="mdi-logout"
+            @click="onLogout"
+          >
+            Sign out
+          </v-btn>
         </div>
+
       </div>
-
-      <v-divider class="my-4" color="white" opacity="0.15" />
-
-      <!-- Navigation -->
-      <v-list
-        nav
-        bg-color="transparent"
-        class="navigation-list"
-      >
-        <v-list-item
-          v-for="item in navigation"
-          :key="item.name"
-          :active="currentRoute === item.name"
-          active-class="active-item"
-          rounded="lg"
-          class="navigation-item"
-          @click="navigateTo(item.name)"
-        >
-          <template #prepend>
-            <v-icon :icon="item.icon" />
-          </template>
-
-          <v-list-item-title>
-            {{ item.title }}
-          </v-list-item-title>
-        </v-list-item>
-      </v-list>
-
-      <!-- Logout -->
-      <div class="logout-section">
-        <v-btn
-          block
-          rounded="lg"
-          variant="outlined"
-          color="white"
-          prepend-icon="mdi-logout"
-          @click="onLogout"
-        >
-          Sign out
-        </v-btn>
-      </div>
-
-    </div>
-  </v-navigation-drawer>
+    </v-navigation-drawer>
 </template>
 
 <style scoped>

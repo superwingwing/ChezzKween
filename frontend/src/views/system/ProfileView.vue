@@ -506,14 +506,8 @@
     rounded
   />
 </div>
-                <v-progress-linear
-                  :model-value="styleConfidence"
-                  color="primary"
-                  height="8"
-                  rounded
-                  class="my-6"
-                />
-
+                
+              <br>  
                 <p class="style-description">
                   {{ styleDescription }}
                 </p>

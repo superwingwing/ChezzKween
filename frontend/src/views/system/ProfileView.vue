@@ -1,9 +1,16 @@
 <script setup>
-    import { ref, reactive, onMounted } from "vue"
+    import { ref, reactive, onMounted, computed } from "vue"
     import { useAuthStore } from "@/stores/authUser"
     import { supabase } from "@/utils/supabase"
 
     const authStore = useAuthStore()
+
+    const wins = ref(0)
+    const losses = ref(0)
+    const draws = ref(0)
+    const aggressivePercentage = ref(0)
+    const positionalPercentage = ref(0)
+    const totalGames = ref(0)
 
     const profile = reactive({
       username: "",
@@ -53,16 +60,14 @@
       }
     ]
 
-    const aggressivePercentage = ref(0)
-    const positionalPercentage = ref(0)
-    const totalGames = ref(0)
+    
 
-        async function loadStylePercentages() {
+    async function loadStylePercentages() {
           if (!authStore.user) return
 
           const { data, error } = await supabase
             .from("style")
-            .select("predicted_style")
+            .select("predicted_style, white, black, result")
             .eq("user_id", authStore.user.id)
 
           if (error) {
@@ -89,7 +94,50 @@
               (positional / totalGames.value) * 100
             )
           }
-        }
+
+          // WIN / LOSS / DRAW
+            wins.value = 0
+            losses.value = 0
+            draws.value = 0
+
+            const chessUsername = "super-wingwing"
+
+            data.forEach(game => {
+
+              const white = game.white?.trim()
+              const black = game.black?.trim()
+              const result = game.result
+
+              // Draw
+              if (result === "1/2-1/2") {
+                draws.value++
+                return
+              }
+
+              // You are White
+              if (white === chessUsername) {
+
+                if (result === "1-0") {
+                  wins.value++
+                } else if (result === "0-1") {
+                  losses.value++
+                }
+
+              }
+
+              // You are Black
+              else if (black === chessUsername) {
+
+                if (result === "0-1") {
+                  wins.value++
+                } else if (result === "1-0") {
+                  losses.value++
+                }
+
+              }
+
+            })
+    }
 
      const statistics = [
       {
@@ -99,17 +147,17 @@
       },
       {
         label: "Wins",
-        value: 15,
+        value: wins,
         icon: "mdi-trophy-outline"
       },
       {
         label: "Losses",
-        value: 6,
+        value: losses,
         icon: "mdi-chart-line"
       },
       {
         label: "Draws",
-        value: 3,
+        value: draws,
         icon: "mdi-equal"
       }
     ]
@@ -290,7 +338,7 @@
         <!-- Main Content -->
         <v-row>
 
-          <!-- Player Information -->
+          <!-- User Information -->
           <v-col cols="12" md="6">
             <v-card
               rounded="xl"
@@ -299,7 +347,7 @@
             >
               <v-card-item>
                 <v-card-title class="card-title">
-                  Player Information
+                  User Information
                 </v-card-title>
               </v-card-item>
 

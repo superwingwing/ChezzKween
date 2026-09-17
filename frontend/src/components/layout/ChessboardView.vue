@@ -433,7 +433,7 @@ async function onMove(move) {
 
     const response =
       await fetch(
-        "http://localhost:8000/analyze-move",
+         `${import.meta.env.VITE_API_URL}/analyze-move`,
         {
           method: "POST",
           headers: {

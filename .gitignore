@@ -24,3 +24,4 @@ model/saved/model.pkl
 # Node dependencies
 node_modules/
 
+*.stackdump

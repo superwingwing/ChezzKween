@@ -4,3 +4,6 @@ cairosvg
 supabase
 python-chess
 python-dotenv
+pandas
+numpy
+scikit-learn

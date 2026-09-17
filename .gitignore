@@ -25,3 +25,4 @@ model/saved/model.pkl
 node_modules/
 
 *.stackdump
+backend-python/engine/stockfish.exe

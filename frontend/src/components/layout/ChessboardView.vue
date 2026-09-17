@@ -491,143 +491,109 @@ function flipBoard() {
 
 async function loadMoves(response) {
   try {
-    console.log(
-      "UPLOAD RESPONSE:",
-      response
-    )
+    console.log("UPLOAD RESPONSE:", response)
+
+    // ==============================
+    // GET GAME DATA
+    // ==============================
 
     let game = null
 
-    if (Array.isArray(response)) {
-      game = response[0]
-    } else if (
-      Array.isArray(response?.data)
-    ) {
-      game = response.data[0]
-    } else if (response?.pgn) {
-      game = response
-    } else if (response?.data?.pgn) {
-      game = response.data
+    if (response?.game) {
+      if (Array.isArray(response.game.data)) {
+        game = response.game.data[0]
+      } else {
+        game = response.game.data || response.game
+      }
     }
 
     if (!game) {
-      console.error(
-        "Could not find uploaded game:",
-        response
-      )
+      console.error("Could not find uploaded game:", response)
       return
     }
+
+    console.log("GAME DATA:", game)
 
     if (!game.pgn) {
-      console.error(
-        "Uploaded game has no PGN:",
-        game
-      )
+      console.error("Uploaded game has no PGN:", game)
       return
     }
 
-    console.log(
-      "UPLOADED PGN:",
-      game.pgn
-    )
+    // ==============================
+    // SAVE GAME
+    // ==============================
 
-    currentGame.value =
-      game
+    currentGame.value = game
 
-    const pgnChess =
-      new Chess()
+    // ==============================
+    // LOAD PGN MOVES
+    // ==============================
 
-    pgnChess.loadPgn(
-      game.pgn
-    )
+    const pgnChess = new Chess()
 
-    const history =
-      pgnChess.history()
+    pgnChess.loadPgn(game.pgn)
 
-    console.log(
-      "PGN HISTORY:",
-      history
-    )
+    const history = pgnChess.history()
+
+    console.log("PGN MOVES:", history)
 
     if (!history.length) {
-      console.error(
-        "PGN contains no moves:",
-        game.pgn
-      )
+      console.error("PGN contains no moves")
       return
     }
 
-    pgnMoves.value = [
-      ...history
-    ]
+    pgnMoves.value = [...history]
 
-    console.log(
-      "PGN MOVES STORED:",
-      pgnMoves.value
-    )
+    // ==============================
+    // RESET STATE
+    // ==============================
 
     pgnEvaluations.value = []
     pgnIndex.value = 0
 
     resetBranch()
 
-    currentAnalysis.value =
-      null
-
+    currentAnalysis.value = null
     analysisCache.value = {}
 
-    orientation.value =
-      "white"
+    orientation.value = "white"
 
     chess.reset()
 
     if (boardAPI) {
-      boardAPI.setPosition(
-        chess.fen()
-      )
-
+      boardAPI.setPosition(chess.fen())
       boardAPI.hideMoves()
     }
 
-    const res =
-      await fetch(
-        "http://localhost:8000/analyze",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-          body: JSON.stringify({
-            pgn: game.pgn
-          })
-        }
-      )
+    // ==============================
+    // USE EXISTING ANALYSIS
+    // ==============================
 
-    if (!res.ok) {
-      throw new Error(
-        `HTTP ${res.status}`
-      )
+    const data = response.analysis
+
+    console.log("PGN ANALYSIS:", data)
+
+    if (!data) {
+      console.error("No analysis returned")
+      return
     }
 
-    const data =
-      await res.json()
-
-    console.log(
-      "PGN ANALYSIS:",
-      data
-    )
-
     if (data.error) {
-      console.error(
-        "PGN analysis error:",
-        data.error
-      )
+      console.error("PGN analysis error:", data.error)
       return
     }
 
     pgnEvaluations.value =
       data.evaluations || []
+
+    console.log(
+      "PGN EVALUATIONS:",
+      pgnEvaluations.value
+    )
+
+    // ==============================
+    // SHOW INITIAL POSITION
+    // ==============================
 
     goToPGN(0)
 

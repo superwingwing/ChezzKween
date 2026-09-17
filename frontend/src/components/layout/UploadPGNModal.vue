@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from "vue"
-import axios from "axios"
+import { ref } from 'vue'
+import axios from 'axios'
+import { supabase } from '@/utils/supabase'
 
-const emit = defineEmits(["loaded"])
+const emit = defineEmits(['loaded'])
 
 const dialog = ref(false)
 const fileInput = ref(null)
@@ -19,7 +20,7 @@ const selectFile = (e) => {
 
 const removeFile = () => {
   file.value = null
-  if (fileInput.value) fileInput.value.value = ""
+  if (fileInput.value) fileInput.value.value = ''
 }
 
 const uploadPGN = async () => {
@@ -29,9 +30,59 @@ const uploadPGN = async () => {
 
   try {
     const pgn = await file.value.text()
-    const res = await axios.post("http://127.0.0.1:8000/upload_pgn", { pgn })
 
-    emit("loaded", res.data)
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      console.error('User not authenticated')
+      return
+    }
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      console.error('No active Supabase session')
+      return
+    }
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    }
+
+    // 1. Store/load the PGN
+    const uploadRes = await axios.post(
+      'http://127.0.0.1:8000/upload_pgn',
+      {
+        pgn: pgn,
+        user_id: user.id,
+      },
+      config,
+    )
+
+    // 2. Analyze the PGN
+    const analysisRes = await axios.post(
+      'http://127.0.0.1:8000/analyze',
+      {
+        pgn: pgn,
+      },
+      config,
+    )
+
+    const game = uploadRes.data.data?.[0] || uploadRes.data.data
+
+    emit('loaded', {
+      game,
+      analysis: analysisRes.data,
+    })
+
     dialog.value = false
     removeFile()
   } catch (err) {
@@ -54,33 +105,19 @@ const uploadPGN = async () => {
 
   <v-dialog v-model="dialog" max-width="440" width="calc(100% - 32px)">
     <v-card rounded="xl">
-
       <v-card-title class="d-flex align-center py-4">
-        <v-icon color="light-green-darken-2" class="mr-3">
-          mdi-file-chess
-        </v-icon>
+        <v-icon color="light-green-darken-2" class="mr-3"> mdi-file-chess </v-icon>
         <span class="font-weight-bold">Analyze Your Game</span>
 
         <v-spacer />
 
-        <v-btn
-          icon="mdi-close"
-          variant="text"
-          size="small"
-          @click="dialog = false"
-        />
+        <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false" />
       </v-card-title>
 
       <v-divider />
 
       <v-card-text class="pa-5">
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".pgn"
-          hidden
-          @change="selectFile"
-        />
+        <input ref="fileInput" type="file" accept=".pgn" hidden @change="selectFile" />
 
         <v-sheet
           class="pa-6 text-center"
@@ -89,19 +126,16 @@ const uploadPGN = async () => {
           color="grey-lighten-5"
           @click="openFile"
         >
-          <v-icon
-            size="42"
-            color="light-green-darken-2"
-          >
-            {{ file ? "mdi-file-document-check" : "mdi-file-upload-outline" }}
+          <v-icon size="42" color="light-green-darken-2">
+            {{ file ? 'mdi-file-document-check' : 'mdi-file-upload-outline' }}
           </v-icon>
 
           <div class="text-subtitle-1 font-weight-bold mt-2">
-            {{ file ? file.name : "Select a PGN file" }}
+            {{ file ? file.name : 'Select a PGN file' }}
           </div>
 
           <div class="text-caption text-grey mt-1">
-            {{ file ? "PGN file selected" : "Upload your chess game in PGN format" }}
+            {{ file ? 'PGN file selected' : 'Upload your chess game in PGN format' }}
           </div>
 
           <v-btn
@@ -131,13 +165,7 @@ const uploadPGN = async () => {
       <v-divider />
 
       <v-card-actions class="pa-4">
-        <v-btn
-          variant="text"
-          :disabled="loading"
-          @click="dialog = false"
-        >
-          Cancel
-        </v-btn>
+        <v-btn variant="text" :disabled="loading" @click="dialog = false"> Cancel </v-btn>
 
         <v-spacer />
 
@@ -152,8 +180,6 @@ const uploadPGN = async () => {
           Analyze Game
         </v-btn>
       </v-card-actions>
-
     </v-card>
   </v-dialog>
 </template>
-

@@ -1,27 +1,40 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
-from services.analysis_service import (
-    analyze_pgn,
-    analyze_explored_move
-)
+from services.analysis_service import analyze_pgn, analyze_explored_move
 
 router = APIRouter()
 
-# PGN ANALYSIS REQUEST
 class PGNRequest(BaseModel):
     pgn: str
 
-# MANUAL MOVE ANALYSIS REQUEST
 class ExploreMoveRequest(BaseModel):
     fen: str
     move_uci: str
 
-# ANALYZE UPLOADED PGN
 @router.post("/analyze")
-def analyze(data: PGNRequest):
-    return analyze_pgn(data.pgn)
+def analyze(data: PGNRequest, request: Request):
+    auth_header = request.headers.get("Authorization")
 
-# ANALYZE MANUALLY EXPLORED MOVE
+    if not auth_header:
+        return {
+            "error": "Missing authorization token"
+        }
+
+    access_token = auth_header.replace(
+        "Bearer ",
+        ""
+    ).strip()
+
+    if not access_token:
+        return {
+            "error": "Invalid authorization token"
+        }
+
+    return analyze_pgn(
+        data.pgn,
+        access_token
+    )
+
 @router.post("/analyze-move")
 def analyze_move(data: ExploreMoveRequest):
     return analyze_explored_move(

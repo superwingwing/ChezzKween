@@ -59,7 +59,7 @@ const uploadPGN = async () => {
 
     // 1. Store/load the PGN
     const uploadRes = await axios.post(
-      'http://127.0.0.1:8000/upload_pgn',
+       `${import.meta.env.VITE_API_URL}/upload_pgn`,
       {
         pgn: pgn,
         user_id: user.id,
@@ -69,7 +69,7 @@ const uploadPGN = async () => {
 
     // 2. Analyze the PGN
     const analysisRes = await axios.post(
-      'http://127.0.0.1:8000/analyze',
+      `${import.meta.env.VITE_API_URL}/analyze`,
       {
         pgn: pgn,
       },

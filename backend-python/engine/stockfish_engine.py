@@ -4,7 +4,9 @@ import chess.engine
 
 STOCKFISH_PATH = os.getenv(
     "STOCKFISH_PATH",
-    "engine/stockfish.exe"
+    "engine/stockfish"
+    if os.name != "nt"
+    else "engine/stockfish.exe"
 )
 
 engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)

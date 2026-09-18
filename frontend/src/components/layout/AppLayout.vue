@@ -26,18 +26,18 @@
 
 .background-image {
   min-height: 100vh;
-  background-image: url('/images/background.svg');
+  background-image: url('/images/chess_background.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #144517;
+  background-color: #4c7ae5;
 }
 
 .footer-container {
-  background-color: #e65100;
+  background-color: #01579B;
   padding: 8px 16px;
   font-size: 0.85rem;
   color: white;

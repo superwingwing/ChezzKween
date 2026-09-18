@@ -209,7 +209,7 @@ const onFormSubmit = () => {
       size="x-large"
       type="submit"
       block
-      color="orange-darken-3"
+      color="light-blue-darken-4"
       :loading="formAction.formProcess"
       >Sign in</v-btn
     >

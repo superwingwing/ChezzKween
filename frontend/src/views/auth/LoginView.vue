@@ -44,7 +44,7 @@ const { mobile } = useDisplay()
 <style scoped>
 .blur-card {
   backdrop-filter: blur(1px);
-  background-color: rgba(145, 179, 136, 0.555);
+  background-color: rgba(166, 220, 245, 0.555);
   border-radius: 16px;
   overflow: hidden;
 }

@@ -182,8 +182,8 @@ const onFormSubmit = () => {
 
   <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       rounded
       v-model="formData.email"
       label="Email"
@@ -192,8 +192,8 @@ const onFormSubmit = () => {
     ></v-text-field>
 
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       v-model="formData.password"
       rounded
       :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"

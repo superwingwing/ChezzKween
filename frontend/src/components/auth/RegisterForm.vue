@@ -83,8 +83,8 @@ const onFormSubmit = () => {
 
   <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       rounded
       v-model="formData.username"
       label="Username"
@@ -92,8 +92,8 @@ const onFormSubmit = () => {
       :rules="[requiredValidator]"
     ></v-text-field>
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       rounded
       v-model="formData.email"
       label="Email"
@@ -101,8 +101,8 @@ const onFormSubmit = () => {
       variant="solo-filled"
     ></v-text-field>
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       rounded
       v-model="formData.password"
       :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
@@ -113,8 +113,8 @@ const onFormSubmit = () => {
       :rules="[requiredValidator, passwordValidator]"
     ></v-text-field>
     <v-text-field
-      color="green-darken-3"
-      bg-color="green-lighten-3"
+      color="light-blue-darken-4"
+      bg-color="white"
       rounded
       v-model="formData.passwordConfirmation"
       :append-inner-icon="isVisible ? 'mdi-eye-off' : 'mdi-eye'"
@@ -136,7 +136,7 @@ const onFormSubmit = () => {
       color="light-blue-darken-4"
       :disabled="formAction.formProcess"
       :loading="formAction.formProcess"
-      >Sign up</v-btn
+      >Register</v-btn
     >
   </v-form>
 </template>

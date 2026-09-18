@@ -2,9 +2,9 @@
     import { ref, reactive, onMounted, computed } from "vue"
     import { useAuthStore } from "@/stores/authUser"
     import { supabase } from "@/utils/supabase"
+    import RecentGames from '@/components/layout/RecentGames.vue'
 
     const authStore = useAuthStore()
-
     const wins = ref(0)
     const losses = ref(0)
     const draws = ref(0)
@@ -26,40 +26,6 @@
       profile.username = authStore.user.user_metadata?.username || ""
       profile.email = authStore.user.email || ""
     }
-
-   
-
-    const recentGames = [
-      {
-        id: 1,
-        opponent: "Player One",
-        result: "Win",
-        date: "Sep 12, 2026",
-        rating: 12
-      },
-      {
-        id: 2,
-        opponent: "Player Two",
-        result: "Loss",
-        date: "Sep 10, 2026",
-        rating: -9
-      },
-      {
-        id: 3,
-        opponent: "Player Three",
-        result: "Win",
-        date: "Sep 8, 2026",
-        rating: 14
-      },
-      {
-        id: 4,
-        opponent: "Player Four",
-        result: "Draw",
-        date: "Sep 6, 2026",
-        rating: 0
-      }
-    ]
-
     
 
     async function loadStylePercentages() {
@@ -199,18 +165,6 @@
     function signOut() {
       console.log("Sign out")
     }
-
-    function resultColor(result) {
-      if (result === "Win") return "success"
-      if (result === "Loss") return "error"
-      return "warning"
-    }
-
-    function ratingClass(rating) {
-      if (rating > 0) return "rating-positive"
-      if (rating < 0) return "rating-negative"
-      return "rating-neutral"
-}
 
     onMounted(() => {
       loadStylePercentages()
@@ -533,100 +487,10 @@
               </v-card-text>
             </v-card>
           </v-col>
-
         </v-row>
 
-        <!-- Recent Games -->
-        <v-card
-          rounded="xl"
-          elevation="1"
-          class="content-card mt-6"
-        >
-          <v-card-item>
-            <v-card-title class="card-title">
-              Recent Games
-            </v-card-title>
-
-            <v-card-subtitle>
-              Your recently analyzed chess games
-            </v-card-subtitle>
-          </v-card-item>
-
-          <v-divider />
-
-          <v-table class="games-table">
-            <thead>
-              <tr>
-                <th>Opponent</th>
-                <th class="d-none d-sm-table-cell">
-                  Result
-                </th>
-                <th class="d-none d-md-table-cell">
-                  Date
-                </th>
-                <th class="text-end">
-                  Rating Change
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr
-                v-for="game in recentGames"
-                :key="game.id"
-              >
-                <td>
-                  <div class="opponent-cell">
-                    <v-avatar
-                      size="34"
-                      color="surface-variant"
-                    >
-                      <v-icon size="18">
-                        mdi-account
-                      </v-icon>
-                    </v-avatar>
-
-                    <span>{{ game.opponent }}</span>
-                  </div>
-                </td>
-
-                <td class="d-none d-sm-table-cell">
-                  <v-chip
-                    :color="resultColor(game.result)"
-                    size="small"
-                    variant="tonal"
-                  >
-                    {{ game.result }}
-                  </v-chip>
-                </td>
-
-                <td class="d-none d-md-table-cell">
-                  {{ game.date }}
-                </td>
-
-                <td class="text-end">
-                  <span :class="ratingClass(game.rating)">
-                    {{ game.rating > 0 ? "+" : "" }}{{ game.rating }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-
-          <v-card-actions class="pa-4">
-            <v-spacer />
-
-            <v-btn
-              variant="text"
-              color="primary"
-            >
-              View All Games
-              <v-icon end>
-                mdi-arrow-right
-              </v-icon>
-            </v-btn>
-          </v-card-actions>
-        </v-card>
+     <!-- Other profile content -->
+          <RecentGames />
 
         <!-- Account Actions -->
         <v-card

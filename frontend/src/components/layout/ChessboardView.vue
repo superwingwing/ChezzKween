@@ -603,7 +603,7 @@
           error
         )
       }
-    }
+}
 
     defineExpose({  //exposes functions/data from a child component
       loadMoves
@@ -640,7 +640,7 @@
             class="board"
             :orientation="orientation"
             @move="onMove"
-            @board-created="(api) => (boardAPI = api)"
+            @board-created="(api) => (boardAPI = api )"
           />
 
           <EvaluationBarView

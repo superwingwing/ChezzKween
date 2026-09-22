@@ -176,10 +176,11 @@ const formatDate = (date) => {
 }
 
 
-const viewGame = async (game) => {
-
+/*
+ * Open selected game.
+ */
+ const viewGame = async (game) => {
   try {
-
     loadingGame.value = true
 
     const { data, error } = await supabase
@@ -194,27 +195,28 @@ const viewGame = async (game) => {
     }
 
     selectedGame.value = game
+
+    // Open dialog
     showGame.value = true
 
+    // Wait until the dialog and ChessboardView are rendered
     await nextTick()
 
-    if (chessboardRef.value) {
-
-      chessboardRef.value.loadMoves({
-        game: game,
-        analysis: data.analysis_json
-      })
-
-    }
+    // Give Vuetify time to finish the dialog transition/layout
+    setTimeout(() => {
+      if (chessboardRef.value) {
+        chessboardRef.value.loadMoves({
+          game: game,
+          analysis: data.analysis_json
+        })
+      }
+    }, 100)
 
   } catch (error) {
-
     console.error("Failed to open game:", error)
 
   } finally {
-
     loadingGame.value = false
-
   }
 }
 
@@ -237,6 +239,7 @@ onMounted(async () => {
 
 })
 </script>
+
 
 <template>
   <v-card
@@ -380,219 +383,113 @@ onMounted(async () => {
 
   </v-card>
 
+          <!-- /// GAME VIEWER MODAL -->  
+      <div v-if="showGame" class="game-overlay">
+        <div class="game-modal">
 
-  <!-- =========================================
-       GAME VIEWER MODAL
-       ========================================= -->
+          <v-btn
+            class="close-btn"
+            icon="mdi-close"
+            size="40"
+            variant="flat"
+            @click="closeGame"
+          />
 
-<v-dialog
-  v-model="showGame"
-  class="game-dialog"
-  :scrim="true"
-  scrollable
->
-  <div class="game-modal">
+          <ChessboardView
+            ref="chessboardRef"
+          />
 
-    <v-btn
-      class="close-btn"
-      icon="mdi-close"
-      size="40"
-      variant="flat"
-      @click="closeGame"
-    />
-
-    <ChessboardView
-      ref="chessboardRef"
-    />
-
-  </div>
-</v-dialog>
+        </div>
+      </div>
 
 </template>
 
 <style scoped>
 
-/* =========================================
-   GAME VIEWER DIALOG
-========================================= */
+    .game-overlay {
+      position: fixed;
+      inset: 0;
 
-:deep(.v-overlay__content) {
-  margin: 0 !important;
-}
+      z-index: 9999;
 
+      display: flex;
+      justify-content: center;
+      align-items: center;
 
-/*
- * Vuetify centers the dialog in the viewport.
- * Your sidebar occupies about 290px, so we
- * move the modal center slightly to the right
- * on desktop.
- */
-@media (min-width: 960px) {
+      padding: 16px;
 
-  :deep(.game-dialog .v-overlay__content) {
-    width: 700px !important;
-    max-width: 700px !important;
+      background: rgba(0, 0, 0, 0.55);
 
-    margin-left: 290px !important;
-  }
+      overflow-y: auto;
+    }
 
-}
+    .game-modal {
+      position: relative;
 
+      width: 660px;
+      max-width: calc(100vw - 32px);
 
-/* =========================================
-   MAIN MODAL
-========================================= */
+      max-height: calc(100vh - 32px);
 
-.game-modal {
-  position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
 
-  width: 700px;
-  max-width: 100%;
+      background: #ffffff;
 
-  max-height: calc(100vh - 40px);
+      border-radius: 18px;
 
-  overflow-y: auto;
-  overflow-x: hidden;
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.30);
 
-  background: #ffffff;
+      box-sizing: border-box;
 
-  border-radius: 18px;
+      padding: 0 20px 16px;
+    }
 
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.30);
+    .close-btn {
+      position: absolute !important;
 
-  box-sizing: border-box;
+      top: 12px;
+      right: 12px;
 
-  /*
-   * Keeps the chess analysis visually centered.
-   */
-  padding: 0 20px 16px;
-}
+      width: 42px !important;
+      height: 42px !important;
 
+      z-index: 10;
 
-/* =========================================
-   CHESSBOARD VIEW
-========================================= */
+      background: #ffffff !important;
+      color: #222222 !important;
 
-.game-modal > :deep(.chessboard-container) {
-  width: 100% !important;
-  max-width: 660px !important;
+      box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.22);
+    }
 
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
+    @media (max-width: 600px) {
 
+      .game-overlay {
+        padding: 8px;
+      }
 
-/* =========================================
-   CLOSE BUTTON
-========================================= */
+      .game-modal {
+        width: 100%;
+        max-width: calc(100vw - 16px);
 
-.close-btn {
-  position: absolute !important;
+        max-height: calc(100vh - 16px);
 
-  top: 12px;
-  right: 12px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-bottom: 10px;
 
-  width: 42px !important;
-  height: 42px !important;
+        border-radius: 12px;
+      }
 
-  z-index: 9999;
+      .close-btn {
+        top: 7px;
+        right: 7px;
 
-  background: #ffffff !important;
-
-  color: #222222 !important;
-
-  box-shadow:
-    0 3px 12px rgba(0, 0, 0, 0.22);
-
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.close-btn:hover {
-  transform: scale(1.05);
-
-  box-shadow:
-    0 5px 16px rgba(0, 0, 0, 0.28);
-}
-
-
-/* =========================================
-   DESKTOP CHESSBOARD
-========================================= */
-
-@media (min-width: 960px) {
-
-  .game-modal {
-    width: 700px;
-  }
-
-}
-
-
-/* =========================================
-   TABLET
-========================================= */
-
-@media (max-width: 959px) {
-
-  :deep(.game-dialog .v-overlay__content) {
-    width: calc(100vw - 32px) !important;
-    max-width: calc(100vw - 32px) !important;
-
-    margin-left: 0 !important;
-  }
-
-  .game-modal {
-    width: 100%;
-
-    max-width: 100%;
-
-    max-height: calc(100vh - 32px);
-
-    padding-left: 14px;
-    padding-right: 14px;
-
-    border-radius: 16px;
-  }
-
-}
-
-
-/* =========================================
-   MOBILE
-========================================= */
-
-@media (max-width: 600px) {
-
-  :deep(.game-dialog .v-overlay__content) {
-    width: calc(100vw - 16px) !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-
-  .game-modal {
-    width: 100%;
-
-    max-width: 100%;
-
-    max-height: calc(100vh - 16px);
-
-    padding-left: 8px;
-    padding-right: 8px;
-    padding-bottom: 10px;
-
-    border-radius: 12px;
-  }
-
-  .close-btn {
-    top: 7px;
-    right: 7px;
-
-    width: 38px !important;
-    height: 38px !important;
-  }
-
-}
+        width: 38px !important;
+        height: 38px !important;
+      }
+    }
 
 </style>

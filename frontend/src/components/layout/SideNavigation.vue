@@ -32,8 +32,8 @@
 
     const navigation = [
       { name: "dashboard", title: "Home", icon: "mdi-home-outline" },
-      { name: "tips", title: "Tips", icon: "mdi-bookmark-outline" },
       { name: "profile", title: "Profile", icon: "mdi-account-outline" },
+      { name: "tips", title: "Tips", icon: "mdi-bookmark-outline" },
       { name: "about", title: "About ChessKween", icon: "mdi-information-outline" }
     ]
 

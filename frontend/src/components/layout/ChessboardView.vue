@@ -487,6 +487,10 @@
         orientation.value === "white"
           ? "black"
           : "white"
+
+          if (boardAPI) {
+          boardAPI.toggleOrientation()
+        }
     }
 
     async function loadMoves(response) {
@@ -639,6 +643,9 @@
           <TheChessboard
             class="board"
             :orientation="orientation"
+            :board-config="{
+                coordinates: true
+              }"
             @move="onMove"
             @board-created="(api) => (boardAPI = api )"
           />

@@ -239,11 +239,6 @@ onMounted(async () => {
 </script>
 
 <template>
-
-  <!-- =========================================
-       RECENT GAMES
-       ========================================= -->
-
   <v-card
     rounded="xl"
     elevation="1"
@@ -394,6 +389,7 @@ onMounted(async () => {
   v-model="showGame"
   class="game-dialog"
   :scrim="true"
+  scrollable
 >
   <div class="game-modal">
 
@@ -414,50 +410,76 @@ onMounted(async () => {
 
 </template>
 
-
 <style scoped>
 
 /* =========================================
-   GAME VIEWER MODAL
+   GAME VIEWER DIALOG
 ========================================= */
 
-:deep(.game-dialog .v-overlay__content) {
-  width: 620px !important;
-  max-width: calc(100vw - 300px) !important;
-
+:deep(.v-overlay__content) {
   margin: 0 !important;
-  padding: 0 !important;
+}
 
-  position: fixed !important;
 
-  left: calc(50% + 135px) !important;
-  top: 50% !important;
+/*
+ * Vuetify centers the dialog in the viewport.
+ * Your sidebar occupies about 290px, so we
+ * move the modal center slightly to the right
+ * on desktop.
+ */
+@media (min-width: 960px) {
 
-  transform: translate(-50%, -50%) !important;
+  :deep(.game-dialog .v-overlay__content) {
+    width: 700px !important;
+    max-width: 700px !important;
+
+    margin-left: 290px !important;
+  }
+
 }
 
 
 /* =========================================
-   MODAL CONTAINER
+   MAIN MODAL
 ========================================= */
 
 .game-modal {
   position: relative;
 
-  width: 620px;
+  width: 700px;
   max-width: 100%;
 
-  max-height: 95vh;
+  max-height: calc(100vh - 40px);
 
   overflow-y: auto;
   overflow-x: hidden;
 
   background: #ffffff;
 
-  border-radius: 14px;
+  border-radius: 18px;
 
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.30);
+    0 24px 70px rgba(0, 0, 0, 0.30);
+
+  box-sizing: border-box;
+
+  /*
+   * Keeps the chess analysis visually centered.
+   */
+  padding: 0 20px 16px;
+}
+
+
+/* =========================================
+   CHESSBOARD VIEW
+========================================= */
+
+.game-modal > :deep(.chessboard-container) {
+  width: 100% !important;
+  max-width: 660px !important;
+
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 
@@ -468,15 +490,44 @@ onMounted(async () => {
 .close-btn {
   position: absolute !important;
 
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
 
-  z-index: 1000;
+  width: 42px !important;
+  height: 42px !important;
+
+  z-index: 9999;
 
   background: #ffffff !important;
 
+  color: #222222 !important;
+
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.25);
+    0 3px 12px rgba(0, 0, 0, 0.22);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.close-btn:hover {
+  transform: scale(1.05);
+
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, 0.28);
+}
+
+
+/* =========================================
+   DESKTOP CHESSBOARD
+========================================= */
+
+@media (min-width: 960px) {
+
+  .game-modal {
+    width: 700px;
+  }
+
 }
 
 
@@ -487,15 +538,23 @@ onMounted(async () => {
 @media (max-width: 959px) {
 
   :deep(.game-dialog .v-overlay__content) {
-    width: 620px !important;
-    max-width: calc(100vw - 24px) !important;
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
 
-    left: 50% !important;
+    margin-left: 0 !important;
   }
 
   .game-modal {
-    width: 620px;
+    width: 100%;
+
     max-width: 100%;
+
+    max-height: calc(100vh - 32px);
+
+    padding-left: 14px;
+    padding-right: 14px;
+
+    border-radius: 16px;
   }
 
 }
@@ -508,24 +567,30 @@ onMounted(async () => {
 @media (max-width: 600px) {
 
   :deep(.game-dialog .v-overlay__content) {
-    width: calc(100vw - 12px) !important;
-    max-width: none !important;
-
-    left: 50% !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
   }
 
   .game-modal {
     width: 100%;
+
     max-width: 100%;
 
-    max-height: calc(100vh - 12px);
+    max-height: calc(100vh - 16px);
 
-    border-radius: 10px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 10px;
+
+    border-radius: 12px;
   }
 
   .close-btn {
-    top: 6px;
-    right: 6px;
+    top: 7px;
+    right: 7px;
+
+    width: 38px !important;
+    height: 38px !important;
   }
 
 }

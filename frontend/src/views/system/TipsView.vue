@@ -5,34 +5,16 @@ const currentStep = ref(0)
 
 const tips = [
   {
-    title: "Upload Your PGN",
+    title: "Analyze a Specific Game",
     description:
-      "Upload your chess games in PGN format to start using ChessKween.",
-    image: "/images/tips/upload-pgn.png"
+      "Upload a PGN file to analyze a specific chess game, review moves, evaluation, and recommendations.",
+    image: "/images/tips/game-analysis.png"
   },
   {
-    title: "Analyze Your Game",
+    title: "Classify Your Playing Style",
     description:
-      "Select a game to view the chessboard, evaluation, move quality, and analysis.",
-    image: "/images/tips/analyze-game.png"
-  },
-  {
-    title: "Check Your Playing Style",
-    description:
-      "View your playing style classification based on your uploaded games.",
+      "Upload multiple PGN games to analyze your playing patterns and classify your style as Aggressive or Positional.",
     image: "/images/tips/style-classification.png"
-  },
-  {
-    title: "Review Your Games",
-    description:
-      "Use the Recent Games section to open and review your previously analyzed games.",
-    image: "/images/tips/recent-games.png"
-  },
-  {
-    title: "Explore Recommendations",
-    description:
-      "Review recommended moves based on the position and your playing style.",
-    image: "/images/tips/recommendations.png"
   }
 ]
 

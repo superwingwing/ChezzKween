@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProfileView from '@/views/system/ProfileView.vue'
 import AboutView from '@/views/system/Aboutview.vue'
+import TipsView from '@/views/system/TipsView.vue'
 
 const routes = [
   {
@@ -36,6 +37,11 @@ const routes = [
         path: 'about',
         name: 'about',
         component: AboutView,
+      },
+      {
+      path: "tips",
+      name: "tips",
+      component: TipsView,
       },
       // 404 ROUTE — KEEP THIS LAST
       {

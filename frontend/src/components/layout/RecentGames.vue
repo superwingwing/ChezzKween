@@ -1,243 +1,243 @@
 <script setup>
-import { ref, onMounted, nextTick } from "vue"
-import { supabase } from "@/utils/supabase"
-import ChessboardView from "@/components/layout/ChessboardView.vue"
+      import { ref, onMounted, nextTick } from "vue"
+      import { supabase } from "@/utils/supabase"
+      import ChessboardView from "@/components/layout/ChessboardView.vue"
 
-const recentGames = ref([])
-const showGame = ref(false)
-const selectedGame = ref(null)
-const chessboardRef = ref(null)
-const loadingGameId = ref(null)
+      const recentGames = ref([])
+      const showGame = ref(false)
+      const selectedGame = ref(null)
+      const chessboardRef = ref(null)
+      const loadingGameId = ref(null)
 
-// Usernames that should be recognized as you
-const myUsernames = ref([
-  "super-wingwing"
-])
+      // Usernames that should be recognized as you
+      const myUsernames = ref([
+        "super-wingwing"
+      ])
 
-/*
- * Get the currently logged-in user's username
- * from Supabase Auth.
- */
-const loadMyUsername = async () => {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+      /*
+      * Get the currently logged-in user's username
+      * from Supabase Auth.
+      */
+      const loadMyUsername = async () => {
+        const {
+          data: { user }
+        } = await supabase.auth.getUser()
 
-  if (!user) return
+        if (!user) return
 
-  const actualUsername = user.user_metadata?.username
+        const actualUsername = user.user_metadata?.username
 
-  const usernames = [
-    "super-wingwing"
-  ]
+        const usernames = [
+          "super-wingwing"
+        ]
 
-  if (actualUsername) {
-    usernames.push(actualUsername)
-  }
+        if (actualUsername) {
+          usernames.push(actualUsername)
+        }
 
-  myUsernames.value = [
-    ...new Set(
-      usernames
-        .filter(Boolean)
-        .map(username =>
-          String(username).trim().toLowerCase()
-        )
-    )
-  ]
+        myUsernames.value = [
+          ...new Set(
+            usernames
+              .filter(Boolean)
+              .map(username =>
+                String(username).trim().toLowerCase()
+              )
+          )
+        ]
 
-  console.log("Recognized usernames:", myUsernames.value)
-}
-
-
-/*
- * Load recent games belonging to the
- * currently authenticated user.
- */
-const loadRecentGames = async () => {
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
-  if (!user) return
-
-  const { data, error } = await supabase
-    .from("review_games")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(4)
-
-  if (error) {
-    console.error("Failed to load recent games:", error)
-    return
-  }
-
-  recentGames.value = data || []
-}
+        console.log("Recognized usernames:", myUsernames.value)
+      }
 
 
-/*
- * Determine the result from YOUR perspective.
- */
-const getMyResult = (game) => {
+      /*
+      * Load recent games belonging to the
+      * currently authenticated user.
+      */
+      const loadRecentGames = async () => {
+        const {
+          data: { user }
+        } = await supabase.auth.getUser()
 
-  const white = String(game.white_name || game.white || "")
-    .trim()
-    .toLowerCase()
+        if (!user) return
 
-  const black = String(game.black_name || game.black || "")
-    .trim()
-    .toLowerCase()
+        const { data, error } = await supabase
+          .from("review_games")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(4)
 
-  const result = String(game.result || "").trim()
+        if (error) {
+          console.error("Failed to load recent games:", error)
+          return
+        }
 
-  const amWhite = myUsernames.value.includes(white)
-  const amBlack = myUsernames.value.includes(black)
-
-  /*
-   * Draw is always a draw.
-   */
-  if (result === "1/2-1/2") {
-    return "Draw"
-  }
-
-  /*
-   * I am White.
-   */
-  if (amWhite) {
-
-    if (result === "1-0") {
-      return "Win"
-    }
-
-    if (result === "0-1") {
-      return "Loss"
-    }
-  }
-
-  /*
-   * I am Black.
-   */
-  if (amBlack) {
-
-    if (result === "0-1") {
-      return "Win"
-    }
-
-    if (result === "1-0") {
-      return "Loss"
-    }
-  }
-
-  /*
-   * Username wasn't found.
-   */
-  return "Unknown"
-}
+        recentGames.value = data || []
+      }
 
 
-/*
- * Result chip color.
- */
-const resultColor = (game) => {
+      /*
+      * Determine the result from YOUR perspective.
+      */
+      const getMyResult = (game) => {
 
-  const result = getMyResult(game)
+        const white = String(game.white_name || game.white || "")
+          .trim()
+          .toLowerCase()
 
-  if (result === "Win") {
-    return "success"
-  }
+        const black = String(game.black_name || game.black || "")
+          .trim()
+          .toLowerCase()
 
-  if (result === "Loss") {
-    return "error"
-  }
+        const result = String(game.result || "").trim()
 
-  if (result === "Draw") {
-    return "warning"
-  }
+        const amWhite = myUsernames.value.includes(white)
+        const amBlack = myUsernames.value.includes(black)
 
-  return "grey"
-}
+        /*
+        * Draw is always a draw.
+        */
+        if (result === "1/2-1/2") {
+          return "Draw"
+        }
+
+        /*
+        * I am White.
+        */
+        if (amWhite) {
+
+          if (result === "1-0") {
+            return "Win"
+          }
+
+          if (result === "0-1") {
+            return "Loss"
+          }
+        }
+
+        /*
+        * I am Black.
+        */
+        if (amBlack) {
+
+          if (result === "0-1") {
+            return "Win"
+          }
+
+          if (result === "1-0") {
+            return "Loss"
+          }
+        }
+
+        /*
+        * Username wasn't found.
+        */
+        return "Unknown"
+      }
 
 
-/*
- * Result text.
- */
-const resultText = (game) => {
-  return getMyResult(game)
-}
+      /*
+      * Result chip color.
+      */
+      const resultColor = (game) => {
+
+        const result = getMyResult(game)
+
+        if (result === "Win") {
+          return "success"
+        }
+
+        if (result === "Loss") {
+          return "error"
+        }
+
+        if (result === "Draw") {
+          return "warning"
+        }
+
+        return "grey"
+      }
 
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  })
-}
+      /*
+      * Result text.
+      */
+      const resultText = (game) => {
+        return getMyResult(game)
+      }
 
 
-/*
- * Open selected game.
- */
- const viewGame = async (game) => {
-  try {
-    loadingGameId.value = game.id
-
-    const { data, error } = await supabase
-      .from("game_analysis")
-      .select("analysis_json")
-      .eq("game_id", game.id)
-      .single()
-
-    if (error) {
-      console.error("Failed to load game analysis:", error)
-      return
-    }
-
-    selectedGame.value = game
-
-    // Open dialog
-    showGame.value = true
-
-    // Wait until the dialog and ChessboardView are rendered
-    await nextTick()
-
-    // Give Vuetify time to finish the dialog transition/layout
-    setTimeout(() => {
-      if (chessboardRef.value) {
-        chessboardRef.value.loadMoves({
-          game: game,
-          analysis: data.analysis_json
+      const formatDate = (date) => {
+        return new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
         })
       }
-    }, 100)
-
-  } catch (error) {
-    console.error("Failed to open game:", error)
-
-  } finally {
-    loadingGameId.value = null
-  }
-}
 
 
-const closeGame = () => {
-  showGame.value = false
-  selectedGame.value = null
-}
+      /*
+      * Open selected game.
+      */
+      const viewGame = async (game) => {
+        try {
+          loadingGameId.value = game.id
+
+          const { data, error } = await supabase
+            .from("game_analysis")
+            .select("analysis_json")
+            .eq("game_id", game.id)
+            .single()
+
+          if (error) {
+            console.error("Failed to load game analysis:", error)
+            return
+          }
+
+          selectedGame.value = game
+
+          // Open dialog
+          showGame.value = true
+
+          // Wait until the dialog and ChessboardView are rendered
+          await nextTick()
+
+          // Give Vuetify time to finish the dialog transition/layout
+          setTimeout(() => {
+            if (chessboardRef.value) {
+              chessboardRef.value.loadMoves({
+                game: game,
+                analysis: data.analysis_json
+              })
+            }
+          }, 100)
+
+        } catch (error) {
+          console.error("Failed to open game:", error)
+
+        } finally {
+          loadingGameId.value = null
+        }
+      }
 
 
-/*
- * Load username first,
- * then load games.
- */
-onMounted(async () => {
+      const closeGame = () => {
+        showGame.value = false
+        selectedGame.value = null
+      }
 
-  await loadMyUsername()
 
-  await loadRecentGames()
+      /*
+      * Load username first,
+      * then load games.
+      */
+      onMounted(async () => {
 
-})
+        await loadMyUsername()
+
+        await loadRecentGames()
+
+      })
 </script>
 
 
@@ -296,15 +296,9 @@ onMounted(async () => {
           <td>
 
             <div class="opponent-cell">
-
-              <v-avatar
-                size="34"
-                color="surface-variant"
-              >
-                <v-icon size="18">
-                  mdi-account
-                </v-icon>
-              </v-avatar>
+                <v-icon size="18" class="me-2">
+                  mdi-file-document
+                </v-icon> 
 
               <span class="game-names">
                 {{ game.white_name }}

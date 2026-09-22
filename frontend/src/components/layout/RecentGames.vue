@@ -2,12 +2,14 @@
       import { ref, onMounted, nextTick } from "vue"
       import { supabase } from "@/utils/supabase"
       import ChessboardView from "@/components/layout/ChessboardView.vue"
+      import ChessCoach from "@/components/layout/ChessCoach.vue"
 
       const recentGames = ref([])
       const showGame = ref(false)
       const selectedGame = ref(null)
       const chessboardRef = ref(null)
       const loadingGameId = ref(null)
+      const coachAnalysis = ref(null)
 
       // Usernames that should be recognized as you
       const myUsernames = ref([
@@ -242,76 +244,36 @@
 
 
 <template>
-  <v-card
-    rounded="xl"
-    elevation="1"
-    class="content-card mt-6"
-  >
-
+  <v-card rounded="xl" elevation="1" class="content-card mt-6">
     <v-card-item>
-
-      <v-card-title class="card-title">
-        Recent Games
-      </v-card-title>
-
-      <v-card-subtitle>
-        Your recently analyzed chess games
-      </v-card-subtitle>
-
+      <v-card-title class="card-title">Recent Games</v-card-title>
+      <v-card-subtitle>Your recently analyzed chess games</v-card-subtitle>
     </v-card-item>
 
     <v-divider />
 
     <v-table class="games-table">
-
       <thead>
         <tr>
-
-          <th>
-            Opponent
-          </th>
-
-          <th class="d-none d-sm-table-cell">
-            Result
-          </th>
-
-          <th class="d-none d-md-table-cell">
-            Date
-          </th>
-
-          <th class="text-end">
-            Action
-          </th>
-
+          <th>Opponent</th>
+          <th class="d-none d-sm-table-cell">Result</th>
+          <th class="d-none d-md-table-cell">Date</th>
+          <th class="text-end">Action</th>
         </tr>
       </thead>
 
       <tbody>
-
-        <tr
-          v-for="game in recentGames"
-          :key="game.id"
-        >
-
+        <tr v-for="game in recentGames" :key="game.id">
           <td>
-
             <div class="opponent-cell">
-                <v-icon size="18" class="me-2">
-                  mdi-file-document
-                </v-icon> 
-
+              <v-icon size="18" class="me-2">mdi-file-document</v-icon>
               <span class="game-names">
-                {{ game.white_name }}
-                vs
-                {{ game.black_name }}
+                {{ game.white_name }} vs {{ game.black_name }}
               </span>
-
             </div>
-
           </td>
 
           <td class="d-none d-sm-table-cell">
-
             <v-chip
               :color="resultColor(game)"
               size="small"
@@ -319,7 +281,6 @@
             >
               {{ resultText(game) }}
             </v-chip>
-
           </td>
 
           <td class="d-none d-md-table-cell">
@@ -327,7 +288,6 @@
           </td>
 
           <td class="text-end">
-
             <v-btn
               variant="text"
               size="small"
@@ -337,154 +297,197 @@
               @click="viewGame(game)"
             >
               View Game
-
-              <v-icon end>
-                mdi-arrow-right
-              </v-icon>
-
+              <v-icon end>mdi-arrow-right</v-icon>
             </v-btn>
-
           </td>
-
         </tr>
-
-        <!-- EMPTY STATE -->
 
         <tr v-if="recentGames.length === 0">
-
-          <td
-            colspan="4"
-            class="text-center py-6"
-          >
-
-            <v-icon
-              size="30"
-              class="mb-2"
-            >
-              mdi-chess-queen
-            </v-icon>
-
-            <div>
-              No analyzed games yet.
-            </div>
-
+          <td colspan="4" class="text-center py-6">
+            <v-icon size="30" class="mb-2">mdi-chess-queen</v-icon>
+            <div>No analyzed games yet.</div>
           </td>
-
         </tr>
-
       </tbody>
-
     </v-table>
-
   </v-card>
 
-          <!-- /// GAME VIEWER MODAL -->  
-      <div v-if="showGame" class="game-overlay">
-        <div class="game-modal">
+  <!-- Game Viewer Modal -->
+  <div v-if="showGame" class="game-overlay">
+    <div class="game-modal">
+      <v-btn
+        class="close-btn"
+        icon="mdi-close"
+        size="40"
+        variant="flat"
+        @click="closeGame"
+      />
 
-          <v-btn
-            class="close-btn"
-            icon="mdi-close"
-            size="40"
-            variant="flat"
-            @click="closeGame"
-          />
+      <div class="game-content">
+        <ChessboardView
+          ref="chessboardRef"
+          @update-coach="coachAnalysis = $event"
+        />
 
-          <ChessboardView
-            ref="chessboardRef"
-          />
-
-        </div>
+        <ChessCoach :analysis="coachAnalysis" />
       </div>
-
+    </div>
+  </div>
 </template>
+
+
 
 <style scoped>
 
-    .game-overlay {
-      position: fixed;
-      inset: 0;
+.game-overlay {
+  position: fixed;
+  inset: 0;
 
-      z-index: 9999;
+  z-index: 9999;
 
-      display: flex;
-      justify-content: center;
-      align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-      padding: 16px;
+  padding: 16px;
 
-      background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.55);
 
-      overflow-y: auto;
-    }
+  overflow-y: auto;
+}
 
-    .game-modal {
-      position: relative;
 
-      width: 660px;
-      max-width: calc(100vw - 32px);
+/* =========================================
+   MODAL
+========================================= */
 
-      max-height: calc(100vh - 32px);
+.game-modal {
+  position: relative;
 
-      overflow-y: auto;
-      overflow-x: hidden;
+  width: 1020px;
+  max-width: calc(100vw - 32px);
 
-      background: #ffffff;
+  max-height: calc(100vh - 32px);
 
-      border-radius: 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
 
-      box-shadow:
-        0 24px 70px rgba(0, 0, 0, 0.30);
+  background: #ffffff;
 
-      box-sizing: border-box;
+  border-radius: 18px;
 
-      padding: 0 20px 16px;
-    }
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.30);
 
-    .close-btn {
-      position: absolute !important;
+  box-sizing: border-box;
 
-      top: 12px;
-      right: 12px;
+  padding: 0 20px 16px;
+}
 
-      width: 42px !important;
-      height: 42px !important;
 
-      z-index: 10;
+/* =========================================
+   CHESSBOARD + COACH
+========================================= */
 
-      background: #ffffff !important;
-      color: #222222 !important;
+.game-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
 
-      box-shadow:
-        0 3px 12px rgba(0, 0, 0, 0.22);
-    }
+  gap: 20px;
 
-    @media (max-width: 600px) {
+  width: 100%;
+}
 
-      .game-overlay {
-        padding: 8px;
-      }
 
-      .game-modal {
-        width: 100%;
-        max-width: calc(100vw - 16px);
+/* Keep chessboard at its natural size */
+.game-content > :deep(.chessboard-container) {
+  flex: 0 0 auto;
+}
 
-        max-height: calc(100vh - 16px);
 
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-bottom: 10px;
+/* Chess Coach */
+.game-content :deep(.coach-card) {
+  flex: 0 0 320px;
 
-        border-radius: 12px;
-      }
+  width: 320px;
+  max-width: 320px;
+}
 
-      .close-btn {
-        top: 7px;
-        right: 7px;
 
-        width: 38px !important;
-        height: 38px !important;
-      }
-    }
+/* =========================================
+   CLOSE BUTTON
+========================================= */
+
+.close-btn {
+  position: absolute !important;
+
+  top: 12px;
+  right: 12px;
+
+  width: 42px !important;
+  height: 42px !important;
+
+  z-index: 10;
+
+  background: #ffffff !important;
+  color: #222222 !important;
+
+  box-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.22);
+}
+
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 960px) {
+
+  .game-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .game-content :deep(.coach-card) {
+    width: 100%;
+    max-width: 620px;
+  }
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+  .game-overlay {
+    padding: 8px;
+  }
+
+  .game-modal {
+    width: 100%;
+
+    max-width: calc(100vw - 16px);
+
+    max-height: calc(100vh - 16px);
+
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 10px;
+
+    border-radius: 12px;
+  }
+
+  .close-btn {
+    top: 7px;
+    right: 7px;
+
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
 
 </style>

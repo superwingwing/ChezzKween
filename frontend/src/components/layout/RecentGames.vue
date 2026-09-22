@@ -7,7 +7,7 @@ const recentGames = ref([])
 const showGame = ref(false)
 const selectedGame = ref(null)
 const chessboardRef = ref(null)
-const loadingGame = ref(false)
+const loadingGameId = ref(null)
 
 // Usernames that should be recognized as you
 const myUsernames = ref([
@@ -181,7 +181,7 @@ const formatDate = (date) => {
  */
  const viewGame = async (game) => {
   try {
-    loadingGame.value = true
+    loadingGameId.value = game.id
 
     const { data, error } = await supabase
       .from("game_analysis")
@@ -216,7 +216,7 @@ const formatDate = (date) => {
     console.error("Failed to open game:", error)
 
   } finally {
-    loadingGame.value = false
+    loadingGameId.value = null
   }
 }
 
@@ -338,7 +338,8 @@ onMounted(async () => {
               variant="text"
               size="small"
               color="primary"
-              :loading="loadingGame"
+              :loading="loadingGameId === game.id"
+              :disabled="loadingGameId !== null"
               @click="viewGame(game)"
             >
               View Game

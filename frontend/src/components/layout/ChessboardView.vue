@@ -658,6 +658,7 @@
           <MoveQuality
             :quality="currentQuality"
             :square="qualityPosition"
+            :orientation="orientation"
           />
 
         </div>

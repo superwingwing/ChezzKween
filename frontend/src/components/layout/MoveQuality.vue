@@ -3,7 +3,11 @@ import { computed, onMounted, onBeforeUnmount, ref, nextTick, watch } from "vue"
 
 const props = defineProps({
   quality: String,
-  square: String
+  square: String,
+  orientation: {
+    type: String,
+    default: "white"
+  }
 })
 
 const badgeStyle = ref({})
@@ -18,10 +22,13 @@ function updatePosition() {
 
   const boardRow = document.querySelector(".board-row")
   if (!boardRow) return
+
   const chessboard = boardRow.querySelector(".board")
   if (!chessboard) return
+
   const boardRect = chessboard.getBoundingClientRect()
   const rowRect = boardRow.getBoundingClientRect()
+
   const boardSize = Math.min(
     boardRect.width,
     boardRect.height
@@ -30,11 +37,27 @@ function updatePosition() {
   if (!boardSize) return
 
   const squareSize = boardSize / 8
+
   const file =
     props.square.charCodeAt(0) - 97
 
   const rank =
     parseInt(props.square[1])
+
+  /*
+    Convert chess coordinates into
+    the visual coordinates of the board.
+  */
+  let displayFile
+  let displayRank
+
+  if (props.orientation === "white") {
+    displayFile = file
+    displayRank = 8 - rank
+  } else {
+    displayFile = 7 - file
+    displayRank = rank - 1
+  }
 
   /*
     Position badge at the UPPER-RIGHT
@@ -52,13 +75,13 @@ function updatePosition() {
 
   const left =
     (boardRect.left - rowRect.left) +
-    ((file + 1) * squareSize) -
+    ((displayFile + 1) * squareSize) -
     badgeSize -
     offset
 
   const top =
     (boardRect.top - rowRect.top) +
-    ((8 - rank) * squareSize) +
+    (displayRank * squareSize) +
     offset
 
   badgeStyle.value = {
@@ -113,6 +136,13 @@ watch(
 
 watch(
   () => props.quality,
+  async () => {
+    await nextTick()
+    updatePosition()
+  }
+)
+watch(
+  () => props.orientation,
   async () => {
     await nextTick()
     updatePosition()

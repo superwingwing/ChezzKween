@@ -336,115 +336,66 @@
 </template>
 
 
-
 <style scoped>
-
 .game-overlay {
   position: fixed;
   inset: 0;
-
   z-index: 9999;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   padding: 16px;
-
   background: rgba(0, 0, 0, 0.55);
-
   overflow-y: auto;
 }
-
-
-/* =========================================
-   MODAL
-========================================= */
 
 .game-modal {
   position: relative;
-
   width: 1020px;
   max-width: calc(100vw - 32px);
-
   max-height: calc(100vh - 32px);
-
   overflow-y: auto;
   overflow-x: hidden;
-
   background: #ffffff;
-
   border-radius: 18px;
-
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.30);
-
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.30);
   box-sizing: border-box;
-
   padding: 0 20px 16px;
+  transform: translateX(50px);
 }
-
-
-/* =========================================
-   CHESSBOARD + COACH
-========================================= */
 
 .game-content {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   justify-content: center;
-
   gap: 20px;
-
   width: 100%;
 }
 
-
-/* Keep chessboard at its natural size */
 .game-content > :deep(.chessboard-container) {
   flex: 0 0 auto;
 }
 
-
-/* Chess Coach */
 .game-content :deep(.coach-card) {
   flex: 0 0 320px;
-
   width: 320px;
   max-width: 320px;
 }
 
-
-/* =========================================
-   CLOSE BUTTON
-========================================= */
-
 .close-btn {
   position: absolute !important;
-
   top: 12px;
   right: 12px;
-
   width: 42px !important;
   height: 42px !important;
-
   z-index: 10;
-
   background: #ffffff !important;
   color: #222222 !important;
-
-  box-shadow:
-    0 3px 12px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
 }
 
-
-/* =========================================
-   TABLET
-========================================= */
-
 @media (max-width: 960px) {
-
   .game-content {
     flex-direction: column;
     align-items: center;
@@ -456,38 +407,26 @@
   }
 }
 
-
-/* =========================================
-   MOBILE
-========================================= */
-
 @media (max-width: 600px) {
-
   .game-overlay {
     padding: 8px;
   }
 
   .game-modal {
     width: 100%;
-
     max-width: calc(100vw - 16px);
-
     max-height: calc(100vh - 16px);
-
-    padding-left: 8px;
-    padding-right: 8px;
-    padding-bottom: 10px;
-
+    padding: 0 8px 10px;
     border-radius: 12px;
+    transform: none;
   }
 
   .close-btn {
     top: 7px;
     right: 7px;
-
     width: 38px !important;
     height: 38px !important;
   }
 }
-
 </style>
+

@@ -349,29 +349,23 @@ def explain_move(
 # ==========================================================
 # ADD QUALITY TO RESULT
 # ==========================================================
-
 def add_quality_to_result(
     result,
     played_move,
     quality
 ):
-    """
-    Add the quality verdict to the explanation.
-
-    This is intentionally done only once at the end of
-    the explanation process.
-    """
-
     verdict = quality_verdict(
         played_move,
         quality
     )
 
     if verdict:
-
         result["explanation"] = (
             f"{verdict} {result['explanation']}"
         )
+
+    if quality not in ("inaccuracy", "mistake", "blunder"):
+        result["recommendation"] = None
 
     return result
 

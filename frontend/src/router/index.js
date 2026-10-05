@@ -39,9 +39,9 @@ const routes = [
         component: AboutView,
       },
       {
-      path: "tips",
-      name: "tips",
-      component: TipsView,
+        path: 'tips',
+        name: 'tips',
+        component: TipsView,
       },
       // 404 ROUTE — KEEP THIS LAST
       {
@@ -55,7 +55,7 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 // Protect all routes except Login and Register (Route Guard or Navigation Guard)
@@ -78,4 +78,3 @@ router.beforeEach(async (to) => {
 })
 
 export default router
-

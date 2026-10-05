@@ -81,8 +81,12 @@ export default {
 
     <!-- Main Page Area -->
     <v-main class="main-content">
-      <router-view />
-    </v-main>
+  <router-view v-slot="{ Component }">
+    <KeepAlive>
+      <component :is="Component" />
+    </KeepAlive>
+  </router-view>
+</v-main>
 
   </v-layout>
 </template>

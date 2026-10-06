@@ -15,8 +15,6 @@
     const profile = reactive({
       username: "",
       email: "",
-      rating: 2200,
-      // style: "Aggressive",
       memberSince: "September 2026",
       avatar: null
     })
@@ -211,29 +209,6 @@
                   <p class="profile-email">
                     {{ profile.email }}
                   </p>
-
-                  <div class="d-flex flex-wrap justify-center justify-sm-start ga-2 mt-4">
-                    <v-chip
-                      color="primary"
-                      variant="tonal"
-                      size="small"
-                    >
-                      <v-icon start size="16">
-                        mdi-chess-queen
-                      </v-icon>
-                      {{ profile.style }}
-                    </v-chip>
-
-                    <v-chip
-                      variant="tonal"
-                      size="small"
-                    >
-                      <v-icon start size="16">
-                        mdi-star-outline
-                      </v-icon>
-                      {{ profile.rating }} Rating
-                    </v-chip>
-                  </div>
                 </div>
               </v-col>
 

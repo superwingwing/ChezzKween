@@ -111,7 +111,9 @@ def analyze_single_move(
     after_analysis=None
 ):
     if move not in before.legal_moves:
-        return {"error": "Illegal move"}
+        return {
+            "error": "Illegal move"
+        }
 
     if player_style is None:
         player_style = {
@@ -119,7 +121,6 @@ def analyze_single_move(
             "Positional": 50.0
         }
 
-    mover = before.turn
     san_move = before.san(move)
 
     if position_analysis is None:
@@ -241,7 +242,8 @@ def analyze_single_move(
 
 def analyze_pgn(
     pgn_text: str,
-    access_token: str
+    access_token: str,
+    progress_callback=None
 ):
     if not access_token:
         return {
@@ -281,8 +283,7 @@ def analyze_pgn(
 
     if not existing_game.data:
         return {
-            "error":
-            "Game was not found in review_games"
+            "error": "Game was not found in review_games"
         }
 
     game_id = existing_game.data[0]["id"]
@@ -297,9 +298,15 @@ def analyze_pgn(
     )
 
     if cached_analysis.data:
-        return cached_analysis.data[0][
-            "analysis_json"
-        ]
+        if progress_callback:
+            progress_callback({
+                "progress": 100,
+                "move": 0,
+                "total_moves": 0,
+                "status": "Analysis already available."
+            })
+
+        return cached_analysis.data[0]["analysis_json"]
 
     game = chess.pgn.read_game(
         io.StringIO(pgn_text)
@@ -309,6 +316,20 @@ def analyze_pgn(
         return {
             "error": "Invalid PGN"
         }
+
+    moves = list(
+        game.mainline_moves()
+    )
+
+    total_moves = len(moves)
+
+    if progress_callback:
+        progress_callback({
+            "progress": 0,
+            "move": 0,
+            "total_moves": total_moves,
+            "status": "Preparing analysis..."
+        })
 
     board = game.board()
 
@@ -323,7 +344,7 @@ def analyze_pgn(
     ]
 
     for move_number, move in enumerate(
-        game.mainline_moves(),
+        moves,
         start=1
     ):
         before = board.copy()
@@ -361,9 +382,33 @@ def analyze_pgn(
 
         current_analysis = next_analysis
 
+        if progress_callback:
+            progress = round(
+                (move_number / total_moves) * 95
+            )
+
+            progress_callback({
+                "progress": progress,
+                "move": move_number,
+                "total_moves": total_moves,
+                "status": (
+                    f"Analyzing move "
+                    f"{move_number} of "
+                    f"{total_moves}..."
+                )
+            })
+
     analysis_result = {
         "evaluations": evaluations
     }
+
+    if progress_callback:
+        progress_callback({
+            "progress": 97,
+            "move": total_moves,
+            "total_moves": total_moves,
+            "status": "Saving analysis..."
+        })
 
     try:
         (
@@ -382,6 +427,14 @@ def analyze_pgn(
             error
         )
 
+    if progress_callback:
+        progress_callback({
+            "progress": 100,
+            "move": total_moves,
+            "total_moves": total_moves,
+            "status": "Analysis complete!"
+        })
+
     return analysis_result
 
 
@@ -391,14 +444,14 @@ def analyze_explored_move(
 ):
     try:
         before = chess.Board(fen)
+
         move = chess.Move.from_uci(
             move_uci
         )
 
     except ValueError:
         return {
-            "error":
-            "Invalid FEN or move"
+            "error": "Invalid FEN or move"
         }
 
     return analyze_single_move(

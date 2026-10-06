@@ -65,7 +65,7 @@
         <div class="profile-section">
           <v-avatar
             size="105"
-            color="white"
+            color="light-blue-darken-4"
             class="profile-avatar"
           >
             <v-img
@@ -74,16 +74,21 @@
               alt="User Avatar"
               cover
             />
-            <v-img
+
+            <span
               v-else
-              src="/images/pic1.jpg"
-              alt="User Avatar"
-              cover
-            />
+              class="avatar-letter"
+            >
+              {{
+                authStore.user?.user_metadata?.username
+                  ?.charAt(0)
+                  ?.toUpperCase() || '?'
+              }}
+            </span>
           </v-avatar>
 
           <div class="profile-name">
-              {{ authStore.user?.user_metadata?.username }}
+            {{ authStore.user?.user_metadata?.username }}
           </div>
         </div>
 
@@ -140,6 +145,21 @@
   border-radius: 0 18px 18px 0 !important;
 }
 
+.avatar-letter {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  color: white;
+  letter-spacing: -2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
 .navigation-content {
   display: flex;
   flex-direction: column;
@@ -173,11 +193,6 @@
   font-size: 11px;
 }
 
-.search-button {
-  min-height: 42px;
-  text-transform: none;
-  font-weight: 600;
-}
 
 .navigation-list {
   padding: 10px 0;

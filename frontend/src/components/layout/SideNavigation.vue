@@ -85,10 +85,6 @@
           <div class="profile-name">
               {{ authStore.user?.user_metadata?.username }}
           </div>
-
-          <div class="profile-label">
-            ChessKween User
-          </div>
         </div>
 
         <v-divider class="my-4" color="white" opacity="0.15" />

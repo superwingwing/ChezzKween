@@ -28,6 +28,7 @@ def parse_pgn(pgn_text):
         "white": game.headers.get("White", "Unknown"),
         "black": game.headers.get("Black", "Unknown"),
         "result": game.headers.get("Result", "*"),
+        "termination": game.headers.get("Termination", ""),
         "white_elo": game.headers.get("WhiteElo"),
         "black_elo": game.headers.get("BlackElo")
     }
@@ -115,6 +116,7 @@ def upload_pgn(data: PGNRequest, request: Request):
             "white_name": info["white"],
             "black_name": info["black"],
             "result": info["result"],
+            "termination": info["termination"],
             "white_elo": info["white_elo"],
             "black_elo": info["black_elo"],
             "moves": moves

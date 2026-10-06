@@ -13,7 +13,7 @@ export default {
     StyleClassification,
     ChessboardView,
     EvaluationBarView,
-    ChessCoach
+    ChessCoach,
   },
 
   setup() {
@@ -29,65 +29,41 @@ export default {
       STDrawer,
       isLargeScreen,
       evalScore,
-      coachData
+      coachData,
     }
-  }
+  },
 }
 </script>
 
 <template>
   <v-layout class="layout">
-
     <!-- App Bar -->
-    <v-app-bar
-      app
-      flat
-      height="64"
-      color="transparent"
-      class="app-bar"
-    >
+    <v-app-bar app flat height="64" color="transparent" class="app-bar">
       <!-- Navigation Toggle -->
-      <v-btn
-        icon
-        color="light-green-darken-3"
-        @click="navigationDrawer = !navigationDrawer"
-      >
+      <v-btn icon color="light-green-darken-3" @click="navigationDrawer = !navigationDrawer">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
 
       <!-- Logo -->
-      <v-img
-        src="/images/logo.png"
-        max-width="120"
-        contain
-        class="mx-auto"
-      />
+      <v-img src="/images/logo.png" max-width="120" contain class="mx-auto" />
 
       <!-- Right Side Toggle -->
-      <v-btn
-        icon
-        color="light-green-darken-3"
-        @click="STDrawer = !STDrawer"
-      >
+      <v-btn icon color="light-green-darken-3" @click="STDrawer = !STDrawer">
         <v-icon>mdi-newspaper-variant-outline</v-icon>
       </v-btn>
     </v-app-bar>
 
     <!-- Side Navigation -->
-    <SideNavigation
-      v-model="navigationDrawer"
-      :permanent="isLargeScreen"
-    />
+    <SideNavigation v-model="navigationDrawer" :permanent="isLargeScreen" />
 
     <!-- Main Page Area -->
     <v-main class="main-content">
-  <router-view v-slot="{ Component }">
-    <KeepAlive>
-      <component :is="Component" />
-    </KeepAlive>
-  </router-view>
-</v-main>
-
+      <router-view v-slot="{ Component }">
+        <KeepAlive>
+          <component :is="Component" />
+        </KeepAlive>
+      </router-view>
+    </v-main>
   </v-layout>
 </template>
 

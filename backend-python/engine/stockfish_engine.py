@@ -13,46 +13,27 @@ engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
 
 
 def score_to_eval(score, board):
-    """
-    Convert Stockfish's PovScore into a consistent evaluation
-    from White's perspective.
-
-    Positive = White is winning
-    Negative = Black is winning
-
-    Special handling is required for mate because after a
-    checkmate the side to move is the side that has been mated.
-    """
-
     score = score.white()
 
     if score.is_mate():
         mate = score.mate()
+
         if board.is_checkmate():
             if board.turn == chess.BLACK:
                 return 100
-            else:
-                return -100
+            return -100
 
-        # For non-checkmate mate scores, use the normal
-        # White-perspective mate sign.
         return 100 if mate > 0 else -100
 
     return round(score.score() / 100, 2)
 
 
-def evaluate_position(board):
+def evaluate_position(board, depth=12, multipv=1):
     infos = engine.analyse(
         board,
-        chess.engine.Limit(depth=18),
-        multipv=3
+        chess.engine.Limit(depth=depth),
+        multipv=multipv
     )
-
-    print("\n==============================")
-    print("FEN:", board.fen())
-    print("Stockfish returned:")
-    print(infos)
-    print("==============================\n")
 
     if isinstance(infos, dict):
         infos = [infos]
@@ -60,7 +41,6 @@ def evaluate_position(board):
     candidates = []
 
     for info in infos:
-
         if "score" not in info:
             continue
 
@@ -92,3 +72,27 @@ def evaluate_position(board):
         "pv": candidates[0]["pv"],
         "candidates": candidates
     }
+
+
+def evaluate_fast(board):
+    return evaluate_position(
+        board,
+        depth=12,
+        multipv=1
+    )
+
+
+def evaluate_critical(board):
+    return evaluate_position(
+        board,
+        depth=16,
+        multipv=3
+    )
+
+
+def evaluate_deep(board):
+    return evaluate_position(
+        board,
+        depth=18,
+        multipv=3
+    )

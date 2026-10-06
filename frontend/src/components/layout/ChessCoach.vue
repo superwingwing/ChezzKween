@@ -35,8 +35,25 @@ const speakCoach = () => {
   const text = getSpeechText()
   const utterance = new SpeechSynthesisUtterance(text)
 
-  utterance.rate = 0.95
-  utterance.pitch = 1.05
+  const voices = window.speechSynthesis.getVoices()
+
+  const femaleVoice =
+    voices.find(voice =>
+      /female|zira|samantha|karen|victoria|susan|aria|jenny|libby|hazel/i.test(voice.name)
+    ) ||
+    voices.find(voice =>
+      voice.lang.startsWith('en')
+    )
+
+  if (femaleVoice) {
+    utterance.voice = femaleVoice
+    utterance.lang = femaleVoice.lang
+  } else {
+    utterance.lang = 'en-US'
+  }
+
+  utterance.rate = 0.88
+  utterance.pitch = 1.18
   utterance.volume = 1
 
   utterance.onstart = () => {

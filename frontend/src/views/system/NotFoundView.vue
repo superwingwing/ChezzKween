@@ -15,76 +15,114 @@ function goBack() {
 <template>
   <v-app class="not-found-page">
     <v-main class="main-content">
+
+      <!-- BACKGROUND -->
       <div class="chess-background"></div>
 
-      <!-- Floating Chess Pieces -->
-      <v-icon class="floating-piece piece-1" icon="mdi-chess-pawn" />
-      <v-icon class="floating-piece piece-2" icon="mdi-chess-knight" />
-      <v-icon class="floating-piece piece-3" icon="mdi-chess-bishop" />
-      <v-icon class="floating-piece piece-4" icon="mdi-chess-rook" />
-      <v-icon class="floating-piece piece-5" icon="mdi-chess-pawn" />
+      <!-- FLOATING CHESS PIECES -->
+      <v-icon
+        class="floating-piece piece-1"
+        icon="mdi-chess-pawn"
+      />
 
+      <v-icon
+        class="floating-piece piece-2"
+        icon="mdi-chess-knight"
+      />
+
+      <v-icon
+        class="floating-piece piece-3"
+        icon="mdi-chess-bishop"
+      />
+
+      <v-icon
+        class="floating-piece piece-4"
+        icon="mdi-chess-rook"
+      />
+
+      <v-icon
+        class="floating-piece piece-5"
+        icon="mdi-chess-pawn"
+      />
+
+      <!-- MAIN CONTENT -->
       <v-container
         fluid
         class="error-container"
       >
-        <div class="error-content">
+        <v-card
+          class="error-card"
+          rounded="xl"
+          elevation="0"
+        >
 
-          <!-- Animated Queen -->
+          <!-- QUEEN -->
           <div class="queen-area">
             <div class="queen-glow"></div>
 
-            <v-icon
-              icon="mdi-chess-queen"
-              class="main-queen"
-            />
+            <v-avatar
+              class="queen-avatar"
+              size="86"
+            >
+              <v-icon
+                icon="mdi-chess-queen"
+                size="52"
+              />
+            </v-avatar>
           </div>
 
           <!-- 404 -->
           <div class="error-number">
             <span>4</span>
-            <span class="zero">0</span>
+
+            <span class="zero">
+              <span class="zero-queen">♛</span>
+            </span>
+
             <span>4</span>
           </div>
 
-          <!-- Title -->
+          <!-- TITLE -->
           <h1 class="error-title">
             PAGE NOT FOUND
           </h1>
 
+          <!-- DESCRIPTION -->
           <p class="error-description">
             Looks like this move wasn't found on the board.
-            The page you're looking for may have been moved or doesn't exist.
+            The page you're looking for may have been moved
+            or doesn't exist.
           </p>
 
-          <!-- Chess line -->
+          <!-- CHESS DIVIDER -->
           <div class="chess-line">
-            <div></div>
+            <span></span>
 
             <v-icon icon="mdi-chess-pawn" />
             <v-icon icon="mdi-chess-knight" />
             <v-icon icon="mdi-chess-bishop" />
             <v-icon icon="mdi-chess-rook" />
 
-            <div></div>
+            <span></span>
           </div>
 
-          <!-- Buttons -->
+          <!-- BUTTONS -->
           <div class="actions">
 
             <v-btn
-              color="light-blue-darken-4"
+              color="orange-darken-1"
               size="large"
               rounded="lg"
               prepend-icon="mdi-home-outline"
               class="home-btn"
+              elevation="4"
               @click="goHome"
             >
               Back to Home
             </v-btn>
 
             <v-btn
-              color="light-blue-darken-4"
+              color="orange-darken-1"
               variant="outlined"
               size="large"
               rounded="lg"
@@ -97,19 +135,28 @@ function goBack() {
 
           </div>
 
-          <!-- Branding -->
+          <!-- BRANDING -->
           <div class="branding">
-            <v-icon
-              icon="mdi-chess-queen"
-              size="18"
-              color="light-blue-darken-4"
-            />
+            <v-avatar
+              size="30"
+              color="#fff3e6"
+              rounded="lg"
+            >
+              <v-icon
+                icon="mdi-chess-queen"
+                size="17"
+                color="orange-darken-2"
+              />
+            </v-avatar>
 
-            <span>ChessKween</span>
+            <span class="branding-text">
+              Chess<span>Kween</span>
+            </span>
           </div>
 
-        </div>
+        </v-card>
       </v-container>
+
     </v-main>
   </v-app>
 </template>
@@ -117,26 +164,42 @@ function goBack() {
 <style scoped>
 
 /* =========================================
-   FULL SCREEN
+   PAGE
    ========================================= */
 
 .not-found-page {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
+
   background: #ffffff;
 }
 
 .main-content {
   position: relative;
+
   width: 100%;
   height: 100dvh;
+
   overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(242, 140, 40, 0.10),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fafafa 55%,
+      #f5f5f5 100%
+    );
 }
 
 
 /* =========================================
-   BACKGROUND
+   CHESS BOARD BACKGROUND
    ========================================= */
 
 .chess-background {
@@ -148,26 +211,27 @@ function goBack() {
   background-image:
     linear-gradient(
       45deg,
-      #01579b 25%,
+      #f28c28 25%,
       transparent 25%
     ),
     linear-gradient(
       -45deg,
-      #01579b 25%,
+      #f28c28 25%,
       transparent 25%
     ),
     linear-gradient(
       45deg,
       transparent 75%,
-      #01579b 75%
+      #f28c28 75%
     ),
     linear-gradient(
       -45deg,
       transparent 75%,
-      #01579b 75%
+      #f28c28 75%
     );
 
   background-size: 80px 80px;
+
   background-position:
     0 0,
     0 40px,
@@ -179,28 +243,50 @@ function goBack() {
 
 
 /* =========================================
-   CONTENT
+   CONTAINER
    ========================================= */
 
 .error-container {
   position: relative;
+
   z-index: 5;
 
   height: 100%;
-  min-height: 0;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 10px;
+  padding: 24px;
 }
 
-.error-content {
+
+/* =========================================
+   ERROR CARD
+   ========================================= */
+
+.error-card {
   width: 100%;
-  max-width: 850px;
+  max-width: 760px;
+
+  padding: 38px 42px 28px;
 
   text-align: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff 0%,
+      #fafafa 100%
+    );
+
+  border: 1px solid #e6e6e6;
+
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.08),
+    0 6px 18px rgba(242, 140, 40, 0.06);
+
+  animation: card-enter 0.6s ease-out;
 }
 
 
@@ -211,27 +297,36 @@ function goBack() {
 .queen-area {
   position: relative;
 
-  width: 90px;
-  height: 90px;
+  width: 86px;
+  height: 86px;
 
-  margin: 0 auto 5px;
+  margin: 0 auto 8px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.main-queen {
+.queen-avatar {
   position: relative;
+
   z-index: 2;
 
-  font-size: 76px;
+  background:
+    linear-gradient(
+      135deg,
+      #111111,
+      #252525
+    );
 
-  color: #01579b;
+  border: 2px solid #f28c28;
 
-  animation:
-    queen-float 3s ease-in-out infinite,
-    queen-glow 2.5s ease-in-out infinite alternate;
+  color: #f28c28;
+
+  box-shadow:
+    0 10px 30px rgba(242, 140, 40, 0.18);
+
+  animation: queen-float 3s ease-in-out infinite;
 }
 
 .queen-glow {
@@ -242,7 +337,7 @@ function goBack() {
 
   border-radius: 50%;
 
-  background: rgba(1, 87, 155, 0.16);
+  background: rgba(242, 140, 40, 0.18);
 
   filter: blur(25px);
 
@@ -257,39 +352,37 @@ function goBack() {
 .error-number {
   display: flex;
 
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
-  gap: clamp(5px, 1vw, 14px);
+  gap: 10px;
 
-  font-size: clamp(100px, 20vw, 230px);
+  margin-top: 2px;
 
-  line-height: 0.78;
+  font-size: clamp(100px, 18vw, 190px);
+
+  line-height: 0.8;
 
   font-weight: 900;
 
-  letter-spacing: clamp(-8px, -1vw, -14px);
+  letter-spacing: -10px;
 
-  color: #01579b;
+  color: #111111;
 
   user-select: none;
 }
 
-.error-number span {
+.error-number > span {
   display: inline-block;
 
   animation: number-float 3.5s ease-in-out infinite;
 }
 
-.error-number span:nth-child(1) {
+.error-number > span:first-child {
   animation-delay: 0s;
 }
 
-.error-number span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.error-number span:nth-child(3) {
+.error-number > span:last-child {
   animation-delay: 0.4s;
 }
 
@@ -301,14 +394,17 @@ function goBack() {
 .zero {
   position: relative;
 
-  width: clamp(90px, 15vw, 180px);
-  height: clamp(90px, 15vw, 180px);
+  width: clamp(85px, 14vw, 160px);
+  height: clamp(85px, 14vw, 160px);
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border: clamp(8px, 1.2vw, 14px) solid #01579b;
+  border:
+    clamp(8px, 1vw, 13px)
+    solid
+    #f28c28;
 
   border-radius: 50%;
 
@@ -319,14 +415,12 @@ function goBack() {
     zero-pulse 2.5s ease-in-out infinite;
 }
 
-.zero::after {
-  content: "♛";
-
+.zero-queen {
   position: absolute;
 
-  font-size: clamp(35px, 6vw, 75px);
+  font-size: clamp(35px, 6vw, 70px);
 
-  color: #01579b;
+  color: #f28c28;
 
   animation: queen-inside 3s ease-in-out infinite;
 }
@@ -337,15 +431,15 @@ function goBack() {
    ========================================= */
 
 .error-title {
-  margin: 28px 0 0;
+  margin: 24px 0 0;
 
-  font-size: clamp(22px, 3vw, 36px);
+  color: #111111;
 
-  font-weight: 800;
+  font-size: clamp(24px, 3vw, 34px);
 
-  letter-spacing: 4px;
+  font-weight: 900;
 
-  color: #263238;
+  letter-spacing: 2px;
 }
 
 
@@ -354,15 +448,15 @@ function goBack() {
    ========================================= */
 
 .error-description {
-  max-width: 580px;
+  max-width: 560px;
 
-  margin: 12px auto 0;
+  margin: 10px auto 0;
 
-  color: #607d8b;
+  color: #666666;
 
-  font-size: clamp(13px, 1.6vw, 16px);
+  font-size: 14px;
 
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 
@@ -373,25 +467,26 @@ function goBack() {
 .chess-line {
   display: flex;
 
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
-  gap: 14px;
+  gap: 13px;
 
-  margin: 20px auto;
+  margin: 22px auto;
 
-  color: #01579b;
+  color: #f28c28;
 }
 
-.chess-line div {
-  width: clamp(35px, 8vw, 100px);
+.chess-line span {
+  width: clamp(35px, 8vw, 90px);
+
   height: 1px;
 
-  background: rgba(1, 87, 155, 0.25);
+  background: #e0e0e0;
 }
 
 .chess-line .v-icon {
-  font-size: 21px;
+  font-size: 20px;
 
   animation: piece-bounce 2s ease-in-out infinite;
 }
@@ -416,29 +511,31 @@ function goBack() {
 .actions {
   display: flex;
 
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
   gap: 12px;
 
-  margin-top: 20px;
+  margin-top: 22px;
 }
 
 .home-btn {
   min-width: 170px;
 
-  color: #ffffff;
+  color: #ffffff !important;
 
-  font-weight: 600;
+  font-weight: 700;
 
   box-shadow:
-    0 8px 22px rgba(1, 87, 155, 0.22);
+    0 8px 24px rgba(242, 140, 40, 0.25);
 }
 
 .back-btn {
   min-width: 135px;
 
-  font-weight: 600;
+  font-weight: 700;
+
+  background: #ffffff;
 }
 
 
@@ -449,23 +546,27 @@ function goBack() {
 .branding {
   display: flex;
 
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 
-  gap: 7px;
+  gap: 8px;
 
-  margin-top: 25px;
+  margin-top: 24px;
 
-  color: #78909c;
+  color: #555555;
 
   font-size: 13px;
 
-  font-weight: 600;
+  font-weight: 800;
+}
+
+.branding-text span {
+  color: #f28c28;
 }
 
 
 /* =========================================
-   FLOATING CHESS PIECES
+   FLOATING PIECES
    ========================================= */
 
 .floating-piece {
@@ -473,7 +574,7 @@ function goBack() {
 
   z-index: 2;
 
-  color: #01579b;
+  color: #f28c28;
 
   opacity: 0.08;
 
@@ -530,24 +631,26 @@ function goBack() {
    ANIMATIONS
    ========================================= */
 
-@keyframes queen-float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-10px) rotate(3deg);
-  }
-}
-
-@keyframes queen-glow {
+@keyframes card-enter {
   from {
-    filter: drop-shadow(0 0 5px rgba(1, 87, 155, 0.2));
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
   }
 
   to {
-    filter: drop-shadow(0 0 20px rgba(1, 87, 155, 0.5));
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes queen-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
   }
 }
 
@@ -571,7 +674,7 @@ function goBack() {
   }
 
   50% {
-    transform: translateY(-7px);
+    transform: translateY(-6px);
   }
 }
 
@@ -589,11 +692,12 @@ function goBack() {
 @keyframes zero-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(1, 87, 155, 0);
+    box-shadow: 0 0 0 rgba(242, 140, 40, 0);
   }
 
   50% {
-    box-shadow: 0 0 35px rgba(1, 87, 155, 0.15);
+    box-shadow:
+      0 0 35px rgba(242, 140, 40, 0.18);
   }
 }
 
@@ -671,52 +775,60 @@ function goBack() {
 @media (max-width: 600px) {
 
   .error-container {
-    padding: 12px;
+    padding: 14px;
+  }
+
+  .error-card {
+    padding: 28px 18px 22px;
   }
 
   .queen-area {
-    width: 65px;
-    height: 65px;
+    width: 70px;
+    height: 70px;
   }
 
-  .main-queen {
-    font-size: 55px;
+  .queen-avatar {
+    width: 68px !important;
+    height: 68px !important;
   }
 
-  .queen-glow {
-    width: 50px;
-    height: 50px;
+  .queen-avatar .v-icon {
+    font-size: 42px !important;
   }
 
   .error-title {
-    margin-top: 22px;
+    margin-top: 20px;
 
-    letter-spacing: 2px;
+    letter-spacing: 1px;
   }
 
   .error-description {
-    max-width: 90%;
+    max-width: 92%;
   }
 
   .chess-line {
     gap: 8px;
 
-    margin: 16px auto;
+    margin: 17px auto;
   }
 
   .chess-line .v-icon {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .actions {
-    margin-top: 16px;
+    flex-direction: column;
 
-    gap: 8px;
+    width: 100%;
+
+    gap: 9px;
   }
 
   .home-btn,
   .back-btn {
-    min-width: 135px;
+    width: 100%;
+
+    min-width: 0;
   }
 
   .branding {
@@ -735,25 +847,31 @@ function goBack() {
 
 @media (max-height: 650px) {
 
+  .error-card {
+    padding-top: 20px;
+    padding-bottom: 18px;
+  }
+
   .queen-area {
     transform: scale(0.75);
+
     margin-bottom: -5px;
   }
 
   .error-title {
-    margin-top: 15px;
+    margin-top: 12px;
   }
 
   .error-description {
-    margin-top: 8px;
+    margin-top: 7px;
   }
 
   .chess-line {
-    margin: 12px auto;
+    margin: 11px auto;
   }
 
   .actions {
-    margin-top: 12px;
+    margin-top: 11px;
   }
 
   .branding {
@@ -768,11 +886,12 @@ function goBack() {
 
 @media (prefers-reduced-motion: reduce) {
 
-  .main-queen,
+  .error-card,
+  .queen-avatar,
   .queen-glow,
-  .error-number span,
+  .error-number > span,
   .zero,
-  .zero::after,
+  .zero-queen,
   .chess-line .v-icon,
   .floating-piece {
     animation: none;

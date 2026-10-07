@@ -5,10 +5,12 @@ import { TheChessboard } from "vue3-chessboard"
 import "vue3-chessboard/style.css"
 import MoveQuality from "@/components/layout/MoveQuality.vue"
 import EvaluationBarView from "@/components/layout/EvaluationBarView.vue"
+import GameEndModal from "@/components/layout/GameEndModal.vue"
 
 const chess = new Chess()
 let boardAPI = null
 const evalScore = ref(0)
+const showGameEndModal = ref(false)
 const pgnMoves = ref([])
 const pgnEvaluations = ref([])
 const pgnIndex = ref(0)
@@ -264,6 +266,13 @@ function goToPGN(index) {
   }
 
   isNavigating.value = false
+
+   if (
+    pgnMoves.value.length > 0 &&
+    pgnIndex.value === pgnMoves.value.length
+  ) {
+    showGameEndModal.value = true
+  }
 }
 
 function nextMove() {
@@ -619,6 +628,7 @@ async function loadMoves(response) {
     analysisCache.value = {}
 
     orientation.value = "white"
+    showGameEndModal.value = false
 
     chess.reset()
 
@@ -880,6 +890,12 @@ defineExpose({
       </span>
 
     </div>
+
+    <!-- Game End -->
+    <GameEndModal
+      v-model="showGameEndModal"
+      :game="currentGame"
+    />
 
   </div>
 </template>

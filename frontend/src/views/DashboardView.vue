@@ -36,6 +36,7 @@ const coachData = ref(null)
         md="4"
         class="pa-2"
       >
+       <br>
         <ChessCoach
           :analysis="coachData"
         />

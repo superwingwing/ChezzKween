@@ -37,17 +37,6 @@ export default {
 
 <template>
   <v-layout class="layout">
-    <!-- App Bar -->
-    <v-app-bar app flat height="64" color="transparent" class="app-bar">
-      <!-- Navigation Toggle -->
-      <v-btn icon color="light-green-darken-3" @click="navigationDrawer = !navigationDrawer">
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
-
-      <!-- Logo -->
-      <v-img src="/images/logo.png" max-width="120" contain class="mx-auto" />
-
-    </v-app-bar>
 
     <!-- Side Navigation -->
     <SideNavigation v-model="navigationDrawer" :permanent="isLargeScreen" />

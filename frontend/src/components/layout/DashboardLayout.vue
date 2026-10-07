@@ -47,10 +47,6 @@ export default {
       <!-- Logo -->
       <v-img src="/images/logo.png" max-width="120" contain class="mx-auto" />
 
-      <!-- Right Side Toggle -->
-      <v-btn icon color="light-green-darken-3" @click="STDrawer = !STDrawer">
-        <v-icon>mdi-newspaper-variant-outline</v-icon>
-      </v-btn>
     </v-app-bar>
 
     <!-- Side Navigation -->

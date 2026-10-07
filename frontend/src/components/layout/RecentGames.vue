@@ -225,17 +225,19 @@ onMounted(async () => {
           </td>
 
           <td class="text-end">
-            <v-btn
-              variant="text"
-              size="small"
-              color="primary"
-              :loading="loadingGameId === game.id"
-              :disabled="loadingGameId !== null"
-              @click="viewGame(game)"
-            >
-              View Game
+             <v-btn
+                  variant="flat"
+                  size="small"
+                  color="orange"
+                  rounded="pill"
+                  :loading="loadingGameId === game.id"
+                  :disabled="loadingGameId !== null"
+                  @click="viewGame(game)"
+                >
+                  View Game
               <v-icon end>mdi-arrow-right</v-icon>
             </v-btn>
+
           </td>
         </tr>
 

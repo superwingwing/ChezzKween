@@ -115,13 +115,13 @@ const statistics = [
   {
     label: "Losses",
     value: losses,
-    icon: "mdi-chart-line",
+    icon: "mdi-shield-outline",
     class: "losses"
   },
   {
     label: "Draws",
     value: draws,
-    icon: "mdi-equal",
+    icon: "mdi-scale-balance",
     class: "draws"
   }
 ]
@@ -171,35 +171,40 @@ onMounted(() => {
 <template>
   <v-container fluid class="profile-page pa-0">
 
-    <!-- =========================================================
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+    <section class="page-header">
+      <div>
+        <div class="page-eyebrow">
+          CHESSKWEEN ANALYTICS
+        </div>
+
+        <h1 class="page-title">
+          Player Profile
+        </h1>
+
+        <p class="page-subtitle">
+          Manage your grandmaster identity, game stats, and analytical insights.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- =====================================================
          PROFILE HERO
-    ========================================================== -->
+    ====================================================== -->
     <section class="profile-hero">
 
       <div class="hero-pattern"></div>
 
       <div class="hero-content">
 
-        <div class="hero-top">
-          <div>
-            <div class="hero-eyebrow">
-              <v-icon size="15">mdi-chess-queen</v-icon>
-              CHESSKWEEN PROFILE
-            </div>
-
-            <h1 class="hero-title">
-              Player Profile
-            </h1>
-
-            <p class="hero-subtitle">
-              Your chess identity, statistics, and playing style.
-            </p>
-          </div>
-        </div>
-
         <div class="profile-identity">
 
+          <!-- Avatar -->
           <div class="avatar-wrapper">
+
             <v-avatar
               size="104"
               class="profile-avatar"
@@ -219,12 +224,24 @@ onMounted(() => {
             </v-avatar>
 
             <span class="online-indicator"></span>
+
           </div>
 
+
+          <!-- Identity -->
           <div class="identity-details">
 
-            <div class="identity-label">
-              CHESSKWEEN USER
+            <div class="identity-badges">
+
+              <span class="identity-label">
+                CHESSKWEEN USER
+              </span>
+
+              <span class="active-badge">
+                <span class="active-dot"></span>
+                Active Analyst
+              </span>
+
             </div>
 
             <h2 class="identity-name">
@@ -232,7 +249,7 @@ onMounted(() => {
             </h2>
 
             <div class="identity-email">
-              <v-icon size="16">
+              <v-icon size="17">
                 mdi-email-outline
               </v-icon>
 
@@ -240,6 +257,7 @@ onMounted(() => {
             </div>
 
             <div class="identity-meta">
+
               <span>
                 <v-icon size="15">
                   mdi-calendar-outline
@@ -255,10 +273,15 @@ onMounted(() => {
 
                 Chess Player
               </span>
+
             </div>
+
           </div>
 
+
+          <!-- Edit -->
           <div class="identity-action">
+
             <v-btn
               class="edit-profile-btn"
               rounded="lg"
@@ -271,16 +294,19 @@ onMounted(() => {
 
               Edit Profile
             </v-btn>
+
           </div>
 
         </div>
+
       </div>
+
     </section>
 
 
-    <!-- =========================================================
+    <!-- =====================================================
          STATISTICS
-    ========================================================== -->
+    ====================================================== -->
     <section class="stats-wrapper">
 
       <v-row class="stats-row">
@@ -297,20 +323,26 @@ onMounted(() => {
             :class="`stat-${stat.class}`"
           >
 
-            <div class="stat-icon">
-              <v-icon size="23">
-                {{ stat.icon }}
-              </v-icon>
-            </div>
-
             <div class="stat-content">
-              <div class="stat-value">
-                {{ stat.value }}
-              </div>
 
               <div class="stat-label">
                 {{ stat.label }}
               </div>
+
+              <div class="stat-bottom">
+
+                <div class="stat-value">
+                  {{ stat.value }}
+                </div>
+
+                <div class="stat-icon">
+                  <v-icon size="21">
+                    {{ stat.icon }}
+                  </v-icon>
+                </div>
+
+              </div>
+
             </div>
 
           </div>
@@ -318,17 +350,20 @@ onMounted(() => {
         </v-col>
 
       </v-row>
+
     </section>
 
 
-    <!-- =========================================================
+    <!-- =====================================================
          MAIN CONTENT
-    ========================================================== -->
+    ====================================================== -->
     <section class="content-wrapper">
 
       <v-row>
 
-        <!-- USER INFORMATION -->
+        <!-- =================================================
+             USER INFORMATION
+        ================================================== -->
         <v-col
           cols="12"
           lg="5"
@@ -357,10 +392,21 @@ onMounted(() => {
                 </p>
               </div>
 
+              <v-spacer />
+
+              <span class="card-link">
+                Account Details
+              </span>
+
             </div>
+
+
+            <div class="card-divider"></div>
+
 
             <div class="information-list">
 
+              <!-- Username -->
               <div class="information-item">
 
                 <div class="information-icon">
@@ -370,6 +416,7 @@ onMounted(() => {
                 </div>
 
                 <div class="information-content">
+
                   <span>
                     Username
                   </span>
@@ -377,11 +424,13 @@ onMounted(() => {
                   <strong>
                     {{ profile.username }}
                   </strong>
+
                 </div>
 
               </div>
 
 
+              <!-- Email -->
               <div class="information-item">
 
                 <div class="information-icon">
@@ -391,18 +440,21 @@ onMounted(() => {
                 </div>
 
                 <div class="information-content">
+
                   <span>
-                    Email
+                    Email Address
                   </span>
 
                   <strong>
                     {{ profile.email }}
                   </strong>
+
                 </div>
 
               </div>
 
 
+              <!-- Member Since -->
               <div class="information-item">
 
                 <div class="information-icon">
@@ -412,6 +464,7 @@ onMounted(() => {
                 </div>
 
                 <div class="information-content">
+
                   <span>
                     Member Since
                   </span>
@@ -419,11 +472,13 @@ onMounted(() => {
                   <strong>
                     {{ profile.memberSince }}
                   </strong>
+
                 </div>
 
               </div>
 
 
+              <!-- Preferred Style -->
               <div class="information-item">
 
                 <div class="information-icon orange-icon">
@@ -454,7 +509,9 @@ onMounted(() => {
         </v-col>
 
 
-        <!-- PLAYING STYLE -->
+        <!-- =================================================
+             PLAYING STYLE
+        ================================================== -->
         <v-col
           cols="12"
           lg="7"
@@ -474,18 +531,21 @@ onMounted(() => {
               </div>
 
               <div>
+
                 <h3>
-                  Playing Style
+                  Playing Style Distribution
                 </h3>
 
                 <p>
-                  Your chess style distribution
+                  Automated engine evaluation based on tactical motifs & board control.
                 </p>
+
               </div>
 
               <v-spacer />
 
               <div class="games-count">
+
                 <strong>
                   {{ totalGames }}
                 </strong>
@@ -493,14 +553,19 @@ onMounted(() => {
                 <span>
                   Games
                 </span>
+
               </div>
 
             </div>
 
 
+            <div class="card-divider"></div>
+
+
+            <!-- Style Distribution -->
             <div class="style-distribution">
 
-              <!-- AGGRESSIVE -->
+              <!-- Aggressive -->
               <div class="style-row">
 
                 <div class="style-row-top">
@@ -522,18 +587,20 @@ onMounted(() => {
                 </div>
 
                 <div class="style-track">
+
                   <div
                     class="style-fill aggressive-fill"
                     :style="{
                       width: `${aggressivePercentage}%`
                     }"
                   ></div>
+
                 </div>
 
               </div>
 
 
-              <!-- POSITIONAL -->
+              <!-- Positional -->
               <div class="style-row">
 
                 <div class="style-row-top">
@@ -555,12 +622,14 @@ onMounted(() => {
                 </div>
 
                 <div class="style-track">
+
                   <div
                     class="style-fill positional-fill"
                     :style="{
                       width: `${positionalPercentage}%`
                     }"
                   ></div>
+
                 </div>
 
               </div>
@@ -568,12 +637,15 @@ onMounted(() => {
             </div>
 
 
+            <!-- Description -->
             <div class="style-description-box">
 
               <div class="description-icon">
+
                 <v-icon size="20">
                   mdi-lightbulb-outline
                 </v-icon>
+
               </div>
 
               <p>
@@ -583,6 +655,7 @@ onMounted(() => {
             </div>
 
 
+            <!-- Characteristics -->
             <div class="characteristics">
 
               <div class="characteristics-title">
@@ -596,11 +669,13 @@ onMounted(() => {
                   :key="feature"
                   class="characteristic"
                 >
-                  <v-icon size="16">
+
+                  <v-icon size="15">
                     mdi-check
                   </v-icon>
 
                   {{ feature }}
+
                 </div>
 
               </div>
@@ -614,14 +689,15 @@ onMounted(() => {
       </v-row>
 
 
-      <!-- =======================================================
+      <!-- ===================================================
            RECENT GAMES
-      ======================================================== -->
+      ==================================================== -->
       <div class="section-block">
 
         <div class="section-header">
 
           <div>
+
             <div class="section-eyebrow">
               GAME ACTIVITY
             </div>
@@ -633,9 +709,11 @@ onMounted(() => {
             <p>
               Review your latest analyzed chess games.
             </p>
+
           </div>
 
         </div>
+
 
         <div class="recent-games-wrapper">
           <RecentGames />
@@ -644,14 +722,15 @@ onMounted(() => {
       </div>
 
 
-      <!-- =======================================================
+      <!-- ===================================================
            ACCOUNT
-      ======================================================== -->
+      ==================================================== -->
       <div class="section-block account-section">
 
         <div class="section-header">
 
           <div>
+
             <div class="section-eyebrow">
               ACCOUNT
             </div>
@@ -663,6 +742,7 @@ onMounted(() => {
             <p>
               Manage your ChessKween account.
             </p>
+
           </div>
 
         </div>
@@ -673,6 +753,7 @@ onMounted(() => {
           elevation="0"
         >
 
+          <!-- Change Password -->
           <div
             class="account-item"
             @click="changePassword"
@@ -687,6 +768,7 @@ onMounted(() => {
               </div>
 
               <div>
+
                 <strong>
                   Change Password
                 </strong>
@@ -694,6 +776,7 @@ onMounted(() => {
                 <span>
                   Update your account password
                 </span>
+
               </div>
 
             </div>
@@ -708,6 +791,7 @@ onMounted(() => {
           <div class="account-divider"></div>
 
 
+          <!-- Sign Out -->
           <div
             class="account-item logout-item"
             @click="signOut"
@@ -722,6 +806,7 @@ onMounted(() => {
               </div>
 
               <div>
+
                 <strong>
                   Sign Out
                 </strong>
@@ -729,6 +814,7 @@ onMounted(() => {
                 <span>
                   Sign out of your ChessKween account
                 </span>
+
               </div>
 
             </div>
@@ -746,9 +832,9 @@ onMounted(() => {
     </section>
 
 
-    <!-- =========================================================
+    <!-- =====================================================
          EDIT PROFILE DIALOG
-    ========================================================== -->
+    ====================================================== -->
     <v-dialog
       v-model="editDialog"
       max-width="500"
@@ -762,12 +848,15 @@ onMounted(() => {
         <div class="dialog-header">
 
           <div class="dialog-icon">
+
             <v-icon>
               mdi-account-edit-outline
             </v-icon>
+
           </div>
 
           <div>
+
             <h3>
               Edit Profile
             </h3>
@@ -775,6 +864,7 @@ onMounted(() => {
             <p>
               Update your profile information.
             </p>
+
           </div>
 
         </div>
@@ -853,138 +943,173 @@ onMounted(() => {
   --orange-soft: #fff3e4;
 
   --white: #ffffff;
+
   --background: #f5f7fa;
 
   --text: #172033;
   --muted: #718096;
 
-  --border: #e5e9ef;
+  --border: #e4e9ef;
 
   min-height: 100vh;
+
   background: var(--background);
+
   color: var(--text);
 }
 
 
 /* =========================================================
-   HERO
+   PAGE HEADER
+========================================================= */
+
+.page-header {
+  width: min(1180px, calc(100% - 40px));
+
+  margin: 0 auto;
+
+  padding: 28px 0 22px;
+}
+
+.page-eyebrow {
+  margin-bottom: 5px;
+
+  color: var(--orange-dark);
+
+  font-size: 0.65rem;
+  font-weight: 800;
+
+  letter-spacing: 0.13em;
+}
+
+.page-title {
+  margin: 0;
+
+  color: var(--navy);
+
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+
+  font-weight: 800;
+
+  letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+  margin: 4px 0 0;
+
+  color: #5d6b80;
+
+  font-size: 0.9rem;
+}
+
+
+/* =========================================================
+   PROFILE HERO
 ========================================================= */
 
 .profile-hero {
   position: relative;
+
   overflow: hidden;
+
+  width: min(1180px, calc(100% - 40px));
+
+  margin: 0 auto;
+
+  border-radius: 18px;
 
   background:
     linear-gradient(
       135deg,
       var(--navy-dark) 0%,
       var(--navy) 55%,
-      #123158 100%
+      #172d50 100%
     );
 
   color: white;
+
+  box-shadow:
+    0 15px 35px rgba(11, 31, 58, 0.13);
 }
 
 .hero-pattern {
   position: absolute;
+
   inset: 0;
 
-  opacity: 0.07;
+  opacity: 0.1;
 
   background-image:
     linear-gradient(
       45deg,
       transparent 25%,
-      rgba(255,255,255,.3) 25%,
-      rgba(255,255,255,.3) 50%,
+      rgba(255, 255, 255, 0.28) 25%,
+      rgba(255, 255, 255, 0.28) 50%,
       transparent 50%,
       transparent 75%,
-      rgba(255,255,255,.3) 75%
+      rgba(255, 255, 255, 0.28) 75%
     );
 
-  background-size: 70px 70px;
+  background-size: 56px 56px;
 
   pointer-events: none;
 }
 
 .hero-content {
   position: relative;
+
   z-index: 1;
 
-  width: min(1180px, calc(100% - 40px));
-  margin: auto;
-
-  padding: 46px 0 64px;
-}
-
-.hero-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  margin-bottom: 8px;
-
-  color: #ffb35c;
-
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
-.hero-title {
-  margin: 0;
-
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
-.hero-subtitle {
-  margin: 7px 0 0;
-
-  color: rgba(255,255,255,.66);
-
-  font-size: 0.95rem;
+  padding: 38px 36px 42px;
 }
 
 .profile-identity {
   display: flex;
+
   align-items: center;
 
-  gap: 24px;
-
-  margin-top: 38px;
+  gap: 23px;
 }
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
 
 .avatar-wrapper {
   position: relative;
+
   flex-shrink: 0;
 }
 
 .profile-avatar {
-  background: var(--orange);
+  background: #233858 !important;
 
-  border: 4px solid rgba(255,255,255,.15);
+  border: 4px solid rgba(242, 140, 40, 0.95);
+
   box-shadow:
-    0 0 0 5px rgba(242,140,40,.25),
-    0 12px 30px rgba(0,0,0,.25);
+    0 0 0 4px rgba(242, 140, 40, 0.12),
+    0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .avatar-letter {
   color: white;
 
-  font-size: 2.4rem;
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 2.5rem;
+
   font-weight: 800;
 }
 
 .online-indicator {
   position: absolute;
 
-  right: 5px;
-  bottom: 6px;
+  right: 3px;
+  bottom: 4px;
 
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 
   border-radius: 50%;
 
@@ -993,54 +1118,124 @@ onMounted(() => {
   border: 3px solid var(--navy);
 }
 
+
+/* =========================================================
+   IDENTITY
+========================================================= */
+
 .identity-details {
   min-width: 0;
 }
 
-.identity-label {
-  color: #ffb35c;
+.identity-badges {
+  display: flex;
 
-  font-size: 0.7rem;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-bottom: 5px;
+}
+
+.identity-label {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 4px 11px;
+
+  border-radius: 100px;
+
+  background: rgba(242, 140, 40, 0.16);
+
+  border: 1px solid rgba(242, 140, 40, 0.3);
+
+  color: #ffad55;
+
+  font-size: 0.65rem;
+
   font-weight: 800;
-  letter-spacing: 0.12em;
+
+  letter-spacing: 0.04em;
+}
+
+.active-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 4px 10px;
+
+  border-radius: 100px;
+
+  background: rgba(35, 190, 137, 0.14);
+
+  border: 1px solid rgba(35, 190, 137, 0.25);
+
+  color: #45d7a5;
+
+  font-size: 0.65rem;
+
+  font-weight: 700;
+}
+
+.active-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #38d39f;
 }
 
 .identity-name {
-  margin: 4px 0;
+  margin: 2px 0 4px;
 
   color: white;
 
-  font-size: clamp(1.7rem, 3vw, 2.35rem);
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+
   font-weight: 800;
+
+  letter-spacing: -0.025em;
 }
 
 .identity-email {
   display: flex;
+
   align-items: center;
+
   gap: 7px;
 
-  color: rgba(255,255,255,.68);
+  color: rgba(255, 255, 255, 0.72);
 
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .identity-meta {
   display: flex;
+
   flex-wrap: wrap;
 
   gap: 18px;
 
-  margin-top: 12px;
+  margin-top: 11px;
 
-  color: rgba(255,255,255,.58);
+  color: rgba(255, 255, 255, 0.55);
 
-  font-size: 0.78rem;
+  font-size: 0.73rem;
 }
 
 .identity-meta span {
   display: flex;
+
   align-items: center;
-  gap: 6px;
+
+  gap: 5px;
 }
 
 .identity-action {
@@ -1056,7 +1251,10 @@ onMounted(() => {
 
   font-weight: 700;
 
-  box-shadow: 0 8px 20px rgba(242,140,40,.22);
+  text-transform: none;
+
+  box-shadow:
+    0 8px 20px rgba(242, 140, 40, 0.25);
 }
 
 .edit-profile-btn:hover {
@@ -1070,11 +1268,12 @@ onMounted(() => {
 
 .stats-wrapper {
   position: relative;
+
   z-index: 5;
 
   width: min(1180px, calc(100% - 40px));
 
-  margin: -35px auto 0;
+  margin: 26px auto 0;
 }
 
 .stats-row {
@@ -1086,75 +1285,108 @@ onMounted(() => {
 }
 
 .stat-card {
-  display: flex;
-  align-items: center;
+  min-height: 108px;
 
-  gap: 15px;
-
-  min-height: 105px;
-
-  padding: 20px;
+  padding: 19px 21px;
 
   background: white;
 
   border: 1px solid var(--border);
+
   border-radius: 15px;
 
-  box-shadow: 0 10px 30px rgba(11,31,58,.08);
+  box-shadow:
+    0 8px 25px rgba(11, 31, 58, 0.07);
 
   transition:
-    transform .2s ease,
-    box-shadow .2s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
 
-  box-shadow: 0 15px 35px rgba(11,31,58,.12);
+  box-shadow:
+    0 14px 30px rgba(11, 31, 58, 0.11);
+}
+
+.stat-content {
+  height: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+}
+
+.stat-label {
+  color: #66758a;
+
+  font-size: 0.68rem;
+
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.08em;
+}
+
+.stat-bottom {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 14px;
+}
+
+.stat-value {
+  color: var(--navy);
+
+  font-size: 1.7rem;
+
+  font-weight: 800;
+
+  line-height: 1;
 }
 
 .stat-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
-  width: 47px;
-  height: 47px;
+  width: 42px;
+  height: 42px;
 
-  flex-shrink: 0;
+  border-radius: 11px;
 
-  border-radius: 12px;
-
-  background: #edf2f7;
+  background: #f0f3f7;
 
   color: var(--navy);
 }
 
 .stat-wins .stat-icon {
   background: var(--orange-soft);
+
   color: var(--orange-dark);
 }
 
-.stat-content {
-  min-width: 0;
+.stat-losses .stat-icon {
+  background: #edf2f7;
+
+  color: #53677f;
 }
 
-.stat-value {
-  color: var(--navy);
+.stat-draws .stat-icon {
+  background: #eef5ff;
 
-  font-size: 1.65rem;
-  font-weight: 800;
-
-  line-height: 1;
-}
-
-.stat-label {
-  margin-top: 6px;
-
-  color: var(--muted);
-
-  font-size: 0.72rem;
-  font-weight: 700;
+  color: #315f9e;
 }
 
 
@@ -1165,38 +1397,43 @@ onMounted(() => {
 .content-wrapper {
   width: min(1180px, calc(100% - 40px));
 
-  margin: 35px auto 60px;
+  margin: 25px auto 60px;
 }
 
 .dashboard-card {
   height: 100%;
 
-  padding: 28px;
+  padding: 27px;
 
   background: white !important;
 
   border: 1px solid var(--border) !important;
+
   border-radius: 17px !important;
 
-  box-shadow: 0 5px 20px rgba(11,31,58,.045) !important;
+  box-shadow:
+    0 5px 20px rgba(11, 31, 58, 0.045) !important;
 }
 
 .card-heading {
   display: flex;
+
   align-items: center;
 
-  gap: 13px;
+  gap: 12px;
 
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .heading-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
-  width: 43px;
-  height: 43px;
+  width: 42px;
+  height: 42px;
 
   flex-shrink: 0;
 
@@ -1205,11 +1442,13 @@ onMounted(() => {
 
 .navy-icon {
   background: #edf2f7;
+
   color: var(--navy);
 }
 
 .orange-icon {
   background: var(--orange-soft);
+
   color: var(--orange-dark);
 }
 
@@ -1218,7 +1457,8 @@ onMounted(() => {
 
   color: var(--navy);
 
-  font-size: 1.05rem;
+  font-size: 1.03rem;
+
   font-weight: 800;
 }
 
@@ -1227,32 +1467,50 @@ onMounted(() => {
 
   color: var(--muted);
 
-  font-size: 0.76rem;
+  font-size: 0.72rem;
+}
+
+.card-link {
+  color: #8a9ab0;
+
+  font-size: 0.7rem;
+
+  font-weight: 600;
+}
+
+.card-divider {
+  height: 1px;
+
+  margin-bottom: 10px;
+
+  background: var(--border);
 }
 
 
 /* =========================================================
-   INFORMATION
+   USER INFORMATION
 ========================================================= */
 
 .information-list {
   display: flex;
+
   flex-direction: column;
 
-  gap: 5px;
+  gap: 3px;
 }
 
 .information-item {
   display: flex;
+
   align-items: center;
 
   gap: 13px;
 
-  padding: 13px 8px;
+  padding: 12px 7px;
 
-  border-radius: 11px;
+  border-radius: 10px;
 
-  transition: background .2s ease;
+  transition: background 0.2s ease;
 }
 
 .information-item:hover {
@@ -1261,15 +1519,17 @@ onMounted(() => {
 
 .information-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
-  width: 38px;
-  height: 38px;
+  width: 39px;
+  height: 39px;
 
   flex-shrink: 0;
 
-  border-radius: 9px;
+  border-radius: 10px;
 
   background: #f1f4f8;
 
@@ -1278,19 +1538,22 @@ onMounted(() => {
 
 .information-content {
   display: flex;
+
   flex-direction: column;
 
   min-width: 0;
 }
 
 .information-content span {
-  color: var(--muted);
+  color: #8a9ab0;
 
-  font-size: 0.68rem;
+  font-size: 0.65rem;
+
   font-weight: 700;
 
   text-transform: uppercase;
-  letter-spacing: .04em;
+
+  letter-spacing: 0.05em;
 }
 
 .information-content strong {
@@ -1298,14 +1561,16 @@ onMounted(() => {
 
   color: var(--text);
 
-  font-size: 0.88rem;
+  font-size: 0.86rem;
+
   font-weight: 700;
 
   overflow-wrap: anywhere;
 }
 
-.orange-icon {
+.information-icon.orange-icon {
   background: var(--orange-soft);
+
   color: var(--orange-dark);
 }
 
@@ -1316,6 +1581,7 @@ onMounted(() => {
 
 .games-count {
   display: flex;
+
   flex-direction: column;
 
   align-items: flex-end;
@@ -1324,14 +1590,16 @@ onMounted(() => {
 .games-count strong {
   color: var(--navy);
 
-  font-size: 1.25rem;
+  font-size: 1.15rem;
+
   font-weight: 800;
 }
 
 .games-count span {
   color: var(--muted);
 
-  font-size: 0.65rem;
+  font-size: 0.62rem;
+
   font-weight: 700;
 
   text-transform: uppercase;
@@ -1339,19 +1607,23 @@ onMounted(() => {
 
 .style-distribution {
   display: flex;
+
   flex-direction: column;
 
-  gap: 21px;
+  gap: 20px;
 }
 
 .style-row-top {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
 
   margin-bottom: 8px;
 
-  font-size: 0.83rem;
+  font-size: 0.82rem;
+
   font-weight: 700;
 }
 
@@ -1361,7 +1633,9 @@ onMounted(() => {
 
 .style-label {
   display: flex;
+
   align-items: center;
+
   gap: 8px;
 }
 
@@ -1382,6 +1656,7 @@ onMounted(() => {
 
 .style-track {
   width: 100%;
+
   height: 8px;
 
   overflow: hidden;
@@ -1396,7 +1671,7 @@ onMounted(() => {
 
   border-radius: inherit;
 
-  transition: width .6s ease;
+  transition: width 0.6s ease;
 }
 
 .aggressive-fill {
@@ -1409,10 +1684,12 @@ onMounted(() => {
 
 .style-description-box {
   display: flex;
-  gap: 12px;
 
-  margin-top: 26px;
-  padding: 15px;
+  gap: 11px;
+
+  margin-top: 24px;
+
+  padding: 14px;
 
   border-radius: 11px;
 
@@ -1423,7 +1700,9 @@ onMounted(() => {
 
 .description-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   width: 34px;
@@ -1443,38 +1722,43 @@ onMounted(() => {
 
   color: #697386;
 
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+
   line-height: 1.65;
 }
 
 .characteristics {
-  margin-top: 25px;
+  margin-top: 23px;
 }
 
 .characteristics-title {
-  margin-bottom: 11px;
+  margin-bottom: 10px;
 
   color: var(--navy);
 
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+
   font-weight: 800;
 
   text-transform: uppercase;
-  letter-spacing: .05em;
+
+  letter-spacing: 0.06em;
 }
 
 .characteristics-list {
   display: flex;
+
   flex-wrap: wrap;
 
-  gap: 8px;
+  gap: 7px;
 }
 
 .characteristic {
   display: flex;
+
   align-items: center;
 
-  gap: 6px;
+  gap: 5px;
 
   padding: 7px 10px;
 
@@ -1484,7 +1768,8 @@ onMounted(() => {
 
   color: #7a4a19;
 
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+
   font-weight: 700;
 }
 
@@ -1494,7 +1779,7 @@ onMounted(() => {
 
 
 /* =========================================================
-   SECTIONS
+   SECTION HEADERS
 ========================================================= */
 
 .section-block {
@@ -1502,7 +1787,7 @@ onMounted(() => {
 }
 
 .section-header {
-  margin-bottom: 17px;
+  margin-bottom: 16px;
 }
 
 .section-eyebrow {
@@ -1510,10 +1795,11 @@ onMounted(() => {
 
   color: var(--orange-dark);
 
-  font-size: 0.65rem;
+  font-size: 0.63rem;
+
   font-weight: 800;
 
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
 }
 
 .section-header h2 {
@@ -1521,7 +1807,8 @@ onMounted(() => {
 
   color: var(--navy);
 
-  font-size: 1.35rem;
+  font-size: 1.3rem;
+
   font-weight: 800;
 }
 
@@ -1530,8 +1817,13 @@ onMounted(() => {
 
   color: var(--muted);
 
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
+
+
+/* =========================================================
+   RECENT GAMES
+========================================================= */
 
 .recent-games-wrapper {
   overflow: hidden;
@@ -1539,9 +1831,11 @@ onMounted(() => {
   background: white;
 
   border: 1px solid var(--border);
+
   border-radius: 17px;
 
-  box-shadow: 0 5px 20px rgba(11,31,58,.045);
+  box-shadow:
+    0 5px 20px rgba(11, 31, 58, 0.045);
 }
 
 
@@ -1555,14 +1849,16 @@ onMounted(() => {
 
 .account-item {
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
 
-  padding: 18px 22px;
+  padding: 17px 22px;
 
   cursor: pointer;
 
-  transition: background .2s ease;
+  transition: background 0.2s ease;
 }
 
 .account-item:hover {
@@ -1571,6 +1867,7 @@ onMounted(() => {
 
 .account-left {
   display: flex;
+
   align-items: center;
 
   gap: 14px;
@@ -1578,7 +1875,9 @@ onMounted(() => {
 
 .account-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   width: 42px;
@@ -1593,13 +1892,14 @@ onMounted(() => {
 
 .account-left > div:last-child {
   display: flex;
+
   flex-direction: column;
 }
 
 .account-left strong {
   color: var(--text);
 
-  font-size: 0.85rem;
+  font-size: 0.84rem;
 }
 
 .account-left span {
@@ -1607,7 +1907,7 @@ onMounted(() => {
 
   color: var(--muted);
 
-  font-size: 0.72rem;
+  font-size: 0.71rem;
 }
 
 .account-arrow {
@@ -1624,12 +1924,13 @@ onMounted(() => {
 
 .logout-icon {
   background: #fff1ed;
+
   color: #c75b45;
 }
 
 
 /* =========================================================
-   EDIT DIALOG
+   EDIT PROFILE DIALOG
 ========================================================= */
 
 .edit-dialog {
@@ -1638,11 +1939,12 @@ onMounted(() => {
 
 .dialog-header {
   display: flex;
+
   align-items: center;
 
   gap: 13px;
 
-  padding: 24px 24px 18px;
+  padding: 24px;
 
   background: var(--navy);
 
@@ -1651,7 +1953,9 @@ onMounted(() => {
 
 .dialog-icon {
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   width: 42px;
@@ -1659,7 +1963,7 @@ onMounted(() => {
 
   border-radius: 10px;
 
-  background: rgba(242,140,40,.15);
+  background: rgba(242, 140, 40, 0.15);
 
   color: #ffad55;
 }
@@ -1668,13 +1972,14 @@ onMounted(() => {
   margin: 0;
 
   font-size: 1.15rem;
+
   font-weight: 800;
 }
 
 .dialog-header p {
   margin: 3px 0 0;
 
-  color: rgba(255,255,255,.6);
+  color: rgba(255, 255, 255, 0.6);
 
   font-size: 0.72rem;
 }
@@ -1697,6 +2002,8 @@ onMounted(() => {
 
 .cancel-btn {
   color: var(--muted);
+
+  text-transform: none;
 }
 
 .save-btn {
@@ -1705,6 +2012,8 @@ onMounted(() => {
   color: white !important;
 
   font-weight: 700;
+
+  text-transform: none;
 }
 
 .save-btn:hover {
@@ -1718,12 +2027,20 @@ onMounted(() => {
 
 @media (max-width: 960px) {
 
+  .page-header,
+  .profile-hero,
+  .stats-wrapper,
+  .content-wrapper {
+    width: calc(100% - 32px);
+  }
+
   .hero-content {
-    padding: 38px 0 60px;
+    padding: 32px 28px 38px;
   }
 
   .profile-identity {
     align-items: flex-start;
+
     flex-wrap: wrap;
   }
 
@@ -1736,29 +2053,42 @@ onMounted(() => {
   .edit-profile-btn {
     width: 100%;
   }
+
+  .card-link {
+    display: none;
+  }
 }
 
 
 @media (max-width: 600px) {
 
-  .hero-content,
+  .page-header,
+  .profile-hero,
   .stats-wrapper,
   .content-wrapper {
     width: calc(100% - 24px);
   }
 
-  .hero-content {
-    padding: 30px 0 55px;
+  .page-header {
+    padding: 22px 0 18px;
   }
 
-  .hero-title {
-    font-size: 2rem;
+  .page-title {
+    font-size: 1.8rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .hero-content {
+    padding: 27px 20px 32px;
   }
 
   .profile-identity {
-    gap: 16px;
+    gap: 15px;
 
-    margin-top: 28px;
+    margin-top: 0;
   }
 
   .profile-avatar {
@@ -1767,54 +2097,66 @@ onMounted(() => {
   }
 
   .avatar-letter {
-    font-size: 1.9rem;
+    font-size: 2rem;
   }
 
   .identity-name {
-    font-size: 1.55rem;
+    font-size: 1.5rem;
+  }
+
+  .identity-email {
+    font-size: 0.76rem;
+
+    overflow-wrap: anywhere;
   }
 
   .identity-meta {
     flex-direction: column;
 
-    gap: 6px;
+    gap: 5px;
   }
 
   .stats-wrapper {
-    margin-top: -25px;
+    margin-top: 18px;
   }
 
   .stat-card {
-    min-height: 88px;
+    min-height: 91px;
 
     padding: 14px;
-
-    gap: 10px;
   }
 
-  .stat-icon {
-    width: 39px;
-    height: 39px;
+  .stat-label {
+    font-size: 0.58rem;
   }
 
   .stat-value {
     font-size: 1.35rem;
   }
 
-  .stat-label {
-    font-size: 0.63rem;
+  .stat-icon {
+    width: 36px;
+    height: 36px;
   }
 
   .content-wrapper {
-    margin-top: 25px;
+    margin-top: 22px;
   }
 
   .dashboard-card {
-    padding: 21px;
+    padding: 20px;
   }
 
   .card-heading {
-    margin-bottom: 18px;
+    margin-bottom: 17px;
+  }
+
+  .card-heading h3 {
+    font-size: 0.95rem;
+  }
+
+  .card-heading p {
+    font-size: 0.68rem;
   }
 
   .games-count {
@@ -1825,6 +2167,10 @@ onMounted(() => {
     margin-top: 30px;
   }
 
+  .section-header h2 {
+    font-size: 1.15rem;
+  }
+
   .account-item {
     padding: 16px;
   }
@@ -1832,6 +2178,9 @@ onMounted(() => {
   .account-divider {
     margin: 0 16px;
   }
-}
 
+  .account-left span {
+    font-size: 0.66rem;
+  }
+}
 </style>

@@ -5,6 +5,7 @@ import {
   passwordValidator,
   confirmedValidator
 } from '@/utils/validators'
+
 import { ref } from 'vue'
 import AlertNotification from '../common/AlertNotification.vue'
 import { supabase, formActionDefault } from '../../utils/supabase.js'
@@ -53,15 +54,30 @@ const onSubmit = async () => {
 
     formAction.value.formErrorMessage = error.message
     formAction.value.formStatus = error.status
-  } else if (data) {
-    console.log(data)
 
+    formAction.value.formProcess = false
+    return
+  }
+
+  console.log('Registration successful:', data)
+
+  // Email verification disabled:
+  // Supabase should return a session immediately.
+  if (data.session) {
     formAction.value.formSuccessMessage =
-      'Please Verify your Email to Login'
+      'Account created successfully! '
+
+    setTimeout(() => {
+      router.replace('/')
+    }, 1000)
+  } else {
+    // This can happen if email confirmation is still enabled
+    formAction.value.formSuccessMessage =
+      'Account created. Please check your email to continue.'
 
     setTimeout(() => {
       router.replace('/login')
-    }, 5000)
+    }, 3000)
   }
 
   refVForm.value?.reset()
@@ -70,7 +86,9 @@ const onSubmit = async () => {
 
 const onFormSubmit = () => {
   refVForm.value?.validate().then(({ valid }) => {
-    if (valid) onSubmit()
+    if (valid) {
+      onSubmit()
+    }
   })
 }
 </script>

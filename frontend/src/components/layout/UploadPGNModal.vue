@@ -9,7 +9,6 @@ const dialog = ref(false)
 const fileInput = ref(null)
 const file = ref(null)
 const loading = ref(false)
-
 const analysisProgress = ref(0)
 const analysisStatus = ref('')
 
@@ -71,13 +70,13 @@ const uploadPGN = async () => {
     const uploadRes = await axios.post(
       `${import.meta.env.VITE_API_URL}/upload_pgn`,
       {
-        pgn: pgn,
+        pgn,
         user_id: user.id,
       },
       config,
     )
 
-    // 2. Analyze the PGN with live progress
+    // 2. Analyze the PGN
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/analyze`,
       {
@@ -87,21 +86,17 @@ const uploadPGN = async () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          pgn: pgn,
+          pgn,
         }),
       },
     )
 
     if (!response.ok) {
-      throw new Error(
-        `Analysis failed: ${response.status}`
-      )
+      throw new Error(`Analysis failed: ${response.status}`)
     }
 
     if (!response.body) {
-      throw new Error(
-        'Analysis stream is not available.'
-      )
+      throw new Error('Analysis stream is not available.')
     }
 
     const reader = response.body.getReader()
@@ -115,59 +110,41 @@ const uploadPGN = async () => {
 
       if (done) break
 
-      buffer += decoder.decode(
-        value,
-        { stream: true }
-      )
+      buffer += decoder.decode(value, { stream: true })
 
       const events = buffer.split('\n\n')
-
       buffer = events.pop()
 
       for (const event of events) {
         const line = event
           .split('\n')
-          .find(line =>
-            line.startsWith('data: ')
-          )
+          .find(line => line.startsWith('data: '))
 
         if (!line) continue
 
-        const payload = JSON.parse(
-          line.slice(6)
-        )
+        const payload = JSON.parse(line.slice(6))
 
         if (payload.type === 'progress') {
-          analysisProgress.value =
-            payload.progress
-
-          analysisStatus.value =
-            payload.status
+          analysisProgress.value = payload.progress
+          analysisStatus.value = payload.status
         }
 
         if (payload.type === 'complete') {
-          analysisData =
-            payload.analysis
+          analysisData = payload.analysis
         }
 
         if (payload.type === 'error') {
-          throw new Error(
-            payload.message
-          )
+          throw new Error(payload.message)
         }
       }
     }
 
     if (!analysisData) {
-      throw new Error(
-        'Analysis did not return a result.'
-      )
+      throw new Error('Analysis did not return a result.')
     }
 
     if (analysisData.error) {
-      throw new Error(
-        analysisData.error
-      )
+      throw new Error(analysisData.error)
     }
 
     const game =
@@ -183,13 +160,10 @@ const uploadPGN = async () => {
     removeFile()
 
   } catch (err) {
-    console.error(
-      err.response?.data || err
-    )
+    console.error(err.response?.data || err)
 
     analysisStatus.value =
-      err.message ||
-      'Analysis failed.'
+      err.message || 'Analysis failed.'
 
   } finally {
     loading.value = false
@@ -198,35 +172,61 @@ const uploadPGN = async () => {
 </script>
 
 <template>
+  <!-- =====================================================
+       HEADER BUTTON
+  ====================================================== -->
+
   <v-btn
-    color="light-blue-darken-4"
-    prepend-icon="mdi-chess-king"
+    color="#F28C28"
+    variant="flat"
+    prepend-icon="mdi-cloud-upload-outline"
     rounded="lg"
+    height="40"
+    class="text-white font-weight-bold"
     @click="dialog = true"
   >
     Analyze Your Game
   </v-btn>
 
+
+  <!-- =====================================================
+       UPLOAD DIALOG
+  ====================================================== -->
+
   <v-dialog
     v-model="dialog"
-    max-width="440"
+    max-width="480"
     width="calc(100% - 32px)"
   >
-    <v-card rounded="xl">
+    <v-card
+      rounded="xl"
+      elevation="12"
+    >
+
+      <!-- HEADER -->
 
       <v-card-title
-        class="d-flex align-center py-4"
+        class="d-flex align-center px-5 py-4"
       >
-        <v-icon
-          color="light-green-darken-2"
+        <v-avatar
+          color="#FFF3E4"
+          size="40"
           class="mr-3"
         >
-          mdi-file-chess
-        </v-icon>
+          <v-icon color="#F28C28">
+            mdi-file-chess
+          </v-icon>
+        </v-avatar>
 
-        <span class="font-weight-bold">
-          Analyze Your Game
-        </span>
+        <div>
+          <div class="text-subtitle-1 font-weight-bold">
+            Analyze Your Game
+          </div>
+
+          <div class="text-caption text-grey">
+            Upload a PGN and let Stockfish analyze it
+          </div>
+        </div>
 
         <v-spacer />
 
@@ -241,6 +241,9 @@ const uploadPGN = async () => {
 
       <v-divider />
 
+
+      <!-- CONTENT -->
+
       <v-card-text class="pa-5">
 
         <input
@@ -251,50 +254,61 @@ const uploadPGN = async () => {
           @change="selectFile"
         />
 
+        <!-- UPLOAD AREA -->
+
         <v-sheet
-          class="pa-6 text-center"
-          rounded="lg"
           border
-          color="grey-lighten-5"
-          :class="{ 'loading-sheet': loading }"
+          rounded="xl"
+          class="pa-7 text-center"
+          color="#F8FAFC"
+          :class="{ 'bg-grey-lighten-4': loading }"
           @click="!loading && openFile()"
         >
 
-          <v-icon
-            size="42"
-            color="light-green-darken-2"
+          <v-avatar
+            size="54"
+            color="#FFF3E4"
           >
-            {{
-              file
-                ? 'mdi-file-document-check'
-                : 'mdi-file-upload-outline'
-            }}
-          </v-icon>
+            <v-icon
+              size="28"
+              color="#F28C28"
+            >
+              {{
+                file
+                  ? 'mdi-file-document-check'
+                  : 'mdi-cloud-upload-outline'
+              }}
+            </v-icon>
+          </v-avatar>
 
-          <div
-            class="text-subtitle-1 font-weight-bold mt-2"
-          >
-            {{ file ? file.name : 'Select a PGN file' }}
+          <div class="text-subtitle-1 font-weight-bold mt-3">
+            {{ file ? file.name : 'Upload your PGN file' }}
           </div>
 
           <div class="text-caption text-grey mt-1">
             {{
               file
-                ? 'PGN file selected'
-                : 'Upload your chess game in PGN format'
+                ? 'PGN file selected successfully'
+                : 'Click here to select a chess game in PGN format'
             }}
           </div>
+
+
+          <!-- CHOOSE FILE -->
 
           <v-btn
             v-if="!file && !loading"
             class="mt-4"
             variant="outlined"
-            color="light-green-darken-2"
+            color="#F28C28"
             rounded="lg"
             @click.stop="openFile"
           >
-            Choose File
+            Choose PGN File
           </v-btn>
+
+
+          <!-- REMOVE -->
 
           <v-btn
             v-else-if="file && !loading"
@@ -307,10 +321,12 @@ const uploadPGN = async () => {
             Remove File
           </v-btn>
 
-          <!-- ANALYSIS PROGRESS -->
+
+          <!-- PROGRESS -->
+
           <div
             v-if="loading"
-            class="mt-5"
+            class="mt-5 text-left"
             @click.stop
           >
 
@@ -321,20 +337,20 @@ const uploadPGN = async () => {
                 {{ analysisStatus }}
               </span>
 
-              <strong class="text-subtitle-2">
+              <strong class="text-caption">
                 {{ analysisProgress }}%
               </strong>
             </div>
 
             <v-progress-linear
               :model-value="analysisProgress"
-              height="9"
+              height="8"
               rounded
-              color="light-green-darken-2"
+              color="#F28C28"
             />
 
             <div class="text-caption text-grey mt-2">
-              Please wait while Stockfish analyzes your game.
+              Stockfish is analyzing your game...
             </div>
 
           </div>
@@ -343,9 +359,13 @@ const uploadPGN = async () => {
 
       </v-card-text>
 
+
       <v-divider />
 
-      <v-card-actions class="pa-4">
+
+      <!-- ACTIONS -->
+
+      <v-card-actions class="px-5 py-4">
 
         <v-btn
           variant="text"
@@ -358,11 +378,13 @@ const uploadPGN = async () => {
         <v-spacer />
 
         <v-btn
-          color="light-green-darken-2"
+          color="#F28C28"
+          variant="flat"
           rounded="lg"
           prepend-icon="mdi-chart-line"
-          :loading="false"
+          :loading="loading"
           :disabled="!file || loading"
+          class="text-white font-weight-bold"
           @click="uploadPGN"
         >
           Analyze Game

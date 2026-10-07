@@ -1,6 +1,5 @@
-
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount } from "vue"
 
 const props = defineProps({
   analysis: {
@@ -12,7 +11,7 @@ const props = defineProps({
 const isSpeaking = ref(false)
 
 const getSpeechText = () => {
-  if (!props.analysis) return ''
+  if (!props.analysis) return ""
 
   let text = `Move ${props.analysis.move}. ${props.analysis.quality}. `
 
@@ -28,28 +27,31 @@ const getSpeechText = () => {
 }
 
 const speakCoach = () => {
-  if (!props.analysis || !('speechSynthesis' in window)) return
+  if (!props.analysis || !("speechSynthesis" in window)) return
 
   window.speechSynthesis.cancel()
 
-  const text = getSpeechText()
-  const utterance = new SpeechSynthesisUtterance(text)
+  const utterance = new SpeechSynthesisUtterance(
+    getSpeechText()
+  )
 
   const voices = window.speechSynthesis.getVoices()
 
   const femaleVoice =
     voices.find(voice =>
-      /female|zira|samantha|karen|victoria|susan|aria|jenny|libby|hazel/i.test(voice.name)
+      /female|zira|samantha|karen|victoria|susan|aria|jenny|libby|hazel/i.test(
+        voice.name
+      )
     ) ||
     voices.find(voice =>
-      voice.lang.startsWith('en')
+      voice.lang.startsWith("en")
     )
 
   if (femaleVoice) {
     utterance.voice = femaleVoice
     utterance.lang = femaleVoice.lang
   } else {
-    utterance.lang = 'en-US'
+    utterance.lang = "en-US"
   }
 
   utterance.rate = 0.88
@@ -72,7 +74,7 @@ const speakCoach = () => {
 }
 
 const stopSpeaking = () => {
-  if ('speechSynthesis' in window) {
+  if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel()
   }
 
@@ -92,314 +94,402 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-card class="coach-card" elevation="4">
+  <v-card
+    class="coach-card"
+    elevation="0"
+  >
 
-    <v-card-title class="coach-header">
-      <div class="coach-avatar">
-        <v-img
-          src="/images/chesskween-coach.png"
-          alt="ChessKween Coach"
-          cover
-        />
-      </div>
+    <!-- HEADER -->
+    <v-card-item class="coach-header">
 
-      <div class="coach-title">
-        <span>ChessKween</span>
-        <small>Your Chess Coach</small>
-      </div>
-    </v-card-title>
+      <template #prepend>
+        <div class="coach-avatar">
+          <v-img
+            src="/images/chesskween-coach.png"
+            alt="ChessKween Coach"
+            cover
+          />
+          <span class="online-dot"></span>
+        </div>
+      </template>
+
+      <v-card-title class="pa-0 coach-title">
+        ChessKween AI Coach
+      </v-card-title>
+
+      <v-card-subtitle class="pa-0 coach-subtitle">
+        Style-Aware Recommendation System
+      </v-card-subtitle>
+
+      <template #append>
+        <v-chip
+          size="small"
+          variant="outlined"
+          class="best-chip"
+        >
+          BEST MOVE
+        </v-chip>
+      </template>
+
+    </v-card-item>
 
     <v-divider />
 
     <v-card-text class="coach-content">
 
-      <template v-if="analysis">
-
-        <div class="move-row">
-          <span class="label">Move</span>
-          <strong>{{ analysis.move }}</strong>
-        </div>
-
-        <div class="quality">
-          {{ analysis.quality }}
-        </div>
-
-        <section class="section">
-          <h4>
-            <v-icon icon="mdi-lightbulb-outline" />
-            Explanation
-          </h4>
-
-          <p>
-            {{ analysis.explanation }}
-          </p>
-        </section>
-
-        <section
-          v-if="analysis.recommendation"
-          class="section"
+      <!-- NO ANALYSIS -->
+      <div
+        v-if="!analysis"
+        class="empty-state"
+      >
+        <v-icon
+          size="42"
+          color="#F28C28"
         >
-          <h4>
-            <v-icon icon="mdi-chess-queen" />
-            Recommendation
-          </h4>
+          mdi-chess-queen
+        </v-icon>
 
-          <p>
-            {{ analysis.recommendation }}
-          </p>
-        </section>
+        <strong>ChessKween is ready!</strong>
 
-        <div class="voice-controls">
+        <span>
+          Upload a game to receive coaching feedback.
+        </span>
+      </div>
+
+      <!-- ANALYSIS -->
+      <template v-else>
+
+        <!-- RECOMMENDED MOVE -->
+        <div class="recommended-box">
+
+          <div>
+            <div class="recommended-label">
+              RECOMMENDED MOVE
+            </div>
+
+            <div class="recommended-move">
+              {{ analysis.move || "—" }}
+            </div>
+          </div>
+
           <v-btn
             v-if="!isSpeaking"
-            class="speak-btn"
+            class="listen-btn"
             variant="flat"
             prepend-icon="mdi-volume-high"
             @click="speakCoach"
           >
-            Listen to ChessKween
+            Listen to Coach
           </v-btn>
 
           <v-btn
             v-else
-            class="stop-btn"
+            class="listen-btn"
             variant="flat"
             prepend-icon="mdi-stop"
             @click="stopSpeaking"
           >
             Stop
           </v-btn>
+
+        </div>
+
+        <!-- EXPLANATION -->
+        <div class="explanation-box">
+
+          <div class="explanation-title">
+            <v-icon
+              size="18"
+              color="#F28C28"
+            >
+              mdi-lightbulb-on
+            </v-icon>
+
+            {{ analysis.quality || "Chess Analysis" }}
+          </div>
+
+          <p>
+            {{ analysis.explanation || "No explanation available." }}
+          </p>
+
+          <template v-if="analysis.recommendation">
+            <div class="recommendation-title">
+              <v-icon
+                size="17"
+                color="#F28C28"
+              >
+                mdi-chess-queen
+              </v-icon>
+
+              Recommendation
+            </div>
+
+            <p>
+              {{ analysis.recommendation }}
+            </p>
+          </template>
+
+        </div>
+
+        <!-- MOVE NOTATION -->
+        <div
+          v-if="analysis.move"
+          class="notation-section"
+        >
+          <div class="notation-title">
+            CURRENT MOVE
+          </div>
+
+          <div class="move-item active">
+            <span>Move</span>
+            <strong>{{ analysis.move }}</strong>
+          </div>
         </div>
 
       </template>
 
-      <div
-        v-else
-        class="empty-state"
-      >
-        <div class="empty-avatar">
-          <v-img
-            src="/images/chesskween-coach.png"
-            alt="ChessKween Coach"
-            cover
-          />
-        </div>
-
-        <strong>ChessKween is ready!</strong>
-
-        <p>
-          Upload a game to receive coaching feedback.
-        </p>
-      </div>
-
     </v-card-text>
+
   </v-card>
 </template>
 
 <style scoped>
 .coach-card {
   width: 100%;
-  max-width: 320px;
   height: 420px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-radius: 16px;
+  border: 1px solid #e1e7ef;
+  border-radius: 18px;
   background: #ffffff;
-  color: #17212b;
-  border: 1px solid #dce7f2;
+  color: #0b1f3a;
+  overflow: hidden;
 }
 
+/* HEADER */
 .coach-header {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 16px;
-  color: #12395b;
+  padding: 16px 18px 12px !important;
 }
 
 .coach-avatar {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  overflow: hidden;
+  position: relative;
+  width: 52px;
+  height: 52px;
+  overflow: visible;
+  border: 2px solid #f28c28;
+  border-radius: 15px;
+  background: #0b1f3a;
+}
+
+.coach-avatar :deep(.v-img) {
+  border-radius: 13px;
+}
+
+.online-dot {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid white;
   border-radius: 50%;
-  border: 2px solid #2878c8;
-  background: #eef6fd;
+  background: #20b486;
 }
 
 .coach-title {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
+  color: #0b1f3a !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
 }
 
-.coach-title span {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.coach-title small {
+.coach-subtitle {
   margin-top: 3px;
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 500;
+  color: #8190a5 !important;
+  font-size: 12px !important;
 }
 
+.best-chip {
+  color: #f28c28 !important;
+  border-color: #f8c28e !important;
+  background: #fffaf5;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* CONTENT - SCROLLABLE */
 .coach-content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px 18px 18px !important;
 }
 
-.move-row {
+/* RECOMMENDED MOVE */
+.recommended-box {
+  min-height: 92px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f3f7fb;
-  color: #12395b;
+  gap: 12px;
+  padding: 15px 20px;
+  border-radius: 14px;
+  background: #0b1328;
+  box-shadow: 0 8px 16px rgba(11, 19, 40, 0.14);
 }
 
-.label {
-  color: #64748b;
-  font-size: 13px;
+.recommended-label {
+  color: #91a4bf;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
 }
 
-.move-row strong {
-  font-size: 17px;
-  color: #12395b;
+.recommended-move {
+  margin-top: 3px;
+  color: #f28c28;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
 }
 
-.quality {
-  padding: 9px 12px;
-  border-radius: 10px;
-  background: #2878c8;
-  color: white;
-  text-align: center;
-  font-size: 14px;
+.listen-btn {
+  min-width: 150px;
+  height: 40px !important;
+  border-radius: 12px !important;
+  background: #ff7517 !important;
+  color: white !important;
+  font-size: 12px;
   font-weight: 700;
-  text-transform: capitalize;
+  text-transform: none;
 }
 
-.section {
+/* EXPLANATION */
+.explanation-box {
   margin-top: 18px;
+  padding: 17px 18px;
+  border: 1px solid #dfe7f0;
+  border-radius: 14px;
+  background: #f8fafc;
 }
 
-.section h4 {
+.explanation-title,
+.recommendation-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 0 7px;
-  color: #2878c8;
+  gap: 7px;
+  color: #101827;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.section p {
-  margin: 0;
-  color: #4b5f73;
+.explanation-box p {
+  margin: 10px 0 0;
+  color: #38506d;
   font-size: 13px;
   line-height: 1.6;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
-.voice-controls {
-  display: flex;
-  justify-content: center;
+.recommendation-title {
+  margin-top: 15px;
+}
+
+/* MOVE NOTATION */
+.notation-section {
   margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #e4edf5;
 }
 
-.speak-btn,
-.stop-btn {
+.notation-title {
+  margin-bottom: 8px;
+  color: #8998ad;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.move-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  border: 1px solid #dce5ef;
   border-radius: 10px;
-  text-transform: none;
-  font-size: 12px;
-  font-weight: 600;
+  background: #f4f7fa;
+  color: #8998ad;
+  font-size: 13px;
 }
 
-.speak-btn {
-  background: #2878c8;
-  color: white;
+.move-item.active {
+  border-color: #ffc98f;
+  background: #fff7ed;
+  color: #f28c28;
 }
 
-.stop-btn {
-  background: #e8eef5;
-  color: #12395b;
+.move-item strong {
+  color: #0b1f3a;
 }
 
+.move-item.active strong {
+  color: #dc7311;
+}
+
+/* EMPTY */
 .empty-state {
-  min-height: 100%;
+  min-height: 350px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
-  color: #64748b;
-}
-
-.empty-avatar {
-  width: 110px;
-  height: 110px;
-  margin-bottom: 4px;
-  overflow: hidden;
-  border-radius: 50%;
-  border: 3px solid #2878c8;
-  background: #eef6fd;
 }
 
 .empty-state strong {
-  color: #12395b;
-  font-size: 15px;
+  color: #0b1f3a;
+  font-size: 16px;
 }
 
-.empty-state p {
-  max-width: 220px;
-  margin: 0;
-  font-size: 13px;
+.empty-state span {
+  max-width: 230px;
+  color: #8190a5;
+  font-size: 12px;
   line-height: 1.5;
 }
 
-@media (max-width: 960px) {
-  .coach-card {
-    max-width: 100%;
-    height: 380px;
-  }
+/* SCROLLBAR */
+.coach-content::-webkit-scrollbar {
+  width: 6px;
 }
 
+.coach-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.coach-content::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #cbd5e1;
+}
+
+.coach-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* RESPONSIVE */
 @media (max-width: 600px) {
-  .coach-card {
-    width: 100%;
-    max-width: none;
-    height: 360px;
-    border-radius: 14px;
-  }
-
   .coach-header {
-    font-size: 16px;
+    padding: 14px !important;
   }
 
-  .coach-content {
+  .recommended-box {
     padding: 14px;
   }
 
-  .section p {
-    font-size: 12.5px;
+  .recommended-move {
+    font-size: 26px;
   }
 
-  .empty-avatar {
-    width: 90px;
-    height: 90px;
+  .listen-btn {
+    min-width: 130px;
   }
 }
 </style>

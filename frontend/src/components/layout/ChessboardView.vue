@@ -1,338 +1,328 @@
 <script setup>
-    import { ref, computed } from "vue"
-    import { Chess } from "chess.js"
-    import { TheChessboard } from "vue3-chessboard"
-    import "vue3-chessboard/style.css"
-    import UploadPGNModal from "@/components/layout/UploadPGNModal.vue"
-    import MoveQuality from "@/components/layout/MoveQuality.vue"
-    import EvaluationBarView from '@/components/layout/EvaluationBarView.vue'
+import { ref, computed } from "vue"
+import { Chess } from "chess.js"
+import { TheChessboard } from "vue3-chessboard"
+import "vue3-chessboard/style.css"
+import MoveQuality from "@/components/layout/MoveQuality.vue"
+import EvaluationBarView from "@/components/layout/EvaluationBarView.vue"
 
-    const chess = new Chess()
-    let boardAPI = null
-    const evalScore = ref(0) //for the evaluation bar
-    const pgnMoves = ref([])
-    const pgnEvaluations = ref([])
-    const pgnIndex = ref(0)
-    const branchMoves = ref([])
-    const branchIndex = ref(0)
-    const branchStart = ref(null)
-    const currentGame = ref(null)
-    const currentAnalysis = ref(null)
-    const analysisCache = ref({})
-    const orientation = ref("white")
-    const isNavigating = ref(false)
-    const isAnalyzingMove = ref(false)
+const chess = new Chess()
+let boardAPI = null
+const evalScore = ref(0)
+const pgnMoves = ref([])
+const pgnEvaluations = ref([])
+const pgnIndex = ref(0)
+const branchMoves = ref([])
+const branchIndex = ref(0)
+const branchStart = ref(null)
 
-    const emit = defineEmits([
-      "update-eval",
-      "update-coach"
-    ])
+const currentGame = ref(null)
+const currentAnalysis = ref(null)
+const analysisCache = ref({})
 
-    const isExploring = computed(() =>
-      branchStart.value !== null
+const orientation = ref("white")
+
+const isNavigating = ref(false)
+const isAnalyzingMove = ref(false)
+
+const emit = defineEmits([
+  "update-eval",
+  "update-coach"
+])
+
+/* =========================================
+   COMPUTED
+========================================= */
+
+const isExploring = computed(() =>
+  branchStart.value !== null
+)
+
+const whitePlayer = computed(() => ({
+  name: currentGame.value?.white_name,
+  elo: currentGame.value?.white_elo
+}))
+
+const blackPlayer = computed(() => ({
+  name: currentGame.value?.black_name,
+  elo: currentGame.value?.black_elo
+}))
+
+const topPlayer = computed(() =>
+  orientation.value === "white"
+    ? blackPlayer.value
+    : whitePlayer.value
+)
+
+const bottomPlayer = computed(() =>
+  orientation.value === "white"
+    ? whitePlayer.value
+    : blackPlayer.value
+)
+
+const currentQuality = computed(() =>
+  currentAnalysis.value?.quality || ""
+)
+
+const qualityPosition = computed(() => {
+  const analysis = currentAnalysis.value
+
+  if (!analysis?.move) {
+    return null
+  }
+
+  const move = analysis.move
+
+  const squareMatch = move.match(/[a-h][1-8]$/)
+
+  return squareMatch
+    ? squareMatch[0]
+    : null
+})
+
+/* =========================================
+   ANALYSIS
+========================================= */
+
+function updateAnalysis(analysis) {
+  console.log("========== MOVE QUALITY DEBUG ==========")
+  console.log("FULL ANALYSIS:", analysis)
+  console.log("QUALITY:", analysis?.quality)
+  console.log("MOVE:", analysis?.move)
+  console.log("TO SQUARE:", analysis?.to_square)
+  console.log("EVALUATION:", analysis?.evaluation)
+  console.log("BEST MOVE:", analysis?.best_move)
+  console.log("========================================")
+
+  currentAnalysis.value = analysis || null
+
+  if (!analysis) {
+    evalScore.value = 0
+
+    emit("update-eval", 0)
+    emit("update-coach", null)
+
+    if (boardAPI) {
+      boardAPI.hideMoves()
+    }
+
+    return
+  }
+
+  evalScore.value = Number(
+    analysis.evaluation || 0
+  )
+
+  emit(
+    "update-eval",
+    evalScore.value
+  )
+
+  emit(
+    "update-coach",
+    analysis
+  )
+
+  if (
+    boardAPI &&
+    typeof analysis.best_move === "string" &&
+    analysis.best_move.length >= 4
+  ) {
+    boardAPI.hideMoves()
+
+    boardAPI.drawMove(
+      analysis.best_move.slice(0, 2),
+      analysis.best_move.slice(2, 4),
+      "green"
+    )
+  } else if (boardAPI) {
+    boardAPI.hideMoves()
+  }
+}
+
+/* =========================================
+   BRANCH / VARIATION
+========================================= */
+
+function resetBranch() {
+  branchMoves.value = []
+  branchIndex.value = 0
+  branchStart.value = null
+}
+
+function rebuildPGN(index) {
+  chess.reset()
+
+  for (let i = 0; i < index; i++) {
+    const move = chess.move(
+      pgnMoves.value[i]
     )
 
-    const whitePlayer = computed(() => ({
-      name: currentGame.value?.white_name,
-      elo: currentGame.value?.white_elo
-    }))
+    if (!move) {
+      console.error(
+        "Failed to replay PGN move:",
+        pgnMoves.value[i],
+        "at index:",
+        i
+      )
 
-    const blackPlayer = computed(() => ({
-      name: currentGame.value?.black_name,
-      elo: currentGame.value?.black_elo
-    }))
+      break
+    }
+  }
+}
 
-    const topPlayer = computed(() =>
-      orientation.value === "white"
-        ? blackPlayer.value
-        : whitePlayer.value
+function rebuildBranch() {
+  chess.reset()
+
+  for (
+    let i = 0;
+    i < branchStart.value;
+    i++
+  ) {
+    const move = chess.move(
+      pgnMoves.value[i]
     )
 
-    const bottomPlayer = computed(() =>
-      orientation.value === "white"
-        ? whitePlayer.value
-        : blackPlayer.value
-    )
+    if (!move) {
+      console.error(
+        "Failed to replay PGN move:",
+        pgnMoves.value[i]
+      )
 
-    const currentQuality = computed(() =>
-      currentAnalysis.value?.quality || ""
-    )
+      return
+    }
+  }
 
-    const qualityPosition = computed(() => {
-      const analysis = currentAnalysis.value
+  for (
+    let i = 0;
+    i < branchIndex.value;
+    i++
+  ) {
+    const move = branchMoves.value[i]
 
-      if (!analysis?.move) {
-        console.log("QUALITY POSITION: no move")
-        return null
-      }
-
-      // The analysis.move is the move that was played.
-      // For simple SAN moves such as d4, e5, Nf3, etc.,
-      // the destination is the last square in the move.
-      const move = analysis.move
-
-      const squareMatch = move.match(/[a-h][1-8]$/)
-
-      const square = squareMatch
-        ? squareMatch[0]
-        : null
-
-      console.log("QUALITY POSITION:", square)
-
-      return square
+    const played = chess.move({
+      from: move.from,
+      to: move.to,
+      promotion:
+        move.promotion || undefined
     })
 
-
-    function updateAnalysis(analysis) {
-      console.log("========== MOVE QUALITY DEBUG ==========")
-      console.log("FULL ANALYSIS:", analysis)
-      console.log("QUALITY:", analysis?.quality)
-      console.log("MOVE:", analysis?.move)
-      console.log("TO SQUARE:", analysis?.to_square)
-      console.log("EVALUATION:", analysis?.evaluation)
-      console.log("BEST MOVE:", analysis?.best_move)
-      console.log("========================================")
-      currentAnalysis.value = analysis || null
-      if (!analysis) {
-        evalScore.value = 0
-        emit("update-eval", 0)
-        emit("update-coach", null)
-
-        if (boardAPI) {
-          boardAPI.hideMoves()
-        }
-
-        return
-      }
-
-      evalScore.value = Number(analysis.evaluation || 0)
-
-      emit("update-eval", evalScore.value)
-      emit("update-coach", analysis)
-
-      if (
-        boardAPI &&
-        typeof analysis.best_move === "string" &&
-        analysis.best_move.length >= 4
-      ) {
-        boardAPI.hideMoves()
-
-        boardAPI.drawMove(
-          analysis.best_move.slice(0, 2),
-          analysis.best_move.slice(2, 4),
-          "green"
-        )
-      } else if (boardAPI) {
-        boardAPI.hideMoves()
-      }
-    }
-
-    function resetBranch() {
-      branchMoves.value = []
-      branchIndex.value = 0
-      branchStart.value = null
-    }
-
-    function rebuildPGN(index) {
-      chess.reset()
-
-      for (let i = 0; i < index; i++) {
-        const move = chess.move(
-          pgnMoves.value[i]
-        )
-
-        if (!move) {
-          console.error(
-            "Failed to replay PGN move:",
-            pgnMoves.value[i],
-            "at index:",
-            i
-          )
-          break
-        }
-      }
-    }
-
-    function rebuildBranch() {
-      chess.reset()
-
-      for (
-        let i = 0;
-        i < branchStart.value;
-        i++
-      ) {
-        const move = chess.move(
-          pgnMoves.value[i]
-        )
-
-        if (!move) {
-          console.error(
-            "Failed to replay PGN move:",
-            pgnMoves.value[i]
-          )
-          return
-        }
-      }
-
-      for (
-        let i = 0;
-        i < branchIndex.value;
-        i++
-      ) {
-        const move = branchMoves.value[i]
-
-        const played = chess.move({
-          from: move.from,
-          to: move.to,
-          promotion: move.promotion || undefined
-        })
-
-        if (!played) {
-          console.error(
-            "Failed to replay branch move:",
-            move
-          )
-          return
-        }
-      }
-    }
-
-    function setBoard() {
-      if (boardAPI) {
-        boardAPI.setPosition(
-          chess.fen()
-        )
-      }
-    }
-
-    function goToPGN(index) {
-      if (isAnalyzingMove.value) return
-
-      isNavigating.value = true
-
-      resetBranch()
-
-      pgnIndex.value = Math.max(
-        0,
-        Math.min(
-          index,
-          pgnMoves.value.length
-        )
+    if (!played) {
+      console.error(
+        "Failed to replay branch move:",
+        move
       )
 
-      rebuildPGN(
-        pgnIndex.value
-      )
+      return
+    }
+  }
+}
 
+function setBoard() {
+  if (boardAPI) {
+    boardAPI.setPosition(
+      chess.fen()
+    )
+  }
+}
+
+/* =========================================
+   PGN NAVIGATION
+========================================= */
+
+function goToPGN(index) {
+  if (isAnalyzingMove.value) {
+    return
+  }
+
+  isNavigating.value = true
+
+  resetBranch()
+
+  pgnIndex.value = Math.max(
+    0,
+    Math.min(
+      index,
+      pgnMoves.value.length
+    )
+  )
+
+  rebuildPGN(
+    pgnIndex.value
+  )
+
+  setBoard()
+
+  if (pgnIndex.value === 0) {
+    updateAnalysis(null)
+  } else {
+    updateAnalysis(
+      pgnEvaluations.value[
+        pgnIndex.value - 1
+      ] || null
+    )
+  }
+
+  isNavigating.value = false
+}
+
+function nextMove() {
+  if (isAnalyzingMove.value) {
+    return
+  }
+
+  if (isExploring.value) {
+    if (
+      branchIndex.value <
+      branchMoves.value.length
+    ) {
+      branchIndex.value++
+
+      rebuildBranch()
       setBoard()
 
-      if (pgnIndex.value === 0) {
-        updateAnalysis(null)
-      } else {
-        updateAnalysis(
-          pgnEvaluations.value[
-            pgnIndex.value - 1
-          ] || null
-        )
-      }
+      const analysis =
+        branchMoves.value[
+          branchIndex.value - 1
+        ]?.analysis
 
-      isNavigating.value = false
+      updateAnalysis(
+        analysis || null
+      )
     }
 
-    function nextMove() {
-      if (isAnalyzingMove.value) return
+    return
+  }
 
-      if (isExploring.value) {
-        if (
-          branchIndex.value <
-          branchMoves.value.length
-        ) {
-          branchIndex.value++
+  if (
+    pgnIndex.value <
+    pgnMoves.value.length
+  ) {
+    goToPGN(
+      pgnIndex.value + 1
+    )
+  }
+}
 
-          rebuildBranch()
-          setBoard()
+function prevMove() {
+  if (isAnalyzingMove.value) {
+    return
+  }
 
-          const analysis =
-            branchMoves.value[
-              branchIndex.value - 1
-            ]?.analysis
+  if (isExploring.value) {
+    if (branchIndex.value > 0) {
+      branchIndex.value--
 
-          updateAnalysis(
-            analysis || null
-          )
+      rebuildBranch()
+      setBoard()
 
-          return
-        }
-
-        return
-      }
-
-      if (
-        pgnIndex.value <
-        pgnMoves.value.length
-      ) {
-        goToPGN(
-          pgnIndex.value + 1
-        )
-      }
-    }
-
-    function prevMove() {
-      if (isAnalyzingMove.value) return
-
-      if (isExploring.value) {
-        if (branchIndex.value > 0) {
-          branchIndex.value--
-
-          rebuildBranch()
-          setBoard()
-
-          if (branchIndex.value === 0) {
-            if (branchStart.value === 0) {
-              updateAnalysis(null)
-            } else {
-              updateAnalysis(
-                pgnEvaluations.value[
-                  branchStart.value - 1
-                ] || null
-              )
-            }
-
-            return
-          }
-
-          const analysis =
-            branchMoves.value[
-              branchIndex.value - 1
-            ]?.analysis
-
-          updateAnalysis(
-            analysis || null
-          )
-
-          return
-        }
-
-        const returnIndex =
-          branchStart.value
-
-        resetBranch()
-
-        pgnIndex.value =
-          returnIndex
-
-        rebuildPGN(
-          pgnIndex.value
-        )
-
-        setBoard()
-
-        if (pgnIndex.value === 0) {
+      if (branchIndex.value === 0) {
+        if (branchStart.value === 0) {
           updateAnalysis(null)
         } else {
           updateAnalysis(
             pgnEvaluations.value[
-              pgnIndex.value - 1
+              branchStart.value - 1
             ] || null
           )
         }
@@ -340,398 +330,564 @@
         return
       }
 
-      if (pgnIndex.value > 0) {
-        goToPGN(
-          pgnIndex.value - 1
-        )
-      }
-    }
+      const analysis =
+        branchMoves.value[
+          branchIndex.value - 1
+        ]?.analysis
 
-    async function onMove(move) {
-      if (
-        isNavigating.value ||
-        isAnalyzingMove.value
-      ) {
-        return
-      }
-
-      const beforeFen =
-        chess.fen()
-
-      const moveUci = move.promotion
-        ? `${move.from}${move.to}${move.promotion}`
-        : `${move.from}${move.to}`
-
-      const played = chess.move({
-        from: move.from,
-        to: move.to,
-        promotion:
-          move.promotion || "q"
-      })
-
-      if (!played) {
-        console.error(
-          "Illegal manual move:",
-          move
-        )
-        return
-      }
-
-      if (!isExploring.value) {
-        branchStart.value =
-          pgnIndex.value
-
-        branchMoves.value = []
-        branchIndex.value = 0
-      }
-
-      if (
-        branchIndex.value <
-        branchMoves.value.length
-      ) {
-        branchMoves.value =
-          branchMoves.value.slice(
-            0,
-            branchIndex.value
-          )
-      }
-
-      const branchMove = {
-        from: move.from,
-        to: move.to,
-        promotion:
-          move.promotion || null,
-        uci: moveUci,
-        san: played.san,
-        analysis: null
-      }
-
-      branchMoves.value.push(
-        branchMove
+      updateAnalysis(
+        analysis || null
       )
 
-      branchIndex.value++
-
-      try {
-        isAnalyzingMove.value = true
-
-        const cacheKey =
-          `${beforeFen}_${moveUci}`
-
-        if (
-          analysisCache.value[cacheKey]
-        ) {
-          branchMove.analysis =
-            analysisCache.value[cacheKey]
-
-          updateAnalysis(
-            branchMove.analysis
-          )
-
-          return
-        }
-
-        const response =
-          await fetch(
-            `${import.meta.env.VITE_API_URL}/analyze-move`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-              body: JSON.stringify({
-                fen: beforeFen,
-                move_uci: moveUci
-              })
-            }
-          )
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP ${response.status}`
-          )
-        }
-
-        const data =
-          await response.json()
-
-        if (data.error) {
-          console.error(
-            "Manual analysis error:",
-            data.error
-          )
-          return
-        }
-
-        analysisCache.value[cacheKey] =
-          data
-
-        branchMove.analysis =
-          data
-
-        updateAnalysis(data)
-
-      } catch (error) {
-        console.error(
-          "Manual move analysis failed:",
-          error
-        )
-      } finally {
-        isAnalyzingMove.value = false
-      }
+      return
     }
 
-    function flipBoard() {
-      orientation.value =
-        orientation.value === "white"
-          ? "black"
-          : "white"
+    const returnIndex =
+      branchStart.value
 
-          if (boardAPI) {
-          boardAPI.toggleOrientation()
-        }
+    resetBranch()
+
+    pgnIndex.value =
+      returnIndex
+
+    rebuildPGN(
+      pgnIndex.value
+    )
+
+    setBoard()
+
+    if (pgnIndex.value === 0) {
+      updateAnalysis(null)
+    } else {
+      updateAnalysis(
+        pgnEvaluations.value[
+          pgnIndex.value - 1
+        ] || null
+      )
     }
 
-    async function loadMoves(response) {
-      try {
-        console.log("UPLOAD RESPONSE:", response)
+    return
+  }
 
-        // ==============================
-        // GET GAME DATA
-        // ==============================
-
-        let game = null
-
-        if (response?.game) {
-          if (Array.isArray(response.game.data)) {
-            game = response.game.data[0]
-          } else {
-            game = response.game.data || response.game
-          }
-        }
-
-        if (!game) {
-          console.error("Could not find uploaded game:", response)
-          return
-        }
-
-        console.log("GAME DATA:", game)
-
-        if (!game.pgn) {
-          console.error("Uploaded game has no PGN:", game)
-          return
-        }
-
-        // ==============================
-        // SAVE GAME
-        // ==============================
-
-        currentGame.value = game
-
-        // ==============================
-        // LOAD PGN MOVES
-        // ==============================
-
-        const pgnChess = new Chess()
-
-        pgnChess.loadPgn(game.pgn)
-
-        const history = pgnChess.history()
-
-        console.log("PGN MOVES:", history)
-
-        if (!history.length) {
-          console.error("PGN contains no moves")
-          return
-        }
-
-        pgnMoves.value = [...history]
-
-        // ==============================
-        // RESET STATE
-        // ==============================
-
-        pgnEvaluations.value = []
-        pgnIndex.value = 0
-
-        resetBranch()
-
-        currentAnalysis.value = null
-        analysisCache.value = {}
-
-        orientation.value = "white"
-
-        chess.reset()
-
-        if (boardAPI) {
-          boardAPI.setPosition(chess.fen())
-          boardAPI.hideMoves()
-        }
-
-        // ==============================
-        // USE EXISTING ANALYSIS
-        // ==============================
-
-        const data = response.analysis
-
-        console.log("PGN ANALYSIS:", data)
-
-        if (!data) {
-          console.error("No analysis returned")
-          return
-        }
-
-        if (data.error) {
-          console.error("PGN analysis error:", data.error)
-          return
-        }
-
-        pgnEvaluations.value =
-          data.evaluations || []
-
-        console.log(
-          "PGN EVALUATIONS:",
-          pgnEvaluations.value
-        )
-
-        // ==============================
-        // SHOW INITIAL POSITION
-        // ==============================
-
-        goToPGN(0)
-
-      } catch (error) {
-        console.error(
-          "PGN loading failed:",
-          error
-        )
-      }
+  if (pgnIndex.value > 0) {
+    goToPGN(
+      pgnIndex.value - 1
+    )
+  }
 }
 
-    defineExpose({  //exposes functions/data from a child component
-      loadMoves
-    })
+/* =========================================
+   MANUAL BOARD MOVE
+========================================= */
+
+async function onMove(move) {
+  if (
+    isNavigating.value ||
+    isAnalyzingMove.value
+  ) {
+    return
+  }
+
+  const beforeFen =
+    chess.fen()
+
+  const moveUci = move.promotion
+    ? `${move.from}${move.to}${move.promotion}`
+    : `${move.from}${move.to}`
+
+  const played = chess.move({
+    from: move.from,
+    to: move.to,
+    promotion:
+      move.promotion || "q"
+  })
+
+  if (!played) {
+    console.error(
+      "Illegal manual move:",
+      move
+    )
+
+    return
+  }
+
+  if (!isExploring.value) {
+    branchStart.value =
+      pgnIndex.value
+
+    branchMoves.value = []
+    branchIndex.value = 0
+  }
+
+  if (
+    branchIndex.value <
+    branchMoves.value.length
+  ) {
+    branchMoves.value =
+      branchMoves.value.slice(
+        0,
+        branchIndex.value
+      )
+  }
+
+  const branchMove = {
+    from: move.from,
+    to: move.to,
+    promotion:
+      move.promotion || null,
+    uci: moveUci,
+    san: played.san,
+    analysis: null
+  }
+
+  branchMoves.value.push(
+    branchMove
+  )
+
+  branchIndex.value++
+
+  try {
+    isAnalyzingMove.value = true
+
+    const cacheKey =
+      `${beforeFen}_${moveUci}`
+
+    if (
+      analysisCache.value[cacheKey]
+    ) {
+      branchMove.analysis =
+        analysisCache.value[cacheKey]
+
+      updateAnalysis(
+        branchMove.analysis
+      )
+
+      return
+    }
+
+    const response =
+      await fetch(
+        `${import.meta.env.VITE_API_URL}/analyze-move`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body: JSON.stringify({
+            fen: beforeFen,
+            move_uci: moveUci
+          })
+        }
+      )
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      )
+    }
+
+    const data =
+      await response.json()
+
+    if (data.error) {
+      console.error(
+        "Manual analysis error:",
+        data.error
+      )
+
+      return
+    }
+
+    analysisCache.value[cacheKey] =
+      data
+
+    branchMove.analysis =
+      data
+
+    updateAnalysis(data)
+
+  } catch (error) {
+    console.error(
+      "Manual move analysis failed:",
+      error
+    )
+  } finally {
+    isAnalyzingMove.value = false
+  }
+}
+
+/* =========================================
+   BOARD ORIENTATION
+========================================= */
+
+function flipBoard() {
+  orientation.value =
+    orientation.value === "white"
+      ? "black"
+      : "white"
+
+  if (boardAPI) {
+    boardAPI.toggleOrientation()
+  }
+}
+
+/* =========================================
+   LOAD PGN
+========================================= */
+
+async function loadMoves(response) {
+  try {
+    console.log(
+      "UPLOAD RESPONSE:",
+      response
+    )
+
+    let game = null
+
+    if (response?.game) {
+      if (
+        Array.isArray(
+          response.game.data
+        )
+      ) {
+        game =
+          response.game.data[0]
+      } else {
+        game =
+          response.game.data ||
+          response.game
+      }
+    }
+
+    if (!game) {
+      console.error(
+        "Could not find uploaded game:",
+        response
+      )
+
+      return
+    }
+
+    console.log(
+      "GAME DATA:",
+      game
+    )
+
+    if (!game.pgn) {
+      console.error(
+        "Uploaded game has no PGN:",
+        game
+      )
+
+      return
+    }
+
+    currentGame.value = game
+
+    const pgnChess = new Chess()
+
+    pgnChess.loadPgn(
+      game.pgn
+    )
+
+    const history =
+      pgnChess.history()
+
+    console.log(
+      "PGN MOVES:",
+      history
+    )
+
+    if (!history.length) {
+      console.error(
+        "PGN contains no moves"
+      )
+
+      return
+    }
+
+    pgnMoves.value =
+      [...history]
+
+    pgnEvaluations.value = []
+    pgnIndex.value = 0
+
+    resetBranch()
+
+    currentAnalysis.value = null
+    analysisCache.value = {}
+
+    orientation.value = "white"
+
+    chess.reset()
+
+    if (boardAPI) {
+      boardAPI.setPosition(
+        chess.fen()
+      )
+
+      boardAPI.hideMoves()
+    }
+
+    const data =
+      response.analysis
+
+    console.log(
+      "PGN ANALYSIS:",
+      data
+    )
+
+    if (!data) {
+      console.error(
+        "No analysis returned"
+      )
+
+      return
+    }
+
+    if (data.error) {
+      console.error(
+        "PGN analysis error:",
+        data.error
+      )
+
+      return
+    }
+
+    pgnEvaluations.value =
+      data.evaluations || []
+
+    console.log(
+      "PGN EVALUATIONS:",
+      pgnEvaluations.value
+    )
+
+    goToPGN(0)
+
+  } catch (error) {
+    console.error(
+      "PGN loading failed:",
+      error
+    )
+  }
+}
+
+defineExpose({
+  loadMoves
+})
 </script>
 
 <template>
   <div class="chessboard-container">
-      <br>
-    <!-- Upload -->
-    <div class="upload-container">
-      <UploadPGNModal @loaded="loadMoves" />
-    </div>
+    <!-- =====================================
+         TOP PLAYER
+    ====================================== -->
 
-    <!-- Top Player -->
-    <div class="player">
-      <div class="player-info">
-        <span class="name">
-          {{ topPlayer.name || "Player" }}
-        </span>
+    <div class="player-card">
 
-        <span class="rating">
-          {{ topPlayer.elo || "--" }}
-        </span>
+      <div class="player-avatar">
+        <v-icon size="18">
+          mdi-chess-king
+        </v-icon>
       </div>
+
+      <div class="player-details">
+
+        <div class="player-name">
+          {{ topPlayer.name || "Player" }}
+
+          <span
+            v-if="topPlayer.elo"
+            class="player-elo"
+          >
+            {{ topPlayer.elo }}
+          </span>
+        </div>
+
+        <div class="player-side">
+          {{ orientation === "white"
+            ? "Black"
+            : "White"
+          }}
+          • Playing
+        </div>
+
+      </div>
+
+      <div
+        v-if="currentAnalysis"
+        class="captured-info"
+      >
+        <span>Analysis</span>
+        <strong>
+          {{ currentAnalysis.quality || "Ready" }}
+        </strong>
+      </div>
+
     </div>
 
-    <!-- Board -->
-    <div class="board-wrapper">
-        <!-- Chessboard + Evaluation Bar -->
-        <div class="board-row">
+    <!-- =====================================
+         CHESSBOARD
+    ====================================== -->
 
-          <TheChessboard
-            class="board"
-            :orientation="orientation"
-            :board-config="{
-                coordinates: true
-              }"
-            @move="onMove"
-            @board-created="(api) => (boardAPI = api )"
-          />
+    <div class="board-section">
 
-          <EvaluationBarView
-            class="evaluation-bar"
-            :score="evalScore"
-          />
+      <div class="board-row">
 
-          <MoveQuality
-            :quality="currentQuality"
-            :square="qualityPosition"
-            :orientation="orientation"
-          />
+        <TheChessboard
+          class="board"
+          :orientation="orientation"
+          :board-config="{
+            coordinates: true
+          }"
+          @move="onMove"
+          @board-created="
+            (api) => (boardAPI = api)
+          "
+        />
+
+        <EvaluationBarView
+          class="evaluation-bar"
+          :score="evalScore"
+        />
+
+        <MoveQuality
+          :quality="currentQuality"
+          :square="qualityPosition"
+          :orientation="orientation"
+        />
+
+      </div>
+
+    </div>
+
+    <!-- =====================================
+         BOTTOM PLAYER
+    ====================================== -->
+
+    <div class="player-card bottom-player">
+
+      <div class="player-avatar">
+
+        <v-icon size="18">
+          mdi-chess-king
+        </v-icon>
+
+      </div>
+
+      <div class="player-details">
+
+        <div class="player-name">
+
+          {{ bottomPlayer.name || "Player" }}
+
+          <span
+            v-if="bottomPlayer.elo"
+            class="player-elo"
+          >
+            {{ bottomPlayer.elo }}
+          </span>
 
         </div>
 
-        <!-- Bottom Player -->
-        <div class="player bottom-player">
-          <div class="player-info">
-            <span class="name">
-              {{ bottomPlayer.name || "Player" }}
-            </span>
-
-            <span class="rating">
-              {{ bottomPlayer.elo || "--" }}
-            </span>
-          </div>
+        <div class="player-side">
+          {{ orientation === "white"
+            ? "White"
+            : "Black"
+          }}
+          • Playing
         </div>
-   </div>
 
-    <!-- Controls -->
+      </div>
+
+      <div
+        v-if="pgnMoves.length"
+        class="move-counter"
+      >
+        {{ pgnIndex }} /
+        {{ pgnMoves.length }}
+      </div>
+
+    </div>
+
+    <!-- =====================================
+         CONTROLS
+    ====================================== -->
+
     <div class="controls">
 
       <v-btn
         class="control-btn"
-        color="light-blue-darken-4"
-        size="small"
         variant="flat"
         @click="prevMove"
         :disabled="isAnalyzingMove"
       >
-        ⬅️ Back
+        <v-icon size="17">
+          mdi-chevron-left
+        </v-icon>
+
+        Back
       </v-btn>
 
       <v-btn
         class="control-btn"
-        color="light-blue-darken-4"
-        size="small"
         variant="flat"
         @click="nextMove"
         :disabled="isAnalyzingMove"
       >
-        Forward ➡️
+        Forward
+
+        <v-icon size="17">
+          mdi-chevron-right
+        </v-icon>
       </v-btn>
 
       <v-btn
         class="control-btn"
-        color="light-blue-darken-4"
-        size="small"
         variant="flat"
         @click="flipBoard"
       >
-        🔄 Flip
+        <v-icon size="16">
+          mdi-swap-vertical
+        </v-icon>
+
+        Flip
       </v-btn>
 
     </div>
 
-    <!-- Exploration -->
+    <!-- =====================================
+         EXPLORATION STATUS
+    ====================================== -->
+
     <div
       v-if="isExploring"
       class="exploration-status"
     >
+
+      <v-icon
+        size="15"
+        color="#F28C28"
+      >
+        mdi-source-branch
+      </v-icon>
+
       Exploring variation
 
       <span v-if="isAnalyzingMove">
         — Analyzing...
       </span>
+
     </div>
 
   </div>
 </template>
 
 <style scoped>
+
 /* =========================================
-   MAIN CONTAINER
+   CHESSBOARD CONTAINER
 ========================================= */
 
 .chessboard-container {
@@ -739,9 +895,9 @@
   max-width: 620px;
   margin: 0 auto;
   padding: 0;
-  text-align: center;
   box-sizing: border-box;
 }
+
 
 /* =========================================
    UPLOAD
@@ -749,166 +905,340 @@
 
 .upload-container {
   width: 100%;
-  margin: 0 0 4px;
+  margin: 0 0 10px;
   padding: 0;
 }
+
+
+/* =========================================
+   PLAYER CARD
+========================================= */
+
+.player-card {
+  width: min(600px, 100%);
+
+  min-height: 54px;
+
+  margin: 0 auto 8px;
+
+  padding: 8px 12px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  box-sizing: border-box;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0B1F3A,
+      #07172D
+    );
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.06);
+
+  border-radius: 10px;
+
+  color: white;
+
+  box-shadow:
+    0 8px 20px
+    rgba(7, 23, 45, 0.16);
+}
+
+
+/* =========================================
+   PLAYER AVATAR
+========================================= */
+
+.player-avatar {
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background:
+    rgba(255, 255, 255, 0.10);
+
+  color: #F28C28;
+
+  border: 1px solid
+    rgba(242, 140, 40, 0.25);
+}
+
+
+/* =========================================
+   PLAYER DETAILS
+========================================= */
+
+.player-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.player-name {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  min-width: 0;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #ffffff;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-elo {
+  color: #F28C28;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+.player-side {
+  margin-top: 2px;
+
+  font-size: 10px;
+
+  color:
+    rgba(255, 255, 255, 0.58);
+}
+
+
+/* =========================================
+   ANALYSIS INFO
+========================================= */
+
+.captured-info,
+.move-counter {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 6px 9px;
+
+  border-radius: 6px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.08);
+
+  font-size: 10px;
+
+  color:
+    rgba(255, 255, 255, 0.60);
+}
+
+.captured-info strong,
+.move-counter {
+  color: #F28C28;
+}
+
+
+/* =========================================
+   BOARD SECTION
+========================================= */
+
+.board-section {
+  width: 100%;
+
+  display: flex;
+  justify-content: center;
+
+  margin: 0;
+  padding: 0;
+}
+
 
 /* =========================================
    BOARD + EVALUATION BAR
 ========================================= */
 
-.board-wrapper {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
 .board-row {
+  position: relative;
+
   display: flex;
   align-items: stretch;
+
   gap: 0;
-  width: 100%;
-  margin: 0;
+
+  width: min(618px, 100%);
+
+  margin: 0 auto;
   padding: 0;
-  position: relative; /* ADD THIS ONLY */
+
+  box-sizing: border-box;
 }
 
 .board {
   display: block;
+
   width: min(600px, 100%);
+
   max-width: 100%;
+
   margin: 0;
   padding: 0;
+
   flex: 0 1 600px;
+
+  overflow: hidden;
+
+  border-radius: 9px;
 }
 
-/* Evaluation bar */
+
+/* =========================================
+   EVALUATION BAR
+========================================= */
+
 .evaluation-bar {
   width: 18px;
   min-width: 18px;
+
   flex: 0 0 18px;
+
   height: auto;
+
   margin: 0;
   padding: 0;
+
   align-self: stretch;
 }
 
+
 /* =========================================
-   PLAYER BAR
+   BOTTOM PLAYER
 ========================================= */
 
-.player {
-  display: flex;
-  align-items: center;
-
-  width: min(600px, 100%);
-
-  height: 30px;
-  min-height: 30px;
-
-  margin: 2px auto;
-  padding: 3px 9px;
-
-  box-sizing: border-box;
-
-  background: #01579B;
-  color: white;
-
-  border-radius: 5px;
-}
-
-/* Player information */
-
-.player-info {
-  display: flex;
-  align-items: center;
-
-  gap: 7px;
-
-  min-width: 0;
-  width: 100%;
-}
-
-/* Player name */
-
-.name {
-  min-width: 0;
-
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-}
-
-/* Rating */
-
-.rating {
-  flex-shrink: 0;
-
-  font-size: 10px;
-  line-height: 1;
-
-  color: rgba(255, 255, 255, 0.75);
-}
-
-/* Bottom player */
-
 .bottom-player {
-  margin: 2px auto 0;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
+
 
 /* =========================================
    CONTROLS
 ========================================= */
 
 .controls {
+  width: 100%;
+
   display: flex;
   justify-content: center;
   align-items: center;
 
+  gap: 7px;
+
   flex-wrap: wrap;
 
-  gap: 5px;
-
-  width: 100%;
-
-  margin: 5px auto 0;
+  margin: 12px auto 0;
   padding: 0;
 }
 
 .control-btn {
-  min-width: 82px;
-  height: 32px !important;
+  height: 34px !important;
+
+  min-width: 88px;
+
+  padding: 0 13px !important;
+
+  border-radius: 7px !important;
+
+  background: #0B1F3A !important;
+
+  color: #ffffff !important;
 
   font-size: 12px;
+
+  font-weight: 600;
+
   text-transform: none;
+
+  box-shadow: none;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
+
+.control-btn:hover {
+  background: #F28C28 !important;
+
+  color: #ffffff !important;
+
+  transform: translateY(-1px);
+}
+
+.control-btn:disabled {
+  opacity: 0.45;
+}
+
 
 /* =========================================
    EXPLORATION
 ========================================= */
 
 .exploration-status {
-  width: 100%;
+  width: fit-content;
 
-  margin: 4px auto 0;
-  padding: 0;
+  margin: 9px auto 0;
+  padding: 6px 11px;
 
-  font-size: 12px;
+  display: flex;
+  align-items: center;
 
-  opacity: 0.75;
+  gap: 5px;
+
+  border-radius: 6px;
+
+  background: #FFF3E4;
+
+  color: #DC7311;
+
+  border: 1px solid
+    rgba(242, 140, 40, 0.25);
+
+  font-size: 11px;
+
+  font-weight: 600;
 }
+
 
 /* =========================================
    TABLET
 ========================================= */
 
 @media (max-width: 960px) {
+
   .chessboard-container {
     max-width: 100%;
+  }
+
+  .board-row {
+    width: 100%;
   }
 
   .board {
@@ -921,37 +1251,26 @@
     flex-basis: 16px;
   }
 
-  .player {
-    height: 29px;
-    min-height: 29px;
-    padding: 3px 8px;
+  .player-card {
+    min-height: 50px;
   }
 
-  .name {
-    font-size: 12px;
-  }
-
-  .rating {
-    font-size: 10px;
-  }
-
-  .controls {
-    margin-top: 5px;
-  }
 }
+
 
 /* =========================================
    MOBILE
 ========================================= */
 
 @media (max-width: 600px) {
+
   .chessboard-container {
     width: 100%;
     padding: 0 2px;
   }
 
   .upload-container {
-    margin-bottom: 2px;
+    margin-bottom: 7px;
   }
 
   .board-row {
@@ -960,63 +1279,82 @@
 
   .board {
     width: calc(100% - 14px);
+
     flex: 1 1 auto;
+
+    border-radius: 6px;
   }
 
   .evaluation-bar {
     width: 14px;
     min-width: 14px;
-    flex: 0 0 14px;
+    flex-basis: 14px;
   }
 
-  .player {
-    height: 27px;
-    min-height: 27px;
+  .player-card {
+    min-height: 46px;
 
-    margin: 2px auto;
-    padding: 3px 7px;
+    padding: 7px 9px;
 
-    border-radius: 4px;
+    margin-bottom: 6px;
+
+    border-radius: 8px;
+
+    gap: 8px;
   }
 
-  .player-info {
-    gap: 6px;
+  .player-avatar {
+    width: 30px;
+    height: 30px;
   }
 
-  .name {
-    font-size: 11px;
+  .player-name {
+    font-size: 12px;
   }
 
-  .rating {
+  .player-elo {
+    font-size: 10px;
+  }
+
+  .player-side {
     font-size: 9px;
   }
 
+  .captured-info {
+    display: none;
+  }
+
   .bottom-player {
-    margin-top: 2px;
+    margin-top: 6px;
   }
 
   .controls {
-    gap: 4px;
-    margin-top: 4px;
+    gap: 5px;
+    margin-top: 9px;
   }
 
   .control-btn {
-    min-width: 75px;
-    height: 30px !important;
+    min-width: 76px;
+
+    height: 31px !important;
+
+    padding: 0 9px !important;
+
     font-size: 11px;
   }
 
   .exploration-status {
-    font-size: 11px;
-    margin-top: 3px;
+    font-size: 10px;
   }
 }
+
 
 /* =========================================
    VERY SMALL PHONES
 ========================================= */
 
 @media (max-width: 400px) {
+
   .chessboard-container {
     padding: 0;
   }
@@ -1031,29 +1369,37 @@
     flex-basis: 12px;
   }
 
-  .player {
-    height: 25px;
-    min-height: 25px;
+  .player-card {
+    min-height: 42px;
 
-    padding: 2px 6px;
+    padding: 6px 7px;
   }
 
-  .player-info {
-    gap: 5px;
+  .player-avatar {
+    width: 27px;
+    height: 27px;
   }
 
-  .name {
-    font-size: 10px;
+  .player-name {
+    font-size: 11px;
   }
 
-  .rating {
+  .player-side {
     font-size: 8px;
+  }
+
+  .move-counter {
+    font-size: 9px;
+    padding: 5px 7px;
   }
 
   .control-btn {
     min-width: 70px;
-    height: 28px !important;
+
+    height: 29px !important;
+
     font-size: 10px;
   }
 }
+
 </style>

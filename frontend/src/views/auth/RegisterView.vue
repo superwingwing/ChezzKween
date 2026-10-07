@@ -126,7 +126,7 @@ const pieces = [
               </v-avatar>
 
               <span class="font-weight-bold text-white">
-                ChessKween Engine
+                ChessKween AI
               </span>
 
             </div>

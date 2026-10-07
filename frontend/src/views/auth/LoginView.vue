@@ -87,7 +87,7 @@ const pieces = [
               </v-avatar>
 
               <span class="font-weight-bold text-white">
-                ChessKween Engine
+                ChessKween AI
               </span>
 
             </div>
@@ -300,7 +300,7 @@ const pieces = [
           </h1>
 
           <p class="text-body-2 text-grey-darken-1 mt-2">
-            Enter your credentials to access your chess engine workspace.
+            Enter your credentials to access the Dashboard...
           </p>
 
         </div>

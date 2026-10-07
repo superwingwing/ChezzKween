@@ -127,7 +127,8 @@ onBeforeUnmount(() => {
           variant="outlined"
           class="best-chip"
         >
-          BEST MOVE
+          <!-- BEST MOVE -->
+           {{ analysis.quality || "Chess Analysis" }} move
         </v-chip>
       </template>
 

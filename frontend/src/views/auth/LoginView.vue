@@ -271,12 +271,24 @@ const pieces = [
 
     <!-- RIGHT SIDE -->
     <section class="form-side">
-
       <div class="form-wrapper">
 
-        <!-- SIGN UP -->
-        <div class="text-end mb-10">
+        <!-- HEADING -->
+        <div class="mb-7">
+          <h1 class="text-h3 font-weight-black">
+            Welcome Back
+          </h1>
 
+          <p class="text-body-2 text-grey-darken-1 mt-2">
+            Enter your credentials to access the Dashboard...
+          </p>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <LoginForm />
+
+        <!-- SIGN UP -->
+        <div class="text-center mt-6">
           <span class="text-caption text-grey-darken-1">
             Don't have an account?
           </span>
@@ -288,29 +300,9 @@ const pieces = [
           >
             Sign Up
           </RouterLink>
-
         </div>
-
-
-        <!-- HEADING -->
-        <div class="mb-7">
-
-          <h1 class="text-h3 font-weight-black">
-            Welcome Back
-          </h1>
-
-          <p class="text-body-2 text-grey-darken-1 mt-2">
-            Enter your credentials to access the Dashboard...
-          </p>
-
-        </div>
-
-
-        <!-- LOGIN FORM -->
-        <LoginForm />
 
       </div>
-
     </section>
 
   </div>

@@ -20,43 +20,42 @@ const pieces = [
   <div class="register-page">
 
     <!-- LEFT: REGISTER FORM -->
-    <section class="form-side">
+     <section class="form-side">
 
-      <div class="form-wrapper">
+  <div class="form-wrapper">
 
-        <!-- LOGIN LINK -->
-        <div class="text-end mb-10">
-          <span class="text-caption text-grey-darken-1">
-            Already have an account?
-          </span>
+    <!-- HEADING -->
+    <div class="mb-7">
+      <h1 class="text-h3 font-weight-black">
+        Create Account
+      </h1>
 
-          <RouterLink
-            to="/"
-            class="text-caption font-weight-bold text-decoration-none ms-1"
-            style="color: #f28c28;"
-          >
-            Login
-          </RouterLink>
-        </div>
+      <p class="text-body-2 text-grey-darken-1 mt-2">
+        Create your ChessKween account and start improving your game.
+      </p>
+    </div>
 
-        <!-- HEADING -->
-        <div class="mb-7">
-          <h1 class="text-h3 font-weight-black">
-            Create Account
-          </h1>
+    <!-- REGISTER FORM -->
+    <RegisterForm />
 
-          <p class="text-body-2 text-grey-darken-1 mt-2">
-            Create your ChessKween account and start improving your game.
-          </p>
-        </div>
+    <!-- LOGIN LINK -->
+    <div class="text-center mt-6">
+      <span class="text-caption text-grey-darken-1">
+        Already have an account?
+      </span>
 
-        <!-- REGISTER FORM -->
-        <RegisterForm />
+      <RouterLink
+        to="/"
+        class="text-caption font-weight-bold text-decoration-none ms-1"
+        style="color: #f28c28;"
+      >
+        Login
+      </RouterLink>
+    </div>
 
-      </div>
+  </div>
 
     </section>
-
 
     <!-- RIGHT: CHESSKWEEN VISUAL -->
     <section

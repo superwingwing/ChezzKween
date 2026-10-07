@@ -33,20 +33,14 @@ const handleGameLoaded = (response) => {
          HEADER
     ====================================================== -->
     <div class="dashboard-header">
-
       <div class="header-left">
-
         <div class="eyebrow">
           CHESSKWEEN WORKSPACE
         </div>
-
         <h1>
           Interactive Engine Dashboard
         </h1>
-
       </div>
-
-
       <div class="header-actions">
 
         <!-- SINGLE GAME PGN UPLOAD -->
@@ -62,12 +56,9 @@ const handleGameLoaded = (response) => {
           <v-icon size="19">
             mdi-bell-outline
           </v-icon>
-
           <span class="notification-dot"></span>
         </v-btn>
-
       </div>
-
     </div>
 
 

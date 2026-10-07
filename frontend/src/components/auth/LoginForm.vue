@@ -49,7 +49,7 @@ const onSubmit = async () => {
 
     setTimeout(() => {
       router.replace('/dashboard')
-    }, 5000) // 5000 milliseconds = 5 seconds
+    }, 1000) // 1000 milliseconds = 1 second
   }
 
   //reset form

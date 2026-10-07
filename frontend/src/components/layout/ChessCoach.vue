@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
 
           <div>
             <div class="recommended-label">
-              RECOMMENDED MOVE
+              PLAYED MOVE
             </div>
 
             <div class="recommended-move">

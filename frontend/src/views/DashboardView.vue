@@ -135,10 +135,7 @@ const handleGameLoaded = (response) => {
   width: 100%;
   max-width: 1250px;
 
-  /*
-    Keep the complete dashboard inside the viewport.
-  */
-  height: calc(100dvh - 8px);
+  height: 100dvh;
 
   margin: 0 auto;
 
@@ -163,7 +160,9 @@ const handleGameLoaded = (response) => {
 
   gap: 20px;
 
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+
+  box-sizing: border-box;
 }
 
 
@@ -293,7 +292,7 @@ const handleGameLoaded = (response) => {
     0 8px 20px
     rgba(7, 23, 45, 0.14);
 
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 
@@ -408,12 +407,11 @@ const handleGameLoaded = (response) => {
   width: 100%;
 
   /*
-    IMPORTANT:
-    The grid gets all remaining viewport height.
+    Header uses approximately 55-65px.
+    We intentionally do NOT reserve 114px because
+    engine-status is currently not displayed.
   */
-  height: calc(
-    100% - 114px
-  );
+  height: calc(100% - 62px);
 
   min-height: 0;
 
@@ -425,7 +423,9 @@ const handleGameLoaded = (response) => {
 
   gap: 24px;
 
-  align-items: center;
+  align-items: stretch;
+
+  box-sizing: border-box;
 }
 
 
@@ -446,34 +446,20 @@ const handleGameLoaded = (response) => {
   justify-content: center;
 
   overflow: hidden;
+
+  box-sizing: border-box;
 }
 
 
 /* =========================================================
-   CHESSBOARD RESPONSIVE SIZE
+   CHESSBOARD CONTAINER
 ========================================================= */
-
-/*
-   THIS IS THE IMPORTANT PART.
-
-   Your ChessboardView normally wants a ~600px board.
-
-   We override its internal width depending on the
-   available viewport height.
-
-   This allows the complete chessboard + player cards +
-   controls to fit on a laptop screen.
-*/
 
 .board-column :deep(.chessboard-container) {
 
-  /*
-    Don't let it become larger than the available
-    vertical space.
-  */
   width: min(
     100%,
-    calc(100dvh - 285px)
+    calc(100dvh - 255px)
   );
 
   max-width: 620px;
@@ -481,12 +467,14 @@ const handleGameLoaded = (response) => {
   margin: 0 auto;
 
   padding: 0;
+
+  box-sizing: border-box;
 }
 
 
-/*
-   Board itself.
-*/
+/* =========================================================
+   BOARD ROW
+========================================================= */
 
 .board-column :deep(.board-row) {
 
@@ -495,17 +483,20 @@ const handleGameLoaded = (response) => {
   max-width: 100%;
 
   margin: 0 auto;
+
+  box-sizing: border-box;
 }
 
 
+/* =========================================================
+   CHESS BOARD
+========================================================= */
+
 .board-column :deep(.board) {
 
-  /*
-    Board becomes responsive to viewport height.
-  */
   width: min(
     600px,
-    calc(100dvh - 285px)
+    calc(100dvh - 255px)
   );
 
   max-width: 100%;
@@ -515,12 +506,14 @@ const handleGameLoaded = (response) => {
   margin: 0;
 
   border-radius: 8px;
+
+  box-sizing: border-box;
 }
 
 
-/*
-   Keep evaluation bar proportional.
-*/
+/* =========================================================
+   EVALUATION BAR
+========================================================= */
 
 .board-column :deep(.evaluation-bar) {
 
@@ -538,9 +531,6 @@ const handleGameLoaded = (response) => {
 
 .board-column :deep(.player-card) {
 
-  /*
-    Match the board width.
-  */
   width: 100%;
 
   max-width: 100%;
@@ -552,6 +542,8 @@ const handleGameLoaded = (response) => {
   padding: 6px 10px;
 
   border-radius: 9px;
+
+  box-sizing: border-box;
 }
 
 
@@ -564,6 +556,8 @@ const handleGameLoaded = (response) => {
   margin-top: 8px;
 
   gap: 6px;
+
+  box-sizing: border-box;
 }
 
 
@@ -584,7 +578,6 @@ const handleGameLoaded = (response) => {
 ========================================================= */
 
 .right-column {
-
   width: 100%;
   height: 100%;
 
@@ -595,11 +588,22 @@ const handleGameLoaded = (response) => {
 
   flex-direction: column;
 
-  justify-content: center;
+  justify-content: flex-start;
 
-  gap: 14px;
+  gap: 12px;
 
-  overflow: hidden;
+  /*
+    Only the right side can scroll.
+    The entire dashboard will not scroll on desktop.
+  */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-right: 4px;
+
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
 }
 
 
@@ -608,9 +612,33 @@ const handleGameLoaded = (response) => {
 ========================================================= */
 
 .right-column > :first-child {
+
   width: 100%;
 
-  flex-shrink: 1;
+  min-width: 0;
+
+  flex: 0 0 auto;
+}
+
+
+/*
+  Keep ChessCoach from becoming excessively tall.
+  Its own content can scroll internally.
+*/
+
+.right-column :deep(.coach-card) {
+
+  width: 100%;
+
+  height: clamp(
+    350px,
+    52vh,
+    420px
+  );
+
+  min-height: 0;
+
+  box-sizing: border-box;
 }
 
 
@@ -619,32 +647,59 @@ const handleGameLoaded = (response) => {
 ========================================================= */
 
 .right-column > :last-child {
+
   width: 100%;
 
-  flex-shrink: 1;
+  min-width: 0;
+
+  flex: 0 0 auto;
 }
 
 
 .right-column :deep(.classifier-card) {
-
-  width: 100%;
-
+ width: 100%;
   max-width: none;
 
+  height: 270px;
+  min-height: 270px;
+
+  flex: 0 0 270px;
+
   box-sizing: border-box;
+
+  overflow: hidden;
 }
 
 
 /* =========================================================
-   SHORT LAPTOP SCREEN
+   RIGHT COLUMN SCROLLBAR
 ========================================================= */
 
-/*
-   For screens around 768px high.
+.right-column::-webkit-scrollbar {
+  width: 5px;
+}
 
-   This is particularly important for laptops where
-   the browser viewport is much shorter than 900px.
-*/
+
+.right-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+.right-column::-webkit-scrollbar-thumb {
+  background: #D8DEE7;
+
+  border-radius: 10px;
+}
+
+
+.right-column::-webkit-scrollbar-thumb:hover {
+  background: #B9C3D0;
+}
+
+
+/* =========================================================
+   SHORT LAPTOP
+========================================================= */
 
 @media (
   max-height: 820px
@@ -655,13 +710,14 @@ const handleGameLoaded = (response) => {
   .dashboard {
 
     padding-top: 7px !important;
+
     padding-bottom: 7px !important;
   }
 
 
   .dashboard-header {
 
-    margin-bottom: 9px;
+    margin-bottom: 8px;
   }
 
 
@@ -677,36 +733,15 @@ const handleGameLoaded = (response) => {
   }
 
 
-  .engine-status {
+  /* -------------------------------------------------------
+     BOARD
+  ------------------------------------------------------- */
 
-    min-height: 55px;
-
-    padding: 8px 15px;
-
-    margin-bottom: 9px;
-  }
-
-
-  .engine-title {
-
-    font-size: 10px;
-  }
-
-
-  .engine-subtitle {
-
-    font-size: 11px;
-  }
-
-
-  /*
-    Smaller board for short screens.
-  */
   .board-column :deep(.chessboard-container) {
 
     width: min(
       100%,
-      calc(100dvh - 250px)
+      calc(100dvh - 225px)
     );
   }
 
@@ -715,7 +750,7 @@ const handleGameLoaded = (response) => {
 
     width: min(
       100%,
-      calc(100dvh - 250px)
+      calc(100dvh - 225px)
     );
   }
 
@@ -733,6 +768,7 @@ const handleGameLoaded = (response) => {
   .board-column :deep(.player-avatar) {
 
     width: 28px;
+
     height: 28px;
   }
 
@@ -765,9 +801,31 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     RIGHT COLUMN
+  ------------------------------------------------------- */
+
   .right-column {
 
-    gap: 10px;
+    gap: 9px;
+  }
+
+
+  .right-column :deep(.coach-card) {
+
+    height: 370px;
+
+    flex-basis: 370px;
+  }
+
+
+  .right-column :deep(.classifier-card) {
+
+     height: 255px;
+
+  min-height: 255px;
+
+  flex-basis: 255px;
   }
 }
 
@@ -790,7 +848,7 @@ const handleGameLoaded = (response) => {
 
   .dashboard-header {
 
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
 
 
@@ -800,46 +858,15 @@ const handleGameLoaded = (response) => {
   }
 
 
-  .engine-status {
+  /* -------------------------------------------------------
+     BOARD
+  ------------------------------------------------------- */
 
-    min-height: 48px;
-
-    padding: 6px 12px;
-
-    margin-bottom: 6px;
-
-    border-radius: 10px;
-  }
-
-
-  .engine-title {
-
-    font-size: 9px;
-  }
-
-
-  .engine-subtitle {
-
-    font-size: 10px;
-  }
-
-
-  .engine-stat {
-
-    padding: 4px 7px;
-
-    font-size: 9px;
-  }
-
-
-  /*
-    Very compact board.
-  */
   .board-column :deep(.chessboard-container) {
 
     width: min(
       100%,
-      calc(100dvh - 215px)
+      calc(100dvh - 195px)
     );
   }
 
@@ -848,7 +875,7 @@ const handleGameLoaded = (response) => {
 
     width: min(
       100%,
-      calc(100dvh - 215px)
+      calc(100dvh - 195px)
     );
   }
 
@@ -866,6 +893,7 @@ const handleGameLoaded = (response) => {
   .board-column :deep(.player-avatar) {
 
     width: 25px;
+
     height: 25px;
   }
 
@@ -902,9 +930,31 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     RIGHT COLUMN
+  ------------------------------------------------------- */
+
   .right-column {
 
     gap: 7px;
+  }
+
+
+  .right-column :deep(.coach-card) {
+
+    height: 330px;
+
+    flex-basis: 330px;
+  }
+
+
+  .right-column :deep(.classifier-card) {
+
+     height: 235px;
+
+  min-height: 235px;
+
+  flex-basis: 235px;
   }
 }
 
@@ -943,6 +993,10 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     BOARD
+  ------------------------------------------------------- */
+
   .board-column {
 
     height: auto;
@@ -968,17 +1022,39 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     RIGHT COLUMN
+  ------------------------------------------------------- */
+
   .right-column {
 
     height: auto;
 
     overflow: visible;
+
+    padding-right: 0;
+  }
+
+
+  .right-column :deep(.coach-card) {
+
+    height: 420px;
+
+    min-height: 420px;
+
+    flex-basis: auto;
   }
 
 
   .right-column :deep(.classifier-card) {
 
-    max-width: 100%;
+    width: 100%;
+
+    height: auto;
+
+    min-height: 220px;
+
+    flex-basis: auto;
   }
 }
 
@@ -1009,6 +1085,10 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     ENGINE
+  ------------------------------------------------------- */
+
   .engine-status {
 
     flex-direction: column;
@@ -1032,6 +1112,30 @@ const handleGameLoaded = (response) => {
     flex: 1;
 
     justify-content: center;
+  }
+
+
+  /* -------------------------------------------------------
+     GRID
+  ------------------------------------------------------- */
+
+  .dashboard-grid {
+
+    gap: 16px;
+  }
+
+
+  .right-column {
+
+    gap: 12px;
+  }
+
+
+  .right-column :deep(.coach-card) {
+
+    height: 400px;
+
+    min-height: 400px;
   }
 }
 
@@ -1080,6 +1184,10 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     ENGINE
+  ------------------------------------------------------- */
+
   .engine-status {
 
     border-radius: 10px;
@@ -1094,9 +1202,13 @@ const handleGameLoaded = (response) => {
   }
 
 
+  /* -------------------------------------------------------
+     GRID
+  ------------------------------------------------------- */
+
   .dashboard-grid {
 
-    gap: 16px;
+    gap: 14px;
   }
 
 
@@ -1104,6 +1216,32 @@ const handleGameLoaded = (response) => {
 
     gap: 12px;
   }
+
+
+  .right-column :deep(.coach-card) {
+
+    height: 380px;
+
+    min-height: 380px;
+  }
+
+
+.right-column :deep(.classifier-header) {
+  padding: 12px 16px 8px !important;
+}
+
+.right-column :deep(.classifier-content) {
+  padding: 6px 16px 14px !important;
+}
+
+.right-column :deep(.drop-zone) {
+  padding: 18px 12px;
+}
+
+.right-column :deep(.upload-btn) {
+  margin-top: 10px;
+  min-height: 44px;
+}
 }
 
 </style>

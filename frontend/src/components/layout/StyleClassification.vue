@@ -1,7 +1,6 @@
 <script setup>
-import { ref } from "vue"
-import { supabase } from "@/utils/supabase"
-
+import { ref } from 'vue'
+import { supabase } from '@/utils/supabase'
 
 const fileInput = ref(null)
 const folderInput = ref(null)
@@ -14,32 +13,33 @@ const browseFolder = () => folderInput.value?.click()
 const selectFiles = (event) => {
   const files = Array.from(event.target.files || [])
   selectedFiles.value.push(...files)
-  event.target.value = ""
+  event.target.value = ''
 }
 
 const uploadFiles = async () => {
   if (!selectedFiles.value.length) {
-    alert("Please select PGN files.")
+    alert('Please select PGN files.')
     return
   }
 
   // Get the currently logged-in Supabase user
-  const { data: { user }, error: userError } =
-    await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
   if (userError || !user) {
-    alert("You must be logged in to upload games.")
+    alert('You must be logged in to upload games.')
     return
   }
-
 
   uploading.value = true
   progress.value = 0
 
   const formData = new FormData()
-  selectedFiles.value.forEach(file => formData.append("files", file))
-  console.log("Logged-in User ID:", user.id)
-  formData.append("user_id", user.id)
+  selectedFiles.value.forEach((file) => formData.append('files', file))
+  console.log('Logged-in User ID:', user.id)
+  formData.append('user_id', user.id)
 
   const timer = setInterval(() => {
     if (progress.value < 95) progress.value += 5
@@ -47,8 +47,8 @@ const uploadFiles = async () => {
 
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/upload_style`, {
-      method: "POST",
-      body: formData
+      method: 'POST',
+      body: formData,
     })
 
     clearInterval(timer)
@@ -69,30 +69,18 @@ const uploadFiles = async () => {
     uploading.value = false
     progress.value = 0
     console.error(error)
-    alert("Failed to upload PGN files.")
+    alert('Failed to upload PGN files.')
   }
 }
 </script>
 
 <template>
-  <v-card
-    class="classifier-card"
-    elevation="4"
-  >
-
+  <v-card class="classifier-card" elevation="4">
     <!-- HEADER -->
     <v-card-item class="classifier-header">
-
       <template #prepend>
-        <v-avatar
-          rounded="lg"
-          size="46"
-          class="classifier-icon"
-        >
-          <v-icon
-            icon="mdi-chess-bishop"
-            size="25"
-          />
+        <v-avatar rounded="lg" size="46" class="classifier-icon">
+          <v-icon icon="mdi-chess-bishop" size="25" />
         </v-avatar>
       </template>
 
@@ -103,61 +91,31 @@ const uploadFiles = async () => {
       <v-card-subtitle class="pa-0 classifier-subtitle">
         Classify your profile into Aggressive vs Positional
       </v-card-subtitle>
-
     </v-card-item>
 
     <!-- CONTENT -->
     <v-card-text class="classifier-content">
-
       <!-- DROP ZONE -->
-      <div
-        class="drop-zone"
-        @click="browseFiles"
-      >
-
-        <v-icon
-          icon="mdi-file-upload-outline"
-          size="34"
-          class="upload-icon"
-        />
+      <div class="drop-zone" @click="browseFiles">
+        <v-icon icon="mdi-file-upload-outline" size="34" class="upload-icon" />
 
         <div class="upload-text">
-          <strong @click.stop="browseFiles">
-            Select PGN Files
-          </strong>
+          <strong @click.stop="browseFiles"> Select PGN Files </strong>
 
-          <span>
-            or Drag & Drop Here
-          </span>
+          <span> or Drag & Drop Here </span>
         </div>
 
-        <div class="supported-text">
-          Supports Lichess, Chess.com & ChessBase PGNs
-        </div>
+        <div class="supported-text">Supports Lichess, Chess.com & ChessBase PGNs</div>
 
-        <div
-          v-if="selectedFiles.length"
-          class="file-count"
-        >
-          <v-icon
-            icon="mdi-file-multiple-outline"
-            size="15"
-          />
+        <div v-if="selectedFiles.length" class="file-count">
+          <v-icon icon="mdi-file-multiple-outline" size="15" />
 
           {{ selectedFiles.length }} PGN file(s) selected
         </div>
-
       </div>
 
       <!-- FILE INPUT -->
-      <input
-        ref="fileInput"
-        type="file"
-        accept=".pgn"
-        multiple
-        hidden
-        @change="selectFiles"
-      />
+      <input ref="fileInput" type="file" accept=".pgn" multiple hidden @change="selectFiles" />
 
       <!-- FOLDER INPUT -->
       <input
@@ -181,10 +139,7 @@ const uploadFiles = async () => {
         prepend-icon="mdi-memory"
         @click="uploadFiles"
       >
-        {{ uploading
-          ? `Uploading ${progress}%`
-          : "Upload & Classify Games"
-        }}
+        {{ uploading ? `Uploading ${progress}%` : 'Upload & Classify Games' }}
       </v-btn>
 
       <!-- PROGRESS -->
@@ -198,9 +153,7 @@ const uploadFiles = async () => {
         height="5"
         class="progress"
       />
-
     </v-card-text>
-
   </v-card>
 </template>
 
@@ -216,7 +169,7 @@ const uploadFiles = async () => {
 
 /* HEADER */
 .classifier-header {
-  padding: 16px 18px 10px !important;
+  padding: 12px 16px 7px !important;
 }
 
 .classifier-icon {
@@ -226,25 +179,26 @@ const uploadFiles = async () => {
 
 .classifier-title {
   color: white !important;
-  font-size: 17px !important;
+  font-size: 16px !important;
   font-weight: 800 !important;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .classifier-subtitle {
-  margin-top: 3px;
+  margin-top: 2px;
   color: #91a4bf !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
+  line-height: 1.2;
 }
 
 /* CONTENT */
 .classifier-content {
-  padding: 8px 18px 18px !important;
+  padding: 6px 16px 14px !important;
 }
 
 /* DROP ZONE */
 .drop-zone {
-  padding: 26px 16px;
+  padding: 20px 14px;
   border: 2px dashed #c76b16;
   border-radius: 15px;
   background: #080f20;
@@ -260,16 +214,17 @@ const uploadFiles = async () => {
 
 .upload-icon {
   color: #ff8735;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
+/* UPLOAD TEXT */
 .upload-text {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 5px;
   color: #91a4bf;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .upload-text strong {
@@ -278,32 +233,33 @@ const uploadFiles = async () => {
 }
 
 .supported-text {
-  margin-top: 10px;
+  margin-top: 7px;
   color: #91a4bf;
-  font-size: 12px;
+  font-size: 11px;
 }
 
+/* FILE COUNT */
 .file-count {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 7px;
   color: #f28c28;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 /* UPLOAD BUTTON */
 .upload-btn {
-  margin-top: 18px;
-  min-height: 50px;
-  border-radius: 14px;
+  margin-top: 12px;
+  min-height: 44px;
+  border-radius: 13px;
   background: #ff7517 !important;
   color: white !important;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: none;
-  box-shadow: 0 8px 20px rgba(255, 117, 23, 0.2);
+  box-shadow: 0 6px 16px rgba(255, 117, 23, 0.18);
 }
 
 .upload-btn:hover {
@@ -312,17 +268,16 @@ const uploadFiles = async () => {
 
 /* PROGRESS */
 .progress {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-/* MOBILE */
-@media (max-width: 600px) {
-  .classifier-header {
-    padding: 14px 14px 8px !important;
-  }
+/* =========================================================
+   SHORT LAPTOP SCREENS
+========================================================= */
 
-  .classifier-content {
-    padding: 8px 14px 14px !important;
+@media (max-height: 820px) and (min-width: 1001px) {
+  .classifier-header {
+    padding: 10px 14px 5px !important;
   }
 
   .classifier-title {
@@ -330,15 +285,134 @@ const uploadFiles = async () => {
   }
 
   .classifier-subtitle {
-    font-size: 11px !important;
+    font-size: 10px !important;
+  }
+
+  .classifier-content {
+    padding: 5px 14px 11px !important;
+  }
+
+  .classifier-icon {
+    width: 40px !important;
+    height: 40px !important;
   }
 
   .drop-zone {
-    padding: 22px 10px;
+    padding: 16px 12px;
+  }
+
+  .upload-icon {
+    margin-bottom: 3px;
+  }
+
+  .supported-text {
+    margin-top: 5px;
+  }
+
+  .upload-btn {
+    margin-top: 9px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .progress {
+    margin-top: 6px;
+  }
+}
+
+/* =========================================================
+   VERY SHORT LAPTOP SCREENS
+========================================================= */
+
+@media (max-height: 720px) and (min-width: 1001px) {
+  .classifier-header {
+    padding: 8px 12px 4px !important;
+  }
+
+  .classifier-title {
+    font-size: 14px !important;
+  }
+
+  .classifier-subtitle {
+    font-size: 9px !important;
+  }
+
+  .classifier-content {
+    padding: 4px 12px 9px !important;
+  }
+
+  .classifier-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .drop-zone {
+    padding: 12px 10px;
+    border-radius: 12px;
+  }
+
+  .upload-icon {
+    font-size: 28px !important;
   }
 
   .upload-text {
-    font-size: 13px;
+    font-size: 11px;
+  }
+
+  .supported-text {
+    margin-top: 4px;
+    font-size: 9px;
+  }
+
+  .file-count {
+    margin-top: 5px;
+    font-size: 9px;
+  }
+
+  .upload-btn {
+    margin-top: 7px;
+    min-height: 36px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .progress {
+    margin-top: 5px;
+  }
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .classifier-header {
+    padding: 12px 14px 7px !important;
+  }
+
+  .classifier-content {
+    padding: 6px 14px 14px !important;
+  }
+
+  .classifier-title {
+    font-size: 15px !important;
+  }
+
+  .classifier-subtitle {
+    font-size: 10px !important;
+  }
+
+  .drop-zone {
+    padding: 18px 10px;
+  }
+
+  .upload-text {
+    font-size: 12px;
+  }
+
+  .supported-text {
+    font-size: 10px;
+  }
+
+  .upload-btn {
+    min-height: 42px;
   }
 }
 </style>

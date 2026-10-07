@@ -616,7 +616,7 @@
 
 <template>
   <div class="chessboard-container">
-
+      <br>
     <!-- Upload -->
     <div class="upload-container">
       <UploadPGNModal @loaded="loadMoves" />

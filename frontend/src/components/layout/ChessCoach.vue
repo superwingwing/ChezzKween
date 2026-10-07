@@ -122,14 +122,18 @@ onBeforeUnmount(() => {
       </v-card-subtitle>
 
       <template #append>
-        <v-chip
-          size="small"
-          variant="outlined"
-          class="best-chip"
-        >
-          <!-- BEST MOVE -->
-           {{ analysis.quality || "Chess Analysis" }} move
-        </v-chip>
+             <v-chip
+              size="small"
+              variant="outlined"
+              class="best-chip"
+            >
+              {{
+                analysis?.quality
+                  ? analysis.quality.toUpperCase()
+                  : "CHESS ANALYSIS"
+              }}
+            </v-chip>
+
       </template>
 
     </v-card-item>

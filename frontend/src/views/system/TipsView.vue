@@ -92,12 +92,11 @@ const goToStep = (index) => {
         </h2>
       </div>
 
-      <!-- IMAGE -->
+      <!-- FIXED IMAGE AREA -->
       <v-hover v-slot="{ isHovering, props }">
         <div
           v-bind="props"
-          class="mx-auto"
-          style="max-width: 800px; cursor: pointer;"
+          class="tip-image-container mx-auto"
           @click="nextStep"
         >
           <v-card
@@ -108,7 +107,7 @@ const goToStep = (index) => {
           >
             <v-img
               :src="tips[currentStep].image"
-              aspect-ratio="16/9"
+              height="430"
               cover
               class="bg-grey-lighten-4"
               :style="{
@@ -121,7 +120,6 @@ const goToStep = (index) => {
             <v-chip
               v-if="currentStep < tips.length - 1"
               size="small"
-              color="white"
               class="position-absolute"
               style="
                 right: 12px;
@@ -131,6 +129,7 @@ const goToStep = (index) => {
               "
             >
               Click image to continue
+
               <v-icon end size="16">
                 mdi-arrow-right
               </v-icon>
@@ -140,13 +139,16 @@ const goToStep = (index) => {
       </v-hover>
 
       <!-- DESCRIPTION -->
-      <v-card-text class="text-center mx-auto px-2" style="max-width: 700px;">
+      <v-card-text
+        class="text-center mx-auto px-2"
+        style="max-width: 700px;"
+      >
         <p class="text-body-1 text-medium-emphasis mb-0">
           {{ tips[currentStep].description }}
         </p>
       </v-card-text>
 
-      <!-- DOTS -->
+      <!-- STEP DOTS -->
       <div class="d-flex justify-center align-center ga-2 my-3">
         <v-btn
           v-for="(tip, index) in tips"
@@ -159,7 +161,11 @@ const goToStep = (index) => {
         >
           <v-icon
             size="12"
-            :color="currentStep === index ? 'orange-darken-2' : 'grey-lighten-1'"
+            :color="
+              currentStep === index
+                ? 'orange-darken-2'
+                : 'grey-lighten-1'
+            "
           >
             mdi-circle
           </v-icon>
@@ -178,6 +184,7 @@ const goToStep = (index) => {
           <v-icon start>
             mdi-arrow-left
           </v-icon>
+
           Previous
         </v-btn>
 
@@ -188,6 +195,7 @@ const goToStep = (index) => {
           @click="nextStep"
         >
           Next
+
           <v-icon end>
             mdi-arrow-right
           </v-icon>
@@ -196,3 +204,17 @@ const goToStep = (index) => {
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.tip-image-container {
+  width: 100%;
+  max-width: 800px;
+}
+
+/* Keep the tutorial comfortable on smaller screens */
+@media (max-width: 600px) {
+  .tip-image-container :deep(.v-img) {
+    height: 300px !important;
+  }
+}
+</style>

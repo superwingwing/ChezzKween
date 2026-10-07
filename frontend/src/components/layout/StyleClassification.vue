@@ -75,32 +75,81 @@ const uploadFiles = async () => {
 </script>
 
 <template>
-  <v-card class="classifier-card" elevation="6">
-    <v-card-title class="text-center classifier-title">
-      <v-icon icon="mdi-chess-queen" class="mr-2" />
-      Style Classifier
-    </v-card-title>
+  <v-card
+    class="classifier-card"
+    elevation="4"
+  >
 
+    <!-- HEADER -->
+    <v-card-item class="classifier-header">
+
+      <template #prepend>
+        <v-avatar
+          rounded="lg"
+          size="46"
+          class="classifier-icon"
+        >
+          <v-icon
+            icon="mdi-chess-bishop"
+            size="25"
+          />
+        </v-avatar>
+      </template>
+
+      <v-card-title class="pa-0 classifier-title">
+        Style Classifier & Bulk PGN Analysis
+      </v-card-title>
+
+      <v-card-subtitle class="pa-0 classifier-subtitle">
+        Classify your profile into Aggressive vs Positional
+      </v-card-subtitle>
+
+    </v-card-item>
+
+    <!-- CONTENT -->
     <v-card-text class="classifier-content">
-      <div class="drop-zone" @click="browseFiles">
+
+      <!-- DROP ZONE -->
+      <div
+        class="drop-zone"
+        @click="browseFiles"
+      >
+
         <v-icon
           icon="mdi-file-upload-outline"
-          size="42"
+          size="34"
           class="upload-icon"
         />
 
         <div class="upload-text">
-          <strong @click.stop="browseFiles">Select PGN Files</strong>
-          <span>or</span>
-          <strong @click.stop="browseFolder">Select Folder</strong>
+          <strong @click.stop="browseFiles">
+            Select PGN Files
+          </strong>
+
+          <span>
+            or Drag & Drop Here
+          </span>
         </div>
 
-        <div v-if="selectedFiles.length" class="file-count">
-          <v-icon icon="mdi-file-multiple-outline" size="16" />
+        <div class="supported-text">
+          Supports Lichess, Chess.com & ChessBase PGNs
+        </div>
+
+        <div
+          v-if="selectedFiles.length"
+          class="file-count"
+        >
+          <v-icon
+            icon="mdi-file-multiple-outline"
+            size="15"
+          />
+
           {{ selectedFiles.length }} PGN file(s) selected
         </div>
+
       </div>
 
+      <!-- FILE INPUT -->
       <input
         ref="fileInput"
         type="file"
@@ -110,6 +159,7 @@ const uploadFiles = async () => {
         @change="selectFiles"
       />
 
+      <!-- FOLDER INPUT -->
       <input
         ref="folderInput"
         type="file"
@@ -121,142 +171,174 @@ const uploadFiles = async () => {
         @change="selectFiles"
       />
 
+      <!-- UPLOAD BUTTON -->
       <v-btn
         block
-        color="white"
+        size="large"
         class="upload-btn"
         :loading="uploading"
         :disabled="uploading || !selectedFiles.length"
+        prepend-icon="mdi-memory"
         @click="uploadFiles"
       >
-        {{ uploading ? `Uploading ${progress}%` : "Upload Games" }}
+        {{ uploading
+          ? `Uploading ${progress}%`
+          : "Upload & Classify Games"
+        }}
       </v-btn>
 
+      <!-- PROGRESS -->
       <v-progress-linear
         v-if="uploading"
         :model-value="progress"
-        color="white"
+        color="#F28C28"
         bg-color="white"
-        bg-opacity=".25"
+        bg-opacity=".15"
         rounded
-        height="6"
+        height="5"
         class="progress"
       />
 
-      <div class="subtitle">
-        Analyze a collection of your chess games.
-      </div>
     </v-card-text>
+
   </v-card>
 </template>
 
 <style scoped>
 .classifier-card {
   width: 100%;
-  max-width: 320px;
+  max-width: 100%;
   border-radius: 18px;
-  background: #01579b;
+  background: #0b1328;
   color: white;
   overflow: hidden;
 }
 
+/* HEADER */
+.classifier-header {
+  padding: 16px 18px 10px !important;
+}
+
+.classifier-icon {
+  background: rgba(242, 140, 40, 0.22);
+  color: #f28c28;
+}
+
 .classifier-title {
-  padding: 14px 16px 8px;
-  font-size: 18px;
-  font-weight: 700;
+  color: white !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  line-height: 1.2;
 }
 
+.classifier-subtitle {
+  margin-top: 3px;
+  color: #91a4bf !important;
+  font-size: 12px !important;
+}
+
+/* CONTENT */
 .classifier-content {
-  padding: 10px 16px 14px;
+  padding: 8px 18px 18px !important;
 }
 
+/* DROP ZONE */
 .drop-zone {
-  border: 2px dashed rgba(255,255,255,.55);
-  border-radius: 14px;
-  padding: 14px 10px;
+  padding: 26px 16px;
+  border: 2px dashed #c76b16;
+  border-radius: 15px;
+  background: #080f20;
   text-align: center;
   cursor: pointer;
-  transition: .2s ease;
+  transition: 0.2s ease;
 }
 
 .drop-zone:hover {
-  background: rgba(255,255,255,.08);
-  border-color: white;
+  border-color: #f28c28;
+  background: #0d162a;
 }
 
 .upload-icon {
-  margin-bottom: 4px;
+  color: #ff8735;
+  margin-bottom: 8px;
 }
 
 .upload-text {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  color: #91a4bf;
+  font-size: 14px;
 }
 
 .upload-text strong {
-  text-decoration: underline;
+  color: white;
   cursor: pointer;
 }
 
-.upload-text span {
-  opacity: .8;
-  font-size: 11px;
+.supported-text {
+  margin-top: 10px;
+  color: #91a4bf;
+  font-size: 12px;
 }
 
 .file-count {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 11px;
-  opacity: .9;
-}
-
-.upload-btn {
+  gap: 5px;
   margin-top: 10px;
-  min-height: 38px;
-  color: #01579b !important;
-  font-weight: 700;
-  text-transform: none;
-  border-radius: 10px;
-}
-
-.progress {
-  margin-top: 9px;
-}
-
-.subtitle {
-  margin-top: 8px;
-  text-align: center;
+  color: #f28c28;
   font-size: 11px;
-  opacity: .75;
 }
 
-@media (max-width: 960px) {
-  .classifier-card {
-    max-width: 100%;
-  }
+/* UPLOAD BUTTON */
+.upload-btn {
+  margin-top: 18px;
+  min-height: 50px;
+  border-radius: 14px;
+  background: #ff7517 !important;
+  color: white !important;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+  box-shadow: 0 8px 20px rgba(255, 117, 23, 0.2);
 }
 
+.upload-btn:hover {
+  background: #f56b0c !important;
+}
+
+/* PROGRESS */
+.progress {
+  margin-top: 10px;
+}
+
+/* MOBILE */
 @media (max-width: 600px) {
-  .classifier-card {
-    border-radius: 14px;
-  }
-
-  .classifier-title {
-    font-size: 16px;
-    padding: 11px 12px 6px;
+  .classifier-header {
+    padding: 14px 14px 8px !important;
   }
 
   .classifier-content {
-    padding: 8px 12px 12px;
+    padding: 8px 14px 14px !important;
+  }
+
+  .classifier-title {
+    font-size: 15px !important;
+  }
+
+  .classifier-subtitle {
+    font-size: 11px !important;
   }
 
   .drop-zone {
-    padding: 12px 8px;
+    padding: 22px 10px;
+  }
+
+  .upload-text {
+    font-size: 13px;
   }
 }
 </style>

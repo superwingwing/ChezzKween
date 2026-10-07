@@ -178,60 +178,75 @@ const onFormSubmit = () => {
   <AlertNotification
     :form-success-message="formAction.formSuccessMessage"
     :form-error-message="formAction.formErrorMessage"
-  ></AlertNotification>
+  />
 
-  <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
+  <v-form
+    ref="refVForm"
+    fast-fail
+    @submit.prevent="onFormSubmit"
+  >
+
+    <!-- EMAIL -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
-      rounded
       v-model="formData.email"
-      label="Email"
+      label="Email address"
+      prepend-inner-icon="mdi-email-outline"
       :rules="[requiredValidator, emailValidator]"
-      variant="solo-filled"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      class="mb-3"
+    />
 
+    <!-- PASSWORD -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
       v-model="formData.password"
-      rounded
+      label="Password"
+      prepend-inner-icon="mdi-lock-outline"
       :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
       :type="visible ? 'text' : 'password'"
-      label="Password"
-      variant="solo-filled"
-      @click:append-inner="visible = !visible"
       :rules="[requiredValidator]"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      @click:append-inner="visible = !visible"
+    />
+
+    <!-- REMEMBER / FORGOT -->
+    <div class="d-flex justify-space-between align-center mb-5">
+      <v-checkbox
+        label="Remember me"
+        density="compact"
+        hide-details
+        color="orange-darken-1"
+      />
+
+      <a
+        href="#"
+        class="text-caption text-blue-darken-2 text-decoration-none"
+        @click.prevent
+      >
+        Forgot password?
+      </a>
+    </div>
+
+    <!-- LOGIN -->
     <v-btn
-      rounded=""
-      class="mt-2 font-weight-black"
-      size="x-large"
       type="submit"
       block
-      color="light-blue-darken-4"
+      size="large"
+      rounded="lg"
+      color="orange-darken-1"
+      class="font-weight-bold text-none"
       :loading="formAction.formProcess"
-      >Sign in</v-btn
     >
-    <!-- <h4 class="text-center">OR</h4> -->
-    <v-divider class="my-5"><h4 class="text-white">or</h4></v-divider>
-    <v-btn
-      rounded
-      class="mt-2 font-weight-medium text-capitalize google-btn"
-      size="x-large"
-      block
-      color="grey-lighten-4"
-      @click="onGoogleSignIn"
-    >
-      <img
-        src="/images/google.png"
-        alt="Google logo"
-        style="height: 24px; width: 24px"
-        class="me-2"
-      />
-      <p class="py-1 font-weight-medium">Continue with Google</p>
+      Log In
+      <v-icon end>
+        mdi-arrow-right
+      </v-icon>
     </v-btn>
 
-    <v-divider class="my-5"></v-divider>
   </v-form>
 </template>

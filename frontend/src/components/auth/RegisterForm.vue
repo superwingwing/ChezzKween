@@ -14,7 +14,6 @@ const visible = ref(false)
 const isVisible = ref(false)
 const refVForm = ref()
 
-//predefined vue functions
 const router = useRouter()
 
 const FormDataDefault = {
@@ -22,7 +21,8 @@ const FormDataDefault = {
   email: '',
   password: '',
   passwordConfirmation: '',
-  profile_pic: 'https://bvflfwricxabodytryee.supabase.co/storage/v1/object/public/profile/public/profile-default.png' // Default profile picture
+  profile_pic:
+    'https://bvflfwricxabodytryee.supabase.co/storage/v1/object/public/profile/public/profile-default.png'
 }
 
 const formData = ref({
@@ -34,7 +34,7 @@ const formAction = ref({
 })
 
 const onSubmit = async () => {
-  formAction.value = { ...formActionDefault } ///reset error message
+  formAction.value = { ...formActionDefault }
   formAction.value.formProcess = true
 
   const { data, error } = await supabase.auth.signUp({
@@ -42,7 +42,7 @@ const onSubmit = async () => {
     password: formData.value.password,
     options: {
       data: {
-        username: formData.value.username,     //customs object
+        username: formData.value.username,
         profile_pic: formData.value.profile_pic
       }
     }
@@ -50,21 +50,21 @@ const onSubmit = async () => {
 
   if (error) {
     console.error(error)
+
     formAction.value.formErrorMessage = error.message
     formAction.value.formStatus = error.status
   } else if (data) {
     console.log(data)
-    formAction.value.formSuccessMessage = 'Successfully Registered'
-    formAction.value.formSuccessMessage = 'Please Verify your Email to Login'
 
-    // Add a 5-second delay before redirecting to the login page
+    formAction.value.formSuccessMessage =
+      'Please Verify your Email to Login'
+
     setTimeout(() => {
       router.replace('/login')
-    }, 5000) // 5000 milliseconds = 5 seconds
+    }, 5000)
   }
 
-  //reset form
-  refVForm.value?.reset() //clear the field if successfull login
+  refVForm.value?.reset()
   formAction.value.formProcess = false
 }
 
@@ -79,64 +79,98 @@ const onFormSubmit = () => {
   <AlertNotification
     :form-success-message="formAction.formSuccessMessage"
     :form-error-message="formAction.formErrorMessage"
-  ></AlertNotification>
+  />
 
-  <v-form class="mt-5 ma-4" ref="refVForm" fast-fail @submit.prevent="onFormSubmit">
+  <v-form
+    ref="refVForm"
+    fast-fail
+    @submit.prevent="onFormSubmit"
+  >
+
+    <!-- USERNAME -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
-      rounded
       v-model="formData.username"
-      label="Username"
-      variant="solo-filled"
+      label="Username in Chess.com"
+      prepend-inner-icon="mdi-account-outline"
       :rules="[requiredValidator]"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      class="mb-3"
+    />
+
+    <!-- EMAIL -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
-      rounded
       v-model="formData.email"
-      label="Email"
+      label="Email address"
+      prepend-inner-icon="mdi-email-outline"
       :rules="[requiredValidator, emailValidator]"
-      variant="solo-filled"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      class="mb-3"
+    />
+
+    <!-- PASSWORD -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
-      rounded
       v-model="formData.password"
-      :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
-      :type="visible ? 'text' : 'password'"
       label="Password"
-      variant="solo-filled"
-      @click:append-inner="visible = !visible"
+      prepend-inner-icon="mdi-lock-outline"
+      :append-inner-icon="
+        visible ? 'mdi-eye-off' : 'mdi-eye'
+      "
+      :type="visible ? 'text' : 'password'"
       :rules="[requiredValidator, passwordValidator]"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      class="mb-3"
+      @click:append-inner="visible = !visible"
+    />
+
+    <!-- PASSWORD CONFIRMATION -->
     <v-text-field
-      color="light-blue-darken-4"
-      bg-color="white"
-      rounded
       v-model="formData.passwordConfirmation"
-      :append-inner-icon="isVisible ? 'mdi-eye-off' : 'mdi-eye'"
+      label="Confirm password"
+      prepend-inner-icon="mdi-lock-check-outline"
+      :append-inner-icon="
+        isVisible ? 'mdi-eye-off' : 'mdi-eye'
+      "
       :type="isVisible ? 'text' : 'password'"
-      label="Password Confirmation"
-      variant="solo-filled"
-      @click:append-inner="isVisible = !isVisible"
       :rules="[
         requiredValidator,
-        confirmedValidator(formData.passwordConfirmation, formData.password)
+        confirmedValidator(
+          formData.passwordConfirmation,
+          formData.password
+        )
       ]"
-    ></v-text-field>
+      variant="outlined"
+      density="comfortable"
+      color="orange-darken-1"
+      rounded="lg"
+      class="mb-5"
+      @click:append-inner="isVisible = !isVisible"
+    />
+
+    <!-- REGISTER -->
     <v-btn
-      rounded
-      class="mt-2 font-weight-black"
-      size="x-large"
       type="submit"
       block
-      color="light-blue-darken-4"
-      :disabled="formAction.formProcess"
+      size="large"
+      rounded="lg"
+      color="orange-darken-1"
+      class="font-weight-bold text-none"
       :loading="formAction.formProcess"
-      >Register</v-btn
+      :disabled="formAction.formProcess"
     >
+      Create Account
+      <v-icon end>
+        mdi-arrow-right
+      </v-icon>
+    </v-btn>
+
   </v-form>
 </template>

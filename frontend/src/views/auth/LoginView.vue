@@ -1,51 +1,372 @@
 <script setup>
-import AppLayout from '@/components/layout/AppLayout.vue'
 import LoginForm from '@/components/auth/LoginForm.vue'
 import { useDisplay } from 'vuetify'
 
 const { mobile } = useDisplay()
+
+const pieces = [
+  { icon: 'mdi-chess-rook', active: false },
+  { icon: 'mdi-chess-knight', active: true },
+  { icon: 'mdi-chess-bishop', active: false },
+  { icon: 'mdi-chess-queen', active: true },
+  { icon: 'mdi-chess-king', active: false },
+  { icon: 'mdi-chess-pawn', active: false },
+  { icon: 'mdi-chess-pawn', active: true },
+  { icon: 'mdi-chess-pawn', active: false }
+]
 </script>
 
 <template>
-  <AppLayout>
-    <template #content>
-      <v-row class="d-flex align-center justify-center">
-        <v-col cols="12" lg="8" v-if="!mobile">
-          <v-img class="mx-auto" src="/images/login.svg" width="800"></v-img>
-        </v-col>
+  <div class="login-page">
 
-        <v-col cols="12" lg="4" :class="mobile ? '' : 'pt-16'">
-          <v-card class="blur-card mx-auto" elevation="16">
-            <v-card-title class="text-center">
-              <v-img class="mx-auto" src="/images/logo.png" :width="mobile ? '60%' : '30%'"></v-img>
-              <h3 class="text-orange-lighten-5 font-weight-black">WELCOME</h3>
-            </v-card-title>
+    <!-- LEFT SIDE -->
+    <section
+      v-if="!mobile"
+      class="visual-side"
+    >
 
-            <v-card-text>
-              <v-divider class="my-5"></v-divider>
+      <div class="visual-content">
 
-              <!-- Call LoginForm -->
-              <LoginForm class="ma-4"></LoginForm>
+        <!-- BRAND -->
+        <div class="d-flex align-center ga-3 mb-8">
 
-              <h5 class="text-white text-center">
-                Don't have an account?
-                <RouterLink class="text-orange-lighten-3" to="register">
-                  Register Here!
-                </RouterLink>
-              </h5>
-            </v-card-text>
+          <v-avatar
+            color="orange-darken-1"
+            rounded="lg"
+            size="54"
+          >
+            <v-icon
+              color="white"
+              size="30"
+            >
+              mdi-chess-queen
+            </v-icon>
+          </v-avatar>
+
+          <div>
+            <div class="text-h5 font-weight-black text-white">
+              Chess<span style="color: #f28c28;">Kween</span>
+            </div>
+
+            <div class="text-caption text-grey-lighten-1 font-weight-bold">
+              ANALYTICS HUB
+            </div>
+          </div>
+
+          <v-icon
+            color="orange"
+            size="11"
+          >
+            mdi-circle
+          </v-icon>
+
+        </div>
+
+
+        <!-- ENGINE PREVIEW -->
+        <v-card
+          rounded="xl"
+          elevation="8"
+          color="#111111"
+          class="engine-preview pa-4"
+        >
+
+          <!-- ENGINE HEADER -->
+          <div class="d-flex justify-space-between align-center mb-4">
+
+            <div class="d-flex align-center ga-2">
+
+              <v-avatar
+                color="orange-darken-2"
+                rounded="sm"
+                size="30"
+              >
+                <span class="font-weight-bold text-white">
+                  AI
+                </span>
+              </v-avatar>
+
+              <span class="font-weight-bold text-white">
+                ChessKween Engine
+              </span>
+
+            </div>
+
+            <v-chip
+              size="small"
+              color="green"
+              variant="tonal"
+              class="font-weight-bold"
+            >
+              99.4% Accuracy
+            </v-chip>
+
+          </div>
+
+
+          <v-divider
+            color="grey-darken-3"
+            class="mb-4"
+          />
+
+
+          <!-- ENGINE GRID -->
+          <v-row dense>
+
+            <v-col
+              v-for="(piece, index) in pieces"
+              :key="index"
+              cols="3"
+            >
+
+              <v-card
+                height="92"
+                rounded="sm"
+                :color="piece.active ? '#3b2b20' : '#1b1b1b'"
+                class="d-flex align-center justify-center"
+              >
+
+                <v-icon
+                  :color="piece.active ? 'orange' : 'grey-lighten-1'"
+                  size="30"
+                >
+                  {{ piece.icon }}
+                </v-icon>
+
+              </v-card>
+
+            </v-col>
+
+          </v-row>
+
+
+          <!-- BEST MOVE -->
+          <v-card
+            color="#080808"
+            rounded="lg"
+            class="mt-4 pa-3"
+          >
+
+            <div class="d-flex align-center ga-3">
+
+              <v-avatar
+                color="orange"
+                size="38"
+              >
+                <v-icon color="white">
+                  mdi-lightbulb-on
+                </v-icon>
+              </v-avatar>
+
+              <div>
+
+                <div
+                  class="text-caption font-weight-bold"
+                  style="color: #f28c28;"
+                >
+                  Best Move Identified
+                </div>
+
+                <div class="text-caption text-grey-lighten-1">
+                  Tactical opportunity detected.
+                </div>
+
+              </div>
+
+            </div>
+
           </v-card>
-        </v-col>
-      </v-row>
-    </template>
-  </AppLayout>
+
+        </v-card>
+
+
+        <!-- MESSAGE -->
+        <div class="text-center mt-8">
+
+          <h2 class="text-h4 font-weight-black text-white">
+            Master Every Move with
+            <span style="color: #f28c28;">
+              AI Precision
+            </span>
+          </h2>
+
+          <p class="text-body-2 text-grey-lighten-1 mt-3">
+            Elevate your game with style-aware recommendations,
+            instant PGN analysis, and real-time engine feedback.
+          </p>
+
+        </div>
+
+
+        <!-- FEATURES -->
+        <v-row
+          class="mt-5"
+          align="center"
+        >
+
+          <v-col class="text-center">
+
+            <v-icon
+              color="orange"
+              size="24"
+            >
+              mdi-brain
+            </v-icon>
+
+            <div class="text-caption text-grey-lighten-1 mt-1">
+              Style<br>
+              Classification
+            </div>
+
+          </v-col>
+
+          <v-divider
+            vertical
+            color="grey-darken-3"
+          />
+
+          <v-col class="text-center">
+
+            <v-icon
+              color="orange"
+              size="24"
+            >
+              mdi-magnify
+            </v-icon>
+
+            <div class="text-caption text-grey-lighten-1 mt-1">
+              Game<br>
+              Analysis
+            </div>
+
+          </v-col>
+
+          <v-divider
+            vertical
+            color="grey-darken-3"
+          />
+
+          <v-col class="text-center">
+
+            <v-icon
+              color="orange"
+              size="24"
+            >
+              mdi-lightbulb-on-outline
+            </v-icon>
+
+            <div class="text-caption text-grey-lighten-1 mt-1">
+              Personalized<br>
+              Recommendations
+            </div>
+
+          </v-col>
+
+        </v-row>
+
+      </div>
+
+    </section>
+
+
+    <!-- RIGHT SIDE -->
+    <section class="form-side">
+
+      <div class="form-wrapper">
+
+        <!-- SIGN UP -->
+        <div class="text-end mb-10">
+
+          <span class="text-caption text-grey-darken-1">
+            Don't have an account?
+          </span>
+
+          <RouterLink
+            to="/register"
+            class="text-caption font-weight-bold text-decoration-none ms-1"
+            style="color: #f28c28;"
+          >
+            Sign Up
+          </RouterLink>
+
+        </div>
+
+
+        <!-- HEADING -->
+        <div class="mb-7">
+
+          <h1 class="text-h3 font-weight-black">
+            Welcome Back
+          </h1>
+
+          <p class="text-body-2 text-grey-darken-1 mt-2">
+            Enter your credentials to access your chess engine workspace.
+          </p>
+
+        </div>
+
+
+        <!-- LOGIN FORM -->
+        <LoginForm />
+
+      </div>
+
+    </section>
+
+  </div>
 </template>
 
 <style scoped>
-.blur-card {
-  backdrop-filter: blur(1px);
-  background-color: rgba(166, 220, 245, 0.555);
-  border-radius: 16px;
-  overflow: hidden;
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  background: #f7f7f7;
+}
+
+.visual-side {
+  min-height: 100vh;
+  padding: 45px 55px;
+  background: #080808;
+}
+
+.visual-content {
+  max-width: 650px;
+  margin: auto;
+}
+
+.engine-preview {
+  border: 1px solid #292929;
+}
+
+.form-side {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 40px 70px;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 520px;
+}
+
+@media (max-width: 960px) {
+  .form-side {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .login-page {
+    display: block;
+  }
+
+  .form-side {
+    min-height: 100vh;
+    padding: 25px;
+  }
 }
 </style>

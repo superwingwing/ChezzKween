@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
   height: 420px;
   display: flex;
   flex-direction: column;
-  border: 1px solid #e1e7ef;
+  border: 1px solid #191a1b;
   border-radius: 18px;
   background: #ffffff;
   color: #0b1f3a;
@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
 
 .coach-subtitle {
   margin-top: 3px;
-  color: #8190a5 !important;
+  color: #121314 !important;
   font-size: 12px !important;
 }
 

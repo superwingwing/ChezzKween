@@ -27,6 +27,7 @@ if (authStore.user) {
 }
 
 const emit = defineEmits(["update:modelValue"])
+
 const router = useRouter()
 const currentRoute = ref(router.currentRoute.value.name)
 
@@ -43,7 +44,7 @@ const navigation = [
   },
   {
     name: "tips",
-    title: "Tips",
+    title: "Tips & Tactics",
     icon: "mdi-lightbulb-on-outline"
   },
   {
@@ -71,7 +72,7 @@ const onLogout = async () => {
 <template>
   <v-navigation-drawer
     class="side-navigation"
-    :width="270"
+    :width="282"
     elevation="0"
     :model-value="modelValue"
     :permanent="permanent"
@@ -79,33 +80,41 @@ const onLogout = async () => {
   >
     <div class="navigation-content">
 
-      <!-- ================= PROFILE ================= -->
-      <div class="profile-section">
+      <!-- =====================================================
+           BRAND
+      ====================================================== -->
+      <div class="brand-section">
+        <div class="brand-logo">
+          <v-icon size="28">
+            mdi-chess-queen
+          </v-icon>
+        </div>
 
-        <div class="avatar-wrapper">
+        <div class="brand-text">
+          <div class="brand-name">
+            Chess<span>Kween</span>
+          </div>
+
+          <div class="brand-subtitle">
+            ANALYTICS HUB
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-divider"></div>
+
+
+      <!-- =====================================================
+           USER PROFILE CARD
+      ====================================================== -->
+      <div class="user-card">
+
+        <div class="user-avatar-wrapper">
           <v-avatar
-            size="92"
-            class="profile-avatar"
+            size="46"
+            class="user-avatar"
           >
-            <v-img
-              v-if="
-                profile_pic &&
-                typeof profile_pic === 'string' &&
-                profile_pic !== ''
-              "
-              :src="
-                profile_pic.startsWith('http')
-                  ? profile_pic
-                  : profileUrl + profile_pic
-              "
-              alt="User Avatar"
-              cover
-            />
-
-            <span
-              v-else
-              class="avatar-letter"
-            >
+            <span class="avatar-letter">
               {{
                 authStore.user?.user_metadata?.username
                   ?.charAt(0)
@@ -114,69 +123,84 @@ const onLogout = async () => {
             </span>
           </v-avatar>
 
-          <div class="online-indicator"></div>
+          <span class="online-indicator"></span>
         </div>
 
-        <div class="profile-name">
-          {{ authStore.user?.user_metadata?.username }}
-        </div>
+        <div class="user-details">
+          <div class="user-name">
+            {{ authStore.user?.user_metadata?.username || "ChessKween User" }}
+          </div>
 
-        <div class="profile-role">
-          ChessKween Player
+          <div class="user-role">
+            Premium Member
+          </div>
         </div>
       </div>
 
-      <!-- ================= DIVIDER ================= -->
-      <div class="section-divider"></div>
 
-      <!-- ================= NAVIGATION ================= -->
-      <div class="navigation-heading">
-        MENU
-      </div>
+      <!-- =====================================================
+           NAVIGATION
+      ====================================================== -->
+      <div class="navigation-section">
 
-      <v-list
-        nav
-        bg-color="transparent"
-        class="navigation-list"
-      >
-        <v-list-item
-          v-for="item in navigation"
-          :key="item.name"
-          :active="currentRoute === item.name"
-          active-class="active-item"
-          rounded="lg"
-          class="navigation-item"
-          @click="navigateTo(item.name)"
+        <div class="navigation-heading">
+          MENU
+        </div>
+
+        <v-list
+          nav
+          bg-color="transparent"
+          class="navigation-list"
         >
-          <template #prepend>
-            <div class="navigation-icon">
-              <v-icon :icon="item.icon" />
-            </div>
-          </template>
 
-          <v-list-item-title>
-            {{ item.title }}
-          </v-list-item-title>
+          <v-list-item
+            v-for="item in navigation"
+            :key="item.name"
+            :active="currentRoute === item.name"
+            active-class="active-item"
+            class="navigation-item"
+            rounded="lg"
+            @click="navigateTo(item.name)"
+          >
 
-          <template #append>
-            <v-icon
-              v-if="currentRoute === item.name"
-              icon="mdi-chevron-right"
-              size="18"
-              class="active-arrow"
-            />
-          </template>
-        </v-list-item>
-      </v-list>
+            <template #prepend>
+              <div class="navigation-icon">
+                <v-icon :icon="item.icon" />
+              </div>
+            </template>
 
-      <!-- ================= BOTTOM AREA ================= -->
+            <v-list-item-title>
+              {{ item.title }}
+            </v-list-item-title>
+
+            <template #append>
+              <v-icon
+                v-if="currentRoute === item.name"
+                icon="mdi-chevron-right"
+                size="17"
+                class="active-arrow"
+              />
+            </template>
+
+          </v-list-item>
+
+        </v-list>
+
+      </div>
+
+
+      <!-- =====================================================
+           BOTTOM SECTION
+      ====================================================== -->
       <div class="bottom-section">
 
+        <!-- ChessKween information -->
         <div class="chesskween-card">
+
           <div class="chesskween-icon">
             <v-icon
               icon="mdi-chess-queen"
-              size="22"
+              size="20"
             />
           </div>
 
@@ -189,7 +213,9 @@ const onLogout = async () => {
               Improve your game
             </div>
           </div>
+
         </div>
+
 
         <!-- Logout -->
         <v-btn
@@ -209,23 +235,38 @@ const onLogout = async () => {
   </v-navigation-drawer>
 </template>
 
+
 <style scoped>
+
 /* =========================================================
-   SIDEBAR
+   COLOR SYSTEM
 ========================================================= */
 
 .side-navigation {
+  --navy: #0b142d;
+  --navy-light: #151f3b;
+  --navy-card: #151f3a;
+  --navy-hover: #1b2746;
+
+  --orange: #ff7900;
+  --orange-dark: #ed6c00;
+
+  --white: #ffffff;
+  --muted: #91a4c2;
+
   height: 100vh !important;
   top: 0 !important;
   bottom: 0 !important;
 
-  background: #0d1b2a !important;
+  background: var(--navy) !important;
 
-  border-radius: 0 20px 20px 0 !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+
+  border-radius: 0 !important;
 
   overflow: hidden;
 }
+
 
 /* =========================================================
    MAIN CONTAINER
@@ -236,44 +277,138 @@ const onLogout = async () => {
   flex-direction: column;
 
   height: 100%;
-  padding: 22px 16px;
+
+  padding: 0 17px;
 
   box-sizing: border-box;
 }
 
+
 /* =========================================================
-   PROFILE
+   BRAND
 ========================================================= */
 
-.profile-section {
+.brand-section {
   display: flex;
-  flex-direction: column;
   align-items: center;
 
-  padding: 4px 4px 6px;
+  min-height: 89px;
 
-  text-align: center;
+  gap: 13px;
+
+  padding: 0 9px;
 }
 
-.avatar-wrapper {
-  position: relative;
-
+.brand-logo {
   display: flex;
   align-items: center;
   justify-content: center;
 
-  width: 100px;
-  height: 100px;
-}
+  width: 44px;
+  height: 44px;
 
-.profile-avatar {
-  background: #162b40 !important;
+  flex-shrink: 0;
 
-  border: 3px solid rgba(255, 255, 255, 0.95);
+  background: var(--orange);
+
+  border-radius: 12px;
+
+  color: white;
 
   box-shadow:
-    0 8px 22px rgba(0, 0, 0, 0.25),
-    0 0 0 5px rgba(255, 255, 255, 0.04);
+    0 8px 20px rgba(255, 121, 0, 0.25);
+}
+
+.brand-text {
+  min-width: 0;
+}
+
+.brand-name {
+  color: white;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  line-height: 1.1;
+
+  letter-spacing: -0.03em;
+}
+
+.brand-name span {
+  color: var(--orange);
+}
+
+.brand-subtitle {
+  margin-top: 5px;
+
+  color: #8ea1bf;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+}
+
+
+/* =========================================================
+   BRAND DIVIDER
+========================================================= */
+
+.brand-divider {
+  height: 1px;
+
+  margin: 0 -17px;
+
+  background: rgba(255, 255, 255, 0.07);
+}
+
+
+/* =========================================================
+   USER PROFILE CARD
+========================================================= */
+
+.user-card {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 18px;
+
+  padding: 12px;
+
+  background: var(--navy-card);
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 12px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.user-card:hover {
+  background: #192541;
+
+  border-color: rgba(255, 121, 0, 0.18);
+}
+
+
+/* Avatar */
+
+.user-avatar-wrapper {
+  position: relative;
+
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  background: #253452 !important;
+
+  border: 2px solid var(--orange);
+
+  color: white;
 }
 
 .avatar-letter {
@@ -284,103 +419,98 @@ const onLogout = async () => {
   width: 100%;
   height: 100%;
 
-  color: #ffffff;
+  color: white;
 
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 52px;
-  font-weight: 900;
-
-  line-height: 1;
-
-  letter-spacing: -2px;
+  font-size: 19px;
+  font-weight: 800;
 }
+
+
+/* Online indicator */
 
 .online-indicator {
   position: absolute;
 
-  right: 4px;
-  bottom: 5px;
+  right: -1px;
+  bottom: 1px;
 
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
 
-  background: #f28c28;
+  background: #27c98a;
 
-  border: 3px solid #0d1b2a;
+  border: 2px solid var(--navy-card);
 
   border-radius: 50%;
 }
 
-.profile-name {
-  max-width: 210px;
 
-  margin-top: 13px;
+/* User information */
 
+.user-details {
+  min-width: 0;
+}
+
+.user-name {
   overflow: hidden;
 
-  color: #ffffff;
+  color: white;
 
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
+
+  line-height: 1.3;
 
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profile-role {
+.user-role {
   margin-top: 3px;
 
-  color: rgba(255, 255, 255, 0.5);
+  color: #8fa3c1;
 
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-
-  letter-spacing: 0.02em;
 }
 
+
 /* =========================================================
-   DIVIDER
+   NAVIGATION
 ========================================================= */
 
-.section-divider {
-  height: 1px;
-
-  margin: 20px 4px 18px;
-
-  background: rgba(255, 255, 255, 0.09);
+.navigation-section {
+  margin-top: 25px;
 }
-
-/* =========================================================
-   NAVIGATION HEADING
-========================================================= */
 
 .navigation-heading {
-  padding: 0 12px 8px;
+  padding: 0 12px 9px;
 
-  color: rgba(255, 255, 255, 0.4);
+  color: #647695;
 
   font-size: 10px;
   font-weight: 800;
 
-  letter-spacing: 0.14em;
+  letter-spacing: 0.13em;
 }
-
-/* =========================================================
-   NAVIGATION LIST
-========================================================= */
 
 .navigation-list {
   padding: 0;
 }
 
+
+/* Individual item */
+
 .navigation-item {
   position: relative;
 
-  min-height: 46px;
+  min-height: 45px;
 
-  margin: 4px 0;
+  margin: 5px 0;
 
-  color: rgba(255, 255, 255, 0.68);
+  padding-left: 9px;
+
+  color: #92a6c5;
 
   transition:
     background 0.2s ease,
@@ -391,33 +521,39 @@ const onLogout = async () => {
 .navigation-item:hover {
   background: rgba(255, 255, 255, 0.055);
 
-  color: #ffffff;
+  color: white;
 
   transform: translateX(2px);
 }
 
 .navigation-item :deep(.v-list-item__content) {
-  padding: 2px 0;
+  padding: 0;
 }
 
 .navigation-item :deep(.v-list-item-title) {
   font-size: 13.5px;
+
   font-weight: 600;
 }
+
+
+/* Navigation icon */
 
 .navigation-icon {
   display: flex;
   align-items: center;
   justify-content: center;
 
-  width: 34px;
-  height: 34px;
+  width: 35px;
+  height: 35px;
 
   margin-right: 8px;
 
   border-radius: 9px;
 
-  background: rgba(255, 255, 255, 0.045);
+  background: transparent;
+
+  color: #91a6c5;
 
   transition:
     background 0.2s ease,
@@ -425,23 +561,26 @@ const onLogout = async () => {
 }
 
 .navigation-item :deep(.v-icon) {
-  color: rgba(255, 255, 255, 0.62);
+  color: #91a6c5;
 
   font-size: 20px;
 }
+
 
 /* =========================================================
    ACTIVE NAVIGATION
 ========================================================= */
 
 .active-item {
-  background: #ffffff !important;
+  background: #1c2948 !important;
 
-  color: #0d1b2a !important;
+  color: white !important;
 
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.14);
+  box-shadow: none !important;
 }
+
+
+/* Orange vertical indicator */
 
 .active-item::before {
   content: "";
@@ -449,39 +588,45 @@ const onLogout = async () => {
   position: absolute;
 
   left: 0;
-  top: 8px;
-  bottom: 8px;
+
+  top: 7px;
+  bottom: 7px;
 
   width: 3px;
 
-  background: #f28c28;
+  background: var(--orange);
 
   border-radius: 0 4px 4px 0;
-
-  opacity: 1;
 }
 
-.active-item .navigation-icon {
-  background: #f28c28;
 
-  color: #ffffff;
+/* Active icon */
+
+.active-item .navigation-icon {
+  background: transparent;
+
+  color: var(--orange);
 }
 
 .active-item :deep(.v-icon) {
-  color: #ffffff !important;
+  color: var(--orange) !important;
 }
 
 .active-item :deep(.v-list-item-title) {
-  color: #0d1b2a !important;
+  color: white !important;
 
   font-weight: 700;
 }
 
-.active-arrow {
-  color: #f28c28 !important;
 
-  margin-right: 2px;
+/* Active arrow */
+
+.active-arrow {
+  margin-right: 3px;
+
+  color: var(--orange) !important;
 }
+
 
 /* =========================================================
    BOTTOM SECTION
@@ -490,11 +635,12 @@ const onLogout = async () => {
 .bottom-section {
   margin-top: auto;
 
-  padding-top: 18px;
+  padding: 18px 0 16px;
 }
 
+
 /* =========================================================
-   CHESSKWEEN INFO CARD
+   CHESSKWEEN CARD
 ========================================================= */
 
 .chesskween-card {
@@ -503,15 +649,15 @@ const onLogout = async () => {
 
   gap: 11px;
 
-  padding: 12px;
+  padding: 11px;
 
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.045);
 
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
-  border-radius: 12px;
+  border-radius: 11px;
 }
 
 .chesskween-icon {
@@ -519,16 +665,16 @@ const onLogout = async () => {
   align-items: center;
   justify-content: center;
 
-  flex: 0 0 auto;
+  width: 37px;
+  height: 37px;
 
-  width: 38px;
-  height: 38px;
+  flex-shrink: 0;
 
-  background: #f28c28;
+  background: var(--orange);
 
-  color: #ffffff;
+  color: white;
 
-  border-radius: 10px;
+  border-radius: 9px;
 }
 
 .chesskween-text {
@@ -536,113 +682,117 @@ const onLogout = async () => {
 }
 
 .chesskween-title {
-  color: #ffffff;
+  color: white;
 
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
 }
 
 .chesskween-subtitle {
   margin-top: 2px;
 
-  color: rgba(255, 255, 255, 0.45);
+  color: #7184a1;
 
-  font-size: 10px;
+  font-size: 9.5px;
 }
+
 
 /* =========================================================
    LOGOUT
 ========================================================= */
 
 .logout-button {
-  min-height: 43px;
+  min-height: 42px;
 
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #8ea1be !important;
 
-  color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
 
   text-transform: none;
 
   transition:
     background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .logout-button:hover {
-  background: rgba(242, 140, 40, 0.1);
+  background: rgba(255, 121, 0, 0.08);
 
-  border-color: rgba(242, 140, 40, 0.45);
+  color: var(--orange) !important;
 
-  color: #f28c28 !important;
+  border-color: rgba(255, 121, 0, 0.3);
 }
+
 
 /* =========================================================
    TABLET
 ========================================================= */
 
 @media (max-width: 960px) {
+
+  .side-navigation {
+    width: 270px !important;
+  }
+
   .navigation-content {
-    padding: 18px 14px;
+    padding-left: 15px;
+    padding-right: 15px;
   }
 
-  .avatar-wrapper {
-    width: 90px;
-    height: 90px;
-  }
-
-  .profile-avatar {
-    width: 82px !important;
-    height: 82px !important;
-  }
-
-  .avatar-letter {
-    font-size: 46px;
+  .brand-divider {
+    margin-left: -15px;
+    margin-right: -15px;
   }
 }
+
 
 /* =========================================================
    MOBILE
 ========================================================= */
 
 @media (max-width: 600px) {
+
   .side-navigation {
     width: 250px !important;
-
-    border-radius: 0 16px 16px 0 !important;
   }
 
   .navigation-content {
-    padding: 16px 13px;
+    padding-left: 13px;
+    padding-right: 13px;
   }
 
-  .avatar-wrapper {
-    width: 84px;
-    height: 84px;
+  .brand-divider {
+    margin-left: -13px;
+    margin-right: -13px;
   }
 
-  .profile-avatar {
-    width: 76px !important;
-    height: 76px !important;
+  .brand-section {
+    min-height: 82px;
   }
 
-  .avatar-letter {
-    font-size: 42px;
+  .brand-logo {
+    width: 40px;
+    height: 40px;
   }
 
-  .profile-name {
-    font-size: 14px;
+  .brand-name {
+    font-size: 16px;
   }
 
   .navigation-item {
-    min-height: 44px;
+    min-height: 43px;
   }
 
   .navigation-item :deep(.v-list-item-title) {
     font-size: 13px;
+  }
+
+  .user-card {
+    padding: 10px;
   }
 
   .chesskween-card {

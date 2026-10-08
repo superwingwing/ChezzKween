@@ -760,6 +760,7 @@ defineExpose({
         <EvaluationBarView
           class="evaluation-bar"
           :score="evalScore"
+          :orientation="orientation"
         />
 
         <MoveQuality

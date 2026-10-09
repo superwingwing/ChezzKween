@@ -5,8 +5,8 @@ import RegisterView from '@/views/auth/RegisterView.vue'
 import DashboardLayout from '@/components/layout/DashboardLayout.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProfileView from '@/views/system/ProfileView.vue'
-import AboutView from '@/views/system/Aboutview.vue'
-import TipsView from '@/views/system/TipsView.vue'
+import AboutView from '@/views/system/AboutView.vue'
+import UserGuide from '@/views/system/UserGuide.vue'
 
 const routes = [
   {
@@ -39,9 +39,9 @@ const routes = [
         component: AboutView,
       },
       {
-        path: 'tips',
-        name: 'tips',
-        component: TipsView,
+        path: 'user-guide',
+        name: 'user-guide',
+        component: UserGuide,
       },
       // 404 ROUTE — KEEP THIS LAST
       {

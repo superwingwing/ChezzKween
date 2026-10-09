@@ -43,8 +43,8 @@ const navigation = [
     icon: "mdi-account-outline"
   },
   {
-    name: "tips",
-    title: "Tips & Tactics",
+    name: "user-guide",
+    title: "User Guide",
     icon: "mdi-lightbulb-on-outline"
   },
   {

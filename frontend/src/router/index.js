@@ -5,7 +5,7 @@ import RegisterView from '@/views/auth/RegisterView.vue'
 import DashboardLayout from '@/components/layout/DashboardLayout.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import ProfileView from '@/views/system/ProfileView.vue'
-import AboutView from '@/views/system/AboutView.vue'
+import AboutView from '@/views/system/Aboutview.vue'
 import UserGuide from '@/views/system/UserGuide.vue'
 
 

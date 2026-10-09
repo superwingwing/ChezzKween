@@ -8,6 +8,7 @@ import ProfileView from '@/views/system/ProfileView.vue'
 import AboutView from '@/views/system/AboutView.vue'
 import UserGuide from '@/views/system/UserGuide.vue'
 
+
 const routes = [
   {
     path: '/',

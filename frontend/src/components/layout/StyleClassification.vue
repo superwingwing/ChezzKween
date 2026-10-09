@@ -1,6 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import { supabase } from '@/utils/supabase'
+import AlertNotification from '../common/AlertNotification.vue'
+
+const formSuccessMessage = ref('')
+const formErrorMessage = ref('')
 
 const fileInput = ref(null)
 const folderInput = ref(null)
@@ -16,60 +20,90 @@ const selectFiles = (event) => {
   event.target.value = ''
 }
 
+ 
 const uploadFiles = async () => {
   if (!selectedFiles.value.length) {
-    alert('Please select PGN files.')
+    formErrorMessage.value = 'Please select PGN files.'
     return
   }
 
-  // Get the currently logged-in Supabase user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    alert('You must be logged in to upload games.')
-    return
-  }
+  formSuccessMessage.value = ''
+  formErrorMessage.value = ''
 
   uploading.value = true
   progress.value = 0
 
-  const formData = new FormData()
-  selectedFiles.value.forEach((file) => formData.append('files', file))
-  console.log('Logged-in User ID:', user.id)
-  formData.append('user_id', user.id)
-
-  const timer = setInterval(() => {
-    if (progress.value < 95) progress.value += 5
-  }, 300)
+  let timer
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/upload_style`, {
-      method: 'POST',
-      body: formData,
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      throw new Error('You must be logged in to upload games.')
+    }
+
+    const formData = new FormData()
+
+    selectedFiles.value.forEach((file) => {
+      formData.append('files', file)
     })
 
-    clearInterval(timer)
-    progress.value = 100
+    formData.append('user_id', user.id)
+
+    timer = setInterval(() => {
+      if (progress.value < 95) {
+        progress.value += 5
+      }
+    }, 300)
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/upload_style`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+    )
 
     const result = await response.json()
 
-    console.log(result)
-    alert(`${result.games_uploaded} games uploaded`)
+    if (!response.ok || result.success === false) {
+      throw new Error(
+        result.error || 'Failed to upload PGN files.',
+      )
+    }
+
+    const count = Number(result.games_uploaded) || 0
+
+    if (count === 0) {
+      formErrorMessage.value =
+        'No games were uploaded. Please check your PGN files.'
+    } else {
+      formSuccessMessage.value =
+        `${count} game${count === 1 ? '' : 's'} uploaded and classified successfully!`
+    }
+
+    progress.value = 100
 
     setTimeout(() => {
-      uploading.value = false
-      progress.value = 0
       selectedFiles.value = []
+      progress.value = 0
+      uploading.value = false
     }, 800)
   } catch (error) {
-    clearInterval(timer)
-    uploading.value = false
-    progress.value = 0
-    console.error(error)
-    alert('Failed to upload PGN files.')
+    formErrorMessage.value =
+      error.message || 'Failed to upload PGN files.'
+
+    console.error('PGN upload failed:', error)
+  } finally {
+    if (timer) clearInterval(timer)
+
+    if (progress.value !== 100) {
+      uploading.value = false
+      progress.value = 0
+    }
   }
 }
 </script>
@@ -95,6 +129,10 @@ const uploadFiles = async () => {
 
     <!-- CONTENT -->
     <v-card-text class="classifier-content">
+        <AlertNotification
+          :form-success-message="formSuccessMessage"
+          :form-error-message="formErrorMessage"
+        />
       <!-- DROP ZONE -->
       <div class="drop-zone" @click="browseFiles">
         <v-icon icon="mdi-file-upload-outline" size="34" class="upload-icon" />

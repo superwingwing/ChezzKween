@@ -2,6 +2,10 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { supabase } from '@/utils/supabase'
+import AlertNotification from '../common/AlertNotification.vue'
+
+const formSuccessMessage = ref('')
+const formErrorMessage = ref('')
 
 const emit = defineEmits(['loaded'])
 
@@ -36,6 +40,8 @@ const uploadPGN = async () => {
   loading.value = true
   analysisProgress.value = 0
   analysisStatus.value = 'Preparing analysis...'
+  formSuccessMessage.value = ''
+  formErrorMessage.value = ''
 
   try {
     const pgn = await file.value.text()
@@ -46,8 +52,7 @@ const uploadPGN = async () => {
     } = await supabase.auth.getUser()
 
     if (userError || !user) {
-      console.error('User not authenticated')
-      return
+      throw new Error('Please sign in before analyzing a game.')
     }
 
     const {
@@ -56,8 +61,7 @@ const uploadPGN = async () => {
     } = await supabase.auth.getSession()
 
     if (sessionError || !session) {
-      console.error('No active Supabase session')
-      return
+      throw new Error('Your session has expired. Please sign in again.')
     }
 
     const config = {
@@ -147,6 +151,9 @@ const uploadPGN = async () => {
       throw new Error(analysisData.error)
     }
 
+    formSuccessMessage.value = 'Game analyzed successfully!'
+    formErrorMessage.value = ''
+
     const game =
       uploadRes.data.data?.[0] ||
       uploadRes.data.data
@@ -160,7 +167,10 @@ const uploadPGN = async () => {
     removeFile()
 
   } catch (err) {
-    console.error(err.response?.data || err)
+    // console.error(err.response?.data || err)
+
+    formErrorMessage.value = err.response?.data?.detail || err.message ||
+      'Failed to analyze your game. Please try again.'
 
     analysisStatus.value =
       err.message || 'Analysis failed.'
@@ -172,9 +182,6 @@ const uploadPGN = async () => {
 </script>
 
 <template>
-  <!-- =====================================================
-       HEADER BUTTON
-  ====================================================== -->
 
   <v-btn
     color="#F28C28"
@@ -187,6 +194,11 @@ const uploadPGN = async () => {
   >
     Analyze Your Game
   </v-btn>
+
+  <AlertNotification
+  :form-success-message="formSuccessMessage"
+  :form-error-message="formErrorMessage"
+/>
 
 
   <!-- =====================================================
@@ -253,7 +265,6 @@ const uploadPGN = async () => {
           hidden
           @change="selectFile"
         />
-
         <!-- UPLOAD AREA -->
 
         <v-sheet

@@ -70,6 +70,16 @@ const onLogout = async () => {
 </script>
 
 <template>
+  <v-btn
+  v-if="!permanent"
+  icon="mdi-menu"
+  variant="text"
+  color="orange"
+  class="menu-toggle"
+  aria-label="Open navigation menu"
+  @click="emit('update:modelValue', !modelValue)"
+/>
+
   <v-navigation-drawer
     class="side-navigation"
     :width="282"
@@ -241,6 +251,14 @@ const onLogout = async () => {
 /* =========================================================
    COLOR SYSTEM
 ========================================================= */
+.menu-toggle {
+  position: fixed !important;
+  top: 12px;
+  left: 12px;
+  z-index: 10000;
+  /* border: 1px solid rgba(255, 121, 0, 0.35);
+  border-radius: 10px; */
+}
 
 .side-navigation {
   --navy: #0b142d;

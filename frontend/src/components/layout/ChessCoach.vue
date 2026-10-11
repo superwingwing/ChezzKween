@@ -1,5 +1,12 @@
 <script setup>
-import { ref, watch, onBeforeUnmount } from "vue"
+import { ref, watch, onBeforeUnmount, computed } from "vue"
+import { useAuthStore } from "@/stores/authUser"
+
+const authStore = useAuthStore()
+
+const systemUsername = computed(
+  () => authStore.user?.user_metadata?.username || "You"
+)
 
 const props = defineProps({
   analysis: {
@@ -20,7 +27,7 @@ const getSpeechText = () => {
   }
 
   if (props.analysis.recommendation) {
-    text += `Recommendation: ${props.analysis.recommendation}.`
+    text += `Recommendation for ${systemUsername.value}: ${props.analysis.recommendation}.`
   }
 
   return text
@@ -230,7 +237,7 @@ onBeforeUnmount(() => {
             </div>
 
             <p>
-              {{ analysis.recommendation }}
+               {{ systemUsername }}: {{ analysis.recommendation }}
             </p>
           </template>
 

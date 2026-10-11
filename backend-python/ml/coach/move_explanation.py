@@ -129,6 +129,7 @@ def explain_move(
     evaluation_before=None,
     evaluation_after=None,
     quality=None,
+    player_style=None,
 ):
     """
     Generate a position-aware explanation for the played move.
@@ -193,7 +194,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style,
         )
 
     # ======================================================
@@ -213,7 +217,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style
         )
 
     # ======================================================
@@ -233,7 +240,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style,    
         )
 
     # ======================================================
@@ -252,8 +262,11 @@ def explain_move(
 
         return add_quality_to_result(
             result,
-            played_move,
-            quality
+    played_move,
+    quality,
+    before=before,
+    best_move=best_move,
+    player_style=player_style,
         )
 
     # ======================================================
@@ -274,7 +287,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style
         )
 
     # ======================================================
@@ -302,7 +318,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style,
         )
 
     # ======================================================
@@ -323,7 +342,10 @@ def explain_move(
         return add_quality_to_result(
             result,
             played_move,
-            quality
+            quality,
+            before=before,
+            best_move=best_move,
+            player_style=player_style,
         )
 
     # ======================================================
@@ -342,9 +364,103 @@ def explain_move(
     return add_quality_to_result(
         result,
         played_move,
-        quality
+        quality,
+        before=before,
+        best_move=best_move,
+        player_style=player_style,
     )
 
+
+
+def build_personalized_recommendation(
+    before,
+    best_move,
+    player_style,
+):
+    """
+    Generate a personalized recommendation using Stockfish's
+    best move and the player's Aggressive or Positional style.
+
+    Only called for inaccuracies, mistakes, and blunders.
+    """
+
+    # Validate required inputs.
+    if before is None or not best_move or not player_style:
+        return None
+
+    # Accept either a style dictionary or a style string.
+    if isinstance(player_style, dict):
+        try:
+            aggressive_score = float(
+                player_style.get("Aggressive", 50.0)
+            )
+            positional_score = float(
+                player_style.get("Positional", 50.0)
+            )
+        except (TypeError, ValueError):
+            return None
+
+        style = (
+            "aggressive"
+            if aggressive_score >= positional_score
+            else "positional"
+        )
+    else:
+        style = str(player_style).strip().lower()
+
+    if style not in ("aggressive", "positional"):
+        return None
+
+    try:
+        # Convert Stockfish's best move to a chess.Move.
+        if isinstance(best_move, chess.Move):
+            move = best_move
+        else:
+            move = chess.Move.from_uci(str(best_move))
+
+        # Ensure the recommended move is legal in this position.
+        if move not in before.legal_moves:
+            return None
+
+        best_move_san = before.san(move)
+
+        # Analyze the board AFTER Stockfish's recommended move.
+        best_after = before.copy()
+        best_after.push(move)
+
+        idea = describe_move_idea(
+            before,
+            best_after,
+            best_move_san,
+        )
+
+    except (ValueError, TypeError, chess.InvalidMoveError):
+        return None
+
+    if not idea:
+        idea = (
+            "improve the position with the engine's "
+            "recommended move"
+        )
+
+    # Build the recommendation for an Aggressive player.
+    if style == "aggressive":
+        return (
+            f"Since you're an Aggressive player, I recommend "
+            f"{best_move_san}. The idea is to {idea}. "
+            f"Look for forcing continuations and attacking "
+            f"opportunities when the position supports them, "
+            f"rather than attacking without sufficient support."
+        )
+
+    # Build the recommendation for a Positional player.
+    return (
+        f"Since you're a Positional player, I recommend "
+        f"{best_move_san}. The idea is to {idea}. "
+        f"Focus on piece coordination, control of important "
+        f"squares, and improving your position while avoiding "
+        f"unnecessary weaknesses."
+    )
 
 # ==========================================================
 # ADD QUALITY TO RESULT
@@ -352,24 +468,30 @@ def explain_move(
 def add_quality_to_result(
     result,
     played_move,
-    quality
+    quality,
+    before=None,
+    best_move=None,
+    player_style=None,
 ):
-    verdict = quality_verdict(
-        played_move,
-        quality
-    )
+    verdict = quality_verdict(played_move, quality)
 
     if verdict:
         result["explanation"] = (
             f"{verdict} {result['explanation']}"
         )
 
-    if quality not in ("inaccuracy", "mistake", "blunder"):
+    if quality in ("inaccuracy", "mistake", "blunder"):
+        result["recommendation"] = (
+            build_personalized_recommendation(
+                before=before,
+                best_move=best_move,
+                player_style=player_style,
+            )
+        )
+    else:
         result["recommendation"] = None
 
     return result
-
-
 # ==========================================================
 # UCI -> SAN
 # ==========================================================

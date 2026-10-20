@@ -160,29 +160,6 @@ onMounted(async () => {
 
 <template>
   <v-card rounded="xl" elevation="1" class="content-card mt-6">
-    <v-card-item>
-      <div class="d-flex align-center justify-space-between">
-        <div>
-          <v-card-title class="card-title">Recent Games</v-card-title>
-          <v-card-subtitle>
-            Your analyzed chess games
-          </v-card-subtitle>
-        </div>
-
-        <v-btn
-          v-if="recentGames.length > 4"
-          variant="text"
-          color="primary"
-          size="small"
-          @click="showAllGames = !showAllGames"
-        >
-          {{ showAllGames ? "Show Less" : "View All" }}
-          <v-icon end>
-            {{ showAllGames ? "mdi-chevron-up" : "mdi-arrow-right" }}
-          </v-icon>
-        </v-btn>
-      </div>
-    </v-card-item>
 
     <v-divider />
 
@@ -235,7 +212,7 @@ onMounted(async () => {
                   @click="viewGame(game)"
                 >
                   View Game
-              <v-icon end>mdi-arrow-right</v-icon>
+              <v-icon end>mdi-eye-arrow-right</v-icon>
             </v-btn>
 
           </td>
@@ -250,7 +227,21 @@ onMounted(async () => {
           </td>
         </tr>
       </tbody>
-    </v-table>
+    </v-table>    
+      <div class="text-end pr-4">
+        <v-btn
+          v-if="recentGames.length > 4"
+          variant="text"
+          color="orange-accent-4"
+          size="small"
+          @click="showAllGames = !showAllGames"
+        >
+          {{ showAllGames ? "Show Less" : "Show All" }}
+          <v-icon end>
+            {{ showAllGames ? "mdi-chevron-up" : "mdi-chevron-down" }}
+          </v-icon>
+        </v-btn>
+      </div>     
   </v-card>
 
   <!-- Game Viewer Modal -->

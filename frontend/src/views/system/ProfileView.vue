@@ -693,32 +693,22 @@ onMounted(() => {
            RECENT GAMES
       ==================================================== -->
       <div class="section-block">
-
         <div class="section-header">
-
           <div>
-
             <div class="section-eyebrow">
               GAME ACTIVITY
             </div>
-
             <h2>
               Recent Games
             </h2>
-
             <p>
               Review your latest analyzed chess games.
             </p>
-
           </div>
-
         </div>
-
-
         <div class="recent-games-wrapper">
           <RecentGames />
         </div>
-
       </div>
 
 
@@ -1818,24 +1808,6 @@ onMounted(() => {
   color: var(--muted);
 
   font-size: 0.76rem;
-}
-
-
-/* =========================================================
-   RECENT GAMES
-========================================================= */
-
-.recent-games-wrapper {
-  overflow: hidden;
-
-  background: white;
-
-  border: 1px solid var(--border);
-
-  border-radius: 17px;
-
-  box-shadow:
-    0 5px 20px rgba(11, 31, 58, 0.045);
 }
 
 

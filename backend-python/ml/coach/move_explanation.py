@@ -78,7 +78,13 @@ POSITIONAL_TAGS = {
     "open_file", "outpost", "passed_pawn", "activity", "trade", "defense",
 }
 
-CENTER_SQUARES = [chess.D4, chess.E4, chess.D5, chess.E5]
+CENTER_SQUARES = [
+    chess.C3, chess.D3, chess.E3, chess.F3,
+    chess.C4, chess.D4, chess.E4, chess.F4,
+    chess.C5, chess.D5, chess.E5, chess.F5,
+    chess.C6, chess.D6, chess.E6, chess.F6,
+]
+
 STYLE_TOLERANCE = 0.40  # pawns: how much weaker than the best a style pick may be
 
 

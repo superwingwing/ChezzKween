@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
       </template>
 
       <v-card-title class="pa-0 coach-title">
-        ChessKween AI Coach
+        ChessKween Coach
       </v-card-title>
 
       <v-card-subtitle class="pa-0 coach-subtitle">

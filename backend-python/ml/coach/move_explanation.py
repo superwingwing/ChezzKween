@@ -1,8 +1,52 @@
+"""
+move_explanation.py  -  ChessQueen "coach" explanations and recommendations.
+
+How it works
+------------
+Nothing here is a canned, per-piece script.  Every sentence is produced from a
+FACT that was verified on the real board with python-chess:
+
+  * static exchange evaluation (SEE)  -> free pieces, good/bad trades, hanging pieces
+  * forks, pins, discovered attacks, checks, mate-in-one threats
+  * king safety (pawn cover, pressure around the king, castling rights)
+  * development, centre control, outposts, open files, passed pawns,
+    pawn-structure damage, piece activity, endgame king activity
+  * the engine's principal variation (material actually won / lost in the line)
+
+Stockfish's numbers are only used for the QUALITY label, the evaluation
+context, and "which move is best".  The reasons come from the board.
+
+Player style
+------------
+  Aggressive -> recommends the attacking move (check, capture, fork, pin,
+                threat, pressure on the king) when it is close in strength
+                to the engine's best move.
+  Positional -> recommends the improving move (development, centre, king
+                safety, structure, outposts, open files, passed pawns).
+
+To make the style choice really work, pass MultiPV lines through the
+optional `candidates` argument of explain_move():
+
+    candidates=[{"move": "e2e4", "evaluation": 0.31},
+                {"move": "g1f3", "evaluation": 0.25}, ...]
+
+(`evaluation` is in pawns from WHITE's point of view, like everywhere else
+in this module.)  Without candidates the engine's best move is used.
+
+Public API (unchanged names):
+    calculate_move_quality, quality_verdict, explain_move,
+    add_quality_to_result, add_consequence_analysis,
+    build_personalized_recommendation, describe_move_idea,
+    recommendation_text, convert_uci_to_san, convert_pv_to_san,
+    get_captured_piece, format_square_list, format_piece_list,
+    format_file_list
+"""
+
 import chess
 
 
 # ==========================================================
-# PIECE NAMES
+# CONSTANTS
 # ==========================================================
 
 PIECE_NAMES = {
@@ -14,7 +58,6 @@ PIECE_NAMES = {
     chess.KING: "king",
 }
 
-
 PIECE_VALUES = {
     chess.PAWN: 1,
     chess.KNIGHT: 3,
@@ -24,99 +67,1056 @@ PIECE_VALUES = {
     chess.KING: 0,
 }
 
+BAD_QUALITIES = ("inaccuracy", "mistake", "blunder")
+
+ATTACK_TAGS = {
+    "mate", "check", "capture_win", "fork", "pin", "threat",
+    "mate_threat", "king_attack", "discovered", "promotion",
+}
+POSITIONAL_TAGS = {
+    "development", "center", "castle", "king_safety", "structure",
+    "open_file", "outpost", "passed_pawn", "activity", "trade", "defense",
+}
+
+CENTER_SQUARES = [chess.D4, chess.E4, chess.D5, chess.E5]
+STYLE_TOLERANCE = 0.40  # pawns: how much weaker than the best a style pick may be
+
+
+# ==========================================================
+# SMALL HELPERS
+# ==========================================================
+
+def _join(items):
+    items = [i for i in items if i]
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+
+def format_square_list(squares):
+    return _join(list(squares))
+
+
+def format_piece_list(pieces):
+    return _join(list(pieces))
+
+
+def format_file_list(files):
+    return _join(list(files))
+
+
+def _lc(text):
+    """Lower-case the first letter so a sentence can follow a lead-in."""
+    return text[:1].lower() + text[1:] if text else text
+
+
+def _color_name(color):
+    return "White" if color == chess.WHITE else "Black"
+
+
+def _points(n):
+    n = int(round(n))
+    return f"{n} point" if n == 1 else f"{n} points"
+
+
+def _fmt_eval(value):
+    if value is None:
+        return "?"
+    if abs(value) >= 50:
+        return "mate-level"
+    return f"{value:+.1f}"
+
+
+def _mover_value(value, color):
+    if value is None:
+        return None
+    return value if color == chess.WHITE else -value
+
+
+def describe_eval(value):
+    """Plain-English description of a White-perspective evaluation in pawns."""
+    if value is None:
+        return ""
+    a = abs(value)
+    side = "White" if value > 0 else "Black"
+    if a < 0.3:
+        return f"the position is roughly equal ({_fmt_eval(value)})"
+    if a < 0.8:
+        return f"{side} is slightly better ({_fmt_eval(value)})"
+    if a < 1.8:
+        return f"{side} is clearly better ({_fmt_eval(value)})"
+    if a < 4:
+        return f"{side} is much better ({_fmt_eval(value)})"
+    return f"{side} is winning ({_fmt_eval(value)})"
+
+
+def get_captured_piece(board, move):
+    captured = board.piece_at(move.to_square)
+    if captured:
+        return captured
+    if board.is_en_passant(move):
+        sq = chess.square(chess.square_file(move.to_square),
+                          chess.square_rank(move.from_square))
+        return board.piece_at(sq)
+    return None
+
+
+def material(board, color):
+    return sum(PIECE_VALUES[p.piece_type]
+               for p in board.piece_map().values() if p.color == color)
+
+
+def _with_turn(board, color):
+    """Copy of the board with `color` to move (used for 'what if it were their turn')."""
+    b = board.copy(stack=False)
+    b.turn = color
+    b.ep_square = None
+    return b
+
+
+def _rel_rank(square, color):
+    r = chess.square_rank(square)
+    return r if color == chess.WHITE else 7 - r
+
+
+def _home_minor_squares(color):
+    return ({chess.B1, chess.G1, chess.C1, chess.F1} if color == chess.WHITE
+            else {chess.B8, chess.G8, chess.C8, chess.F8})
+
+
+def _undeveloped(board, color):
+    home = _home_minor_squares(color)
+    n = 0
+    for sq in home:
+        p = board.piece_at(sq)
+        if p and p.color == color and p.piece_type in (chess.KNIGHT, chess.BISHOP):
+            n += 1
+    return n
+
+
+def _phase(board):
+    npm = sum(PIECE_VALUES[p.piece_type] for p in board.piece_map().values()
+              if p.piece_type not in (chess.PAWN, chess.KING))
+    if npm <= 20:
+        return "endgame"
+    if board.fullmove_number <= 12 and (
+            _undeveloped(board, chess.WHITE) + _undeveloped(board, chess.BLACK)) >= 2:
+        return "opening"
+    return "middlegame"
+
 
 # ==========================================================
 # MOVE QUALITY
 # ==========================================================
 
-def calculate_move_quality(
-    before,
-    after,
-    evaluation_before,
-    evaluation_after
-):
-    """
-    Calculate move quality using the same thresholds used
-    by the analysis service.
-
-    Evaluation is assumed to be from White's perspective.
-    """
-
+def calculate_move_quality(before, after, evaluation_before, evaluation_after):
+    """Quality label from the evaluation drop (pawns, White perspective)."""
     if after.is_checkmate():
         return "best"
-
     if evaluation_before is None or evaluation_after is None:
         return None
 
     if before.turn == chess.WHITE:
-        eval_change = evaluation_after - evaluation_before
+        change = evaluation_after - evaluation_before
     else:
-        eval_change = evaluation_before - evaluation_after
+        change = evaluation_before - evaluation_after
+    loss = max(0, -change)
 
-    centipawn_loss = max(0, -eval_change)
-
-    if centipawn_loss < 0.3:
+    if loss < 0.3:
         return "best"
-
-    if centipawn_loss < 0.7:
+    if loss < 0.7:
         return "good"
-
-    if centipawn_loss < 1.5:
+    if loss < 1.5:
         return "inaccuracy"
-
-    if centipawn_loss < 3:
+    if loss < 3:
         return "mistake"
-
     return "blunder"
 
 
+_QUALITY_PHRASES = {
+    "best": "a strong move",
+    "good": "a good move",
+    "inaccuracy": "an inaccuracy",
+    "mistake": "a mistake",
+    "blunder": "a blunder",
+}
+
+
+def quality_stem(played_move, quality):
+    """'Qxc6 is a blunder' (no punctuation); '' when the quality is unknown."""
+    phrase = _QUALITY_PHRASES.get(quality)
+    return f"{played_move} is {phrase}" if phrase else ""
+
+
+def quality_verdict(played_move, quality, swing=None):
+    """Opening sentence, e.g. 'Qxc6 is a blunder.'  (`swing` kept for compatibility.)"""
+    stem = quality_stem(played_move, quality)
+    return f"{stem}." if stem else ""
+
+
 # ==========================================================
-# QUALITY VERDICT
+# STATIC EXCHANGE EVALUATION
 # ==========================================================
 
-def quality_verdict(
-    played_move,
-    quality
-):
+def _attacker_rank(board, move):
+    p = board.piece_at(move.from_square)
+    if p is None:
+        return 100
+    return 100 if p.piece_type == chess.KING else PIECE_VALUES[p.piece_type]
+
+
+def _best_capture_gain(board, square, depth=0):
     """
-    Generate the opening sentence that describes the
-    quality of the move.
+    Material the side to move can win by starting a capture sequence on
+    `square` (least valuable attacker first, legal moves only, may stop any time).
     """
+    if depth > 10:
+        return 0
+    caps = [m for m in board.legal_moves
+            if m.to_square == square and board.is_capture(m)]
+    if not caps:
+        return 0
+    m = min(caps, key=lambda x: _attacker_rank(board, x))
+    victim = get_captured_piece(board, m)
+    if victim is None or victim.piece_type == chess.KING:
+        return 0
+    value = PIECE_VALUES[victim.piece_type]
+    board.push(m)
+    try:
+        gain = value - _best_capture_gain(board, square, depth + 1)
+    finally:
+        board.pop()
+    return max(0, gain)
 
-    if quality == "best":
-        return (
-            f"{played_move} is a strong move in this position."
-        )
 
-    if quality == "good":
-        return (
-            f"{played_move} is a good move in this position."
-        )
+def _best_capture_san(board, square):
+    caps = [m for m in board.legal_moves
+            if m.to_square == square and board.is_capture(m)]
+    if not caps:
+        return None
+    m = min(caps, key=lambda x: _attacker_rank(board, x))
+    return board.san(m)
 
-    if quality == "inaccuracy":
-        return (
-            f"{played_move} is slightly inaccurate in this position. "
-            "The move is playable, but a stronger continuation was available."
-        )
 
-    if quality == "mistake":
-        return (
-            f"{played_move} is a mistake in this position. "
-            "It allows the opponent to improve their position or "
-            "creates a concrete positional or tactical problem."
-        )
+def threatened_pieces(board, victim_color):
+    """
+    Pieces of `victim_color` that the opponent can win material from
+    if the opponent were to move.  Returns [(square, piece, gain)].
+    """
+    b = _with_turn(board, not victim_color)
+    if not b.is_valid():
+        return []
+    result = []
+    for sq, p in b.piece_map().items():
+        if p.color != victim_color or p.piece_type == chess.KING:
+            continue
+        if not b.is_attacked_by(not victim_color, sq):
+            continue
+        gain = _best_capture_gain(b.copy(stack=False), sq)
+        if gain > 0:
+            result.append((sq, p, gain))
+    result.sort(key=lambda t: (-t[2], -PIECE_VALUES[t[1].piece_type]))
+    return result
 
-    if quality == "blunder":
-        return (
-            f"{played_move} is a bad move in this position. "
-            "It causes a significant deterioration in the position."
-        )
 
+def _mate_in_one(board):
+    b = board.copy(stack=False)
+    for m in list(b.legal_moves):
+        san = b.san(m)
+        b.push(m)
+        mate = b.is_checkmate()
+        b.pop()
+        if mate:
+            return san
+    return None
+
+
+# ==========================================================
+# STRUCTURE / KING / CENTRE HELPERS
+# ==========================================================
+
+def _is_passed(board, square, color):
+    f = chess.square_file(square)
+    r = chess.square_rank(square)
+    ranks = range(r + 1, 8) if color == chess.WHITE else range(0, r)
+    for ff in (f - 1, f, f + 1):
+        if not 0 <= ff <= 7:
+            continue
+        for rr in ranks:
+            p = board.piece_at(chess.square(ff, rr))
+            if p and p.piece_type == chess.PAWN and p.color != color:
+                return False
+    return True
+
+
+def _pawn_flaws(board, color):
+    counts = [0] * 8
+    for sq in board.pieces(chess.PAWN, color):
+        counts[chess.square_file(sq)] += 1
+    flaws = set()
+    for f in range(8):
+        if counts[f] >= 2:
+            flaws.add(("doubled", chr(97 + f)))
+        if counts[f] >= 1:
+            left = counts[f - 1] if f > 0 else 0
+            right = counts[f + 1] if f < 7 else 0
+            if left == 0 and right == 0:
+                flaws.add(("isolated", chr(97 + f)))
+    return flaws
+
+
+def _king_zone_pressure(board, king_color):
+    ksq = board.king(king_color)
+    if ksq is None:
+        return 0
+    zone = set(board.attacks(ksq)) | {ksq}
+    return sum(len(board.attackers(not king_color, s)) for s in zone)
+
+
+def _pawn_shield(board, color):
+    ksq = board.king(color)
+    if ksq is None or _rel_rank(ksq, color) != 0:
+        return None
+    kf = chess.square_file(ksq)
+    if kf in (3, 4):          # king still in the middle: no shield concept
+        return None
+    step = 1 if color == chess.WHITE else -1
+    kr = chess.square_rank(ksq)
+    count = 0
+    for f in (kf - 1, kf, kf + 1):
+        if not 0 <= f <= 7:
+            continue
+        for rr in (kr + step, kr + 2 * step):
+            if 0 <= rr <= 7:
+                p = board.piece_at(chess.square(f, rr))
+                if p and p.piece_type == chess.PAWN and p.color == color:
+                    count += 1
+                    break
+    return count
+
+
+def _center_influence(board, color):
+    res = {}
+    for sq in CENTER_SQUARES:
+        n = len(board.attackers(color, sq))
+        p = board.piece_at(sq)
+        if p and p.color == color and p.piece_type == chess.PAWN:
+            n += 1
+        res[sq] = n
+    return res
+
+
+def _is_outpost(board, square, color):
+    if not 3 <= _rel_rank(square, color) <= 5:
+        return False
+    supported = any(
+        (p := board.piece_at(s)) is not None and p.piece_type == chess.PAWN
+        for s in board.attackers(color, square)
+    )
+    if not supported:
+        return False
+    f = chess.square_file(square)
+    r = chess.square_rank(square)
+    for ff in (f - 1, f + 1):
+        if not 0 <= ff <= 7:
+            continue
+        for sq in board.pieces(chess.PAWN, not color):
+            if chess.square_file(sq) == ff:
+                rr = chess.square_rank(sq)
+                if (color == chess.WHITE and rr > r) or (color == chess.BLACK and rr < r):
+                    return False
+    return True
+
+
+def is_open_file(board, file_index):
+    return not any(
+        (p := board.piece_at(chess.square(file_index, r))) is not None
+        and p.piece_type == chess.PAWN for r in range(8))
+
+
+def is_semi_open_file(board, file_index, color):
+    own = enemy = False
+    for r in range(8):
+        p = board.piece_at(chess.square(file_index, r))
+        if p and p.piece_type == chess.PAWN:
+            if p.color == color:
+                own = True
+            else:
+                enemy = True
+    return (not own) and enemy
+
+
+def _attack_targets(after, to_sq, mover):
+    """Enemy pieces the moved piece attacks that are loose or worth more than it."""
+    piece = after.piece_at(to_sq)
+    if piece is None:
+        return []
+    av = 100 if piece.piece_type == chess.KING else PIECE_VALUES[piece.piece_type]
+    res = []
+    for sq in after.attacks(to_sq):
+        t = after.piece_at(sq)
+        if not t or t.color == mover or t.piece_type == chess.KING:
+            continue
+        v = PIECE_VALUES[t.piece_type]
+        defended = after.is_attacked_by(not mover, sq)
+        if (not defended and v >= 1) or v > av:
+            res.append((sq, t))
+    return res
+
+
+# ==========================================================
+# CORE: ANALYSE ONE MOVE FROM THE BOARD
+# ==========================================================
+
+def analyze_move(before, after, move):
+    """
+    Return {"positives": [(prio, text, tag)], "negatives": [(prio, text, tag)],
+            "tags": set}.  Every item is verified on the board.
+    """
+    pos, neg = [], []
+    mover = before.turn
+    enemy = not mover
+    ename = _color_name(enemy)
+    piece = before.piece_at(move.from_square)
+    result = {"positives": pos, "negatives": neg, "tags": set()}
+    if piece is None:
+        return result
+
+    san = before.san(move)
+    to_sq = move.to_square
+    to_name = chess.square_name(to_sq)
+    from_name = chess.square_name(move.from_square)
+    pname = PIECE_NAMES[piece.piece_type]
+    phase = _phase(before)
+    handled_sq = None
+
+    # ---------- game-ending outcomes ----------
+    if after.is_checkmate():
+        pos.append((100, "It is checkmate: the king has no escape, no block and no capture.", "mate"))
+        result["tags"] = {"mate", "check"}
+        return result
+    if after.is_stalemate():
+        neg.append((95, "It leaves the opponent without a legal move while not in check, which is stalemate and a draw.", "king_safety"))
+
+    # ---------- promotion ----------
+    if move.promotion:
+        pos.append((95, f"It promotes the pawn to a {PIECE_NAMES[move.promotion]} on {to_name}, creating a brand-new piece.", "promotion"))
+
+    # ---------- castling ----------
+    if before.is_castling(move):
+        side = "kingside" if chess.square_file(to_sq) > chess.square_file(move.from_square) else "queenside"
+        pos.append((55, f"It castles {side}: the king gets behind its pawns and the rook joins the game.", "castle"))
+    elif piece.piece_type == chess.KING and before.has_castling_rights(mover) \
+            and not after.has_castling_rights(mover) and phase != "endgame":
+        neg.append((50, "It gives up the right to castle, leaving the king in the centre.", "king_safety"))
+
+    # ---------- captures ----------
+    if before.is_capture(move):
+        cap = get_captured_piece(before, move)
+        if cap is not None:
+            cap_name = PIECE_NAMES[cap.piece_type]
+            cap_val = PIECE_VALUES[cap.piece_type]
+            regain = _best_capture_gain(after.copy(stack=False), to_sq)
+            net = cap_val - regain
+            if regain == 0 and cap_val >= 1:
+                prio = 90 if cap_val >= 3 else 60
+                pos.append((prio, f"It wins a free {cap_name} on {to_name}: nothing can legally take the {pname} back.", "capture_win"))
+            elif net > 0:
+                pos.append((75, f"It captures the {cap_name} on {to_name}; even after the recapture you finish {_points(net)} ahead.", "capture_win"))
+            elif net == 0:
+                pos.append((40, f"It trades the {pname} for the {cap_name} on {to_name}.", "trade"))
+                diff = material(after, mover) - material(after, enemy)
+                if diff >= 3:
+                    pos.append((35, "Trading pieces while ahead in material makes the advantage easier to convert.", "trade"))
+            else:
+                handled_sq = to_sq
+                neg.append((90, f"It captures the {cap_name} on {to_name}, but after the recapture you lose {_points(-net)} in the exchange.", "capture_win"))
+
+    # ---------- check / discovered check ----------
+    if after.is_check():
+        replies = list(after.legal_moves)
+        discovered = to_sq not in after.checkers()
+        if discovered:
+            pos.append((70, "It uncovers a discovered check: another piece now attacks the king while the moved piece does something else.", "discovered"))
+        else:
+            txt = f"It gives check, so {ename} must deal with the king before anything else."
+            if len(replies) == 1:
+                txt = f"It gives check and {ename} has only one legal reply, which makes the move very forcing."
+            pos.append((60, txt, "check"))
+
+    # ---------- forks / new threats ----------
+    targets = _attack_targets(after, to_sq, mover)
+    moved_piece_sq_hanging = any(
+        sq == to_sq for sq, _, _ in threatened_pieces(after, mover))
+    fork_squares = set()
+    check_by_moved = after.is_check() and to_sq in after.checkers()
+    if len(targets) + (1 if check_by_moved else 0) >= 2:
+        desc = [f"the {PIECE_NAMES[t.piece_type]} on {chess.square_name(s)}" for s, t in targets]
+        if check_by_moved:
+            desc.insert(0, "the king")
+        txt = f"It forks {_join(desc[:3])} with the {PIECE_NAMES[after.piece_at(to_sq).piece_type]}: it cannot save everything."
+        if moved_piece_sq_hanging:
+            txt = f"It attacks {_join(desc[:3])} at once, although the {pname} itself can be captured, so check the sequence."
+            pos.append((50, txt, "threat"))
+        else:
+            pos.append((82, txt, "fork"))
+        fork_squares = {s for s, _ in targets}
+
+    before_threats = {sq for sq, _, _ in threatened_pieces(before, enemy)}
+    after_threats = threatened_pieces(after, enemy) if not after.is_check() else []
+    shown = 0
+    for sq, p, gain in after_threats:
+        if sq in before_threats or sq in fork_squares or shown >= 1:
+            continue
+        sqn = chess.square_name(sq)
+        pn = PIECE_NAMES[p.piece_type]
+        if sq in after.attacks(to_sq):
+            pos.append((70 if gain >= 3 else 45,
+                        f"It attacks the {pn} on {sqn} and threatens to win it.", "threat"))
+        else:
+            pos.append((68 if gain >= 3 else 45,
+                        f"It uncovers an attack on the {pn} on {sqn}, threatening to win it.", "discovered"))
+        shown += 1
+
+    # ---------- pins ----------
+    for sq, p in after.piece_map().items():
+        if p.color != enemy or p.piece_type in (chess.KING, chess.PAWN):
+            continue
+        if after.is_pinned(enemy, sq) and not before.is_pinned(enemy, sq):
+            pos.append((65, f"It pins the {PIECE_NAMES[p.piece_type]} on {chess.square_name(sq)} to the king, so that piece cannot move freely.", "pin"))
+            break
+
+    # ---------- mate threats / mate allowed ----------
+    if not after.is_check():
+        flipped = _with_turn(after, mover)
+        if flipped.is_valid():
+            mate_san = _mate_in_one(flipped)
+            if mate_san:
+                pos.append((85, f"It threatens {mate_san}, which would be checkmate.", "mate_threat"))
+    if not after.is_stalemate():
+        enemy_mate = _mate_in_one(after)
+        if enemy_mate:
+            neg.append((100, f"It allows {enemy_mate}, which is checkmate.", "king_safety"))
+
+    # ---------- hanging pieces ----------
+    before_hanging = {sq for sq, _, _ in threatened_pieces(before, mover)}
+    after_hanging = threatened_pieces(after, mover)
+    after_hanging_sqs = {sq for sq, _, _ in after_hanging}
+    for sq, p, gain in after_hanging[:2]:
+        if sq == handled_sq:
+            continue
+        sqn = chess.square_name(sq)
+        pn = PIECE_NAMES[p.piece_type]
+        cap_san = _best_capture_san(after, sq)
+        how = f" with {cap_san}" if cap_san else ""
+        prio = 95 if gain >= 3 else 65
+        if sq == to_sq:
+            neg.append((prio, f"The {pn} on {sqn} can be captured{how}, winning about {_points(gain)} of material.", "capture_win"))
+        elif sq in before_hanging:
+            neg.append((prio, f"It does not deal with the threat to the {pn} on {sqn}, so {cap_san or 'a capture'} wins {_points(gain)}.", "defense"))
+        else:
+            neg.append((prio, f"It leaves the {pn} on {sqn} loose: the opponent can win {_points(gain)}{how}.", "defense"))
+    rescued = [sq for sq in before_hanging if sq not in after_hanging_sqs
+               and (before.piece_at(sq) is not None)]
+    for sq in rescued[:1]:
+        p = before.piece_at(sq)
+        if p and not before.is_capture(move):
+            moved_it = (sq == move.from_square)
+            pos.append((60, f"It {'moves' if moved_it else 'protects'} the {PIECE_NAMES[p.piece_type]} {'out of danger' if moved_it else 'that was under threat on ' + chess.square_name(sq)}.", "defense"))
+
+    # ---------- king safety ----------
+    ek_b, ek_a = _king_zone_pressure(before, enemy), _king_zone_pressure(after, enemy)
+    if ek_a - ek_b >= 2 and not after.is_check():
+        pos.append((50, f"It increases the pressure around {ename}'s king.", "king_attack"))
+    ok_b, ok_a = _king_zone_pressure(before, mover), _king_zone_pressure(after, mover)
+    if ok_a - ok_b >= 2:
+        neg.append((55, "It lets the opponent's pieces target the squares around your own king.", "king_safety"))
+    sh_b, sh_a = _pawn_shield(before, mover), _pawn_shield(after, mover)
+    if sh_b is not None and sh_a is not None and sh_a < sh_b and piece.piece_type == chess.PAWN:
+        neg.append((50, "It breaks up the pawn cover in front of your king.", "king_safety"))
+
+    # ---------- development / opening principles ----------
+    if piece.piece_type in (chess.KNIGHT, chess.BISHOP) and \
+            move.from_square in _home_minor_squares(mover) and to_sq not in _home_minor_squares(mover):
+        pos.append((45, f"It develops the {pname} to {to_name}, bringing another piece into the game.", "development"))
+    if phase == "opening" and piece.piece_type == chess.QUEEN and before.fullmove_number <= 8:
+        attackers = [after.piece_at(s) for s in after.attackers(enemy, to_sq)]
+        lesser = [a for a in attackers if a and PIECE_VALUES[a.piece_type] < 9 and a.piece_type != chess.KING]
+        if lesser:
+            neg.append((50, f"Bringing the queen out this early lets the opponent gain time by attacking it with a {PIECE_NAMES[lesser[0].piece_type]}.", "development"))
+
+    # ---------- centre ----------
+    if piece.piece_type == chess.PAWN and to_sq in CENTER_SQUARES:
+        pos.append((50, f"It plants a pawn on {to_name}, taking space in the centre.", "center"))
+    else:
+        ci_b, ci_a = _center_influence(before, mover), _center_influence(after, mover)
+        gained = [chess.square_name(s) for s in CENTER_SQUARES if ci_a[s] > ci_b[s]]
+        if gained and piece.piece_type != chess.PAWN:
+            pos.append((35, f"It increases the influence over the centre ({_join(gained)}).", "center"))
+
+    # ---------- piece placement ----------
+    if piece.piece_type == chess.ROOK and chess.square_file(to_sq) != chess.square_file(move.from_square):
+        fi = chess.square_file(to_sq)
+        fname = chr(97 + fi)
+        if is_open_file(after, fi):
+            pos.append((50, f"It places the rook on the open {fname}-file, where nothing blocks it.", "open_file"))
+        elif is_semi_open_file(after, fi, mover):
+            pos.append((40, f"It places the rook on the semi-open {fname}-file, pressuring the enemy pawn there.", "open_file"))
+    if piece.piece_type == chess.ROOK and _rel_rank(to_sq, mover) == 6 and _rel_rank(move.from_square, mover) != 6:
+        pos.append((45, "It puts the rook on the seventh rank, where it eyes enemy pawns and restricts the king.", "activity"))
+    if piece.piece_type == chess.KNIGHT and _is_outpost(after, to_sq, mover) and not _is_outpost(before, move.from_square, mover):
+        pos.append((55, f"It places the knight on {to_name}, a protected outpost the enemy pawns can never attack.", "outpost"))
+    if piece.piece_type != chess.PAWN and piece.piece_type != chess.KING and not move.promotion:
+        m_before = len(before.attacks(move.from_square))
+        m_after = len(after.attacks(to_sq))
+        if m_after - m_before >= 3:
+            pos.append((30, f"The {pname} becomes more active: it now controls {m_after} squares instead of {m_before}.", "activity"))
+        elif m_before - m_after >= 3 and not any(t == "capture_win" for _, _, t in pos):
+            neg.append((30, f"It makes the {pname} more passive: it controls {m_after} squares instead of {m_before}.", "activity"))
+
+    # ---------- pawns ----------
+    if piece.piece_type == chess.PAWN and not move.promotion:
+        if _is_passed(after, to_sq, mover) and not _is_passed(before, move.from_square, mover):
+            pos.append((60, f"It creates a passed pawn on {to_name}: no enemy pawn can stop it by capturing.", "passed_pawn"))
+        elif _is_passed(after, to_sq, mover) and _rel_rank(to_sq, mover) >= 5:
+            steps = 7 - _rel_rank(to_sq, mover)
+            pos.append((65, f"It pushes the passed pawn to {to_name}, only {steps} step{'s' if steps != 1 else ''} from promotion.", "passed_pawn"))
+    new_flaws = _pawn_flaws(after, mover) - _pawn_flaws(before, mover)
+    for kind, f in sorted(new_flaws)[:1]:
+        neg.append((35, f"It creates {'doubled' if kind == 'doubled' else 'an isolated'} pawn{'s' if kind == 'doubled' else ''} on the {f}-file, a long-term weakness.", "structure"))
+    enemy_flaws = _pawn_flaws(after, enemy) - _pawn_flaws(before, enemy)
+    for kind, f in sorted(enemy_flaws)[:1]:
+        pos.append((40, f"It damages {ename}'s pawn structure, leaving {'doubled' if kind == 'doubled' else 'an isolated'} pawn{'s' if kind == 'doubled' else ''} on the {f}-file.", "structure"))
+
+    # ---------- endgame king ----------
+    if piece.piece_type == chess.KING and not before.is_castling(move) and phase == "endgame":
+        def center_dist(sq):
+            return max(abs(chess.square_file(sq) - 3.5), abs(chess.square_rank(sq) - 3.5))
+        if center_dist(to_sq) < center_dist(move.from_square):
+            pos.append((35, "It centralises the king, which is a real asset in the endgame.", "activity"))
+
+    # de-duplicate
+    seen = set()
+    for lst in (pos, neg):
+        lst[:] = [x for x in lst if not (x[1] in seen or seen.add(x[1]))]
+    result["tags"] = {t for _, _, t in pos}
+    return result
+
+
+# ==========================================================
+# ENGINE-PV MATERIAL STORY
+# ==========================================================
+
+def _normalise_move(board, candidate):
+    if candidate is None:
+        return None
+    if isinstance(candidate, chess.Move):
+        move = candidate
+    else:
+        raw = str(candidate).strip()
+        try:
+            move = chess.Move.from_uci(raw)
+        except ValueError:
+            try:
+                move = board.parse_san(raw)
+            except ValueError:
+                return None
+    return move if move in board.legal_moves else None
+
+
+def _pv_moves(board, variation, limit=12):
+    """Legal chess.Move list from a UCI/SAN/Move variation, stopping at first problem."""
+    if not variation:
+        return []
+    if isinstance(variation, str):
+        variation = variation.split()
+    try:
+        items = list(variation)
+    except TypeError:
+        return []
+    temp = board.copy(stack=False)
+    moves = []
+    for item in items[:limit]:
+        m = _normalise_move(temp, item)
+        if m is None:
+            break
+        moves.append(m)
+        temp.push(m)
+    return moves
+
+
+def _normalise_pv(board, variation):
+    temp = board.copy(stack=False)
+    out = []
+    for m in _pv_moves(board, variation):
+        out.append(temp.san(m))
+        temp.push(m)
+    return out
+
+
+def _pv_story(after, moves, mover):
+    """Follow the engine line after the played move and report the first capture sequence."""
+    if not moves:
+        return None
+    board = after.copy(stack=False)
+    start = material(board, mover) - material(board, not mover)
+    sans, first, last = [], None, None
+    for i, m in enumerate(moves[:10]):
+        is_cap = board.is_capture(m)
+        victim = get_captured_piece(board, m) if is_cap else None
+        sq = m.to_square
+        if board.is_en_passant(m):
+            sq = chess.square(chess.square_file(m.to_square), chess.square_rank(m.from_square))
+        capturer = board.turn
+        sans.append(board.san(m))
+        board.push(m)
+        if is_cap:
+            if first is None:
+                first = {"capturer": capturer, "victim": victim, "square": sq, "san": sans[-1]}
+            last = i
+        elif first is not None:
+            break
+        if board.is_game_over():
+            break
+    if first is None or last is None:
+        return None
+    # material after the capture sequence
+    b = after.copy(stack=False)
+    for m in moves[:last + 1]:
+        b.push(m)
+    net = (material(b, mover) - material(b, not mover)) - start
+    return {"line": sans[:last + 1], "net": net, "first": first}
+
+
+def _story_sentence(story, mover):
+    if not story:
+        return None
+    net, first, line = story["net"], story["first"], " ".join(story["line"])
+    enemy = not mover
+    victim = first["victim"]
+    vname = PIECE_NAMES[victim.piece_type] if victim else "piece"
+    sqn = chess.square_name(first["square"])
+    if first["capturer"] == enemy and net <= -1:
+        return (f"The engine's line ({line}) shows {_color_name(enemy)} winning your {vname} on {sqn} "
+                f"and finishing {_points(-net)} ahead after the exchanges.")
+    if first["capturer"] == mover and net >= 1:
+        return f"The engine's line ({line}) shows you finishing {_points(net)} ahead after the exchanges."
+    return None
+
+
+def _story_reason(story, mover, bad):
+    """(sentence, points) describing the engine line, or None if it proves nothing."""
+    if not story:
+        return None
+    net, first = story["net"], story["first"]
+    line = " ".join(story["line"])
+    enemy = not mover
+    victim = first["victim"]
+    vname = PIECE_NAMES[victim.piece_type] if victim else "piece"
+    sqn = chess.square_name(first["square"])
+    if bad and first["capturer"] == enemy and net <= -1:
+        return (f"In the engine's line ({line}), {_color_name(enemy)} wins your {vname} "
+                f"on {sqn} and you end up {_points(-net)} down.", -net)
+    if not bad and first["capturer"] == mover and net >= 1:
+        return (f"In the engine's line ({line}), you win the opponent's {vname} "
+                f"on {sqn} and come out {_points(net)} ahead.", net)
+    return None
+
+
+# ==========================================================
+# ANALYSIS-PAYLOAD READERS
+# ==========================================================
+
+def _analysis_value(analysis):
+    if not isinstance(analysis, dict):
+        return None
+    for key in ("evaluation", "eval", "score", "score_cp", "centipawns"):
+        value = analysis.get(key)
+        if isinstance(value, dict):
+            value = value.get("value", value.get("score"))
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if number != number or abs(number) == float("inf"):
+            continue
+        if key in ("score_cp", "centipawns"):
+            number /= 100.0
+        return number
+    return None
+
+
+def _analysis_variation(analysis):
+    if not isinstance(analysis, dict):
+        return None
+    for key in ("pv", "principal_variation", "variation", "line", "moves"):
+        value = analysis.get(key)
+        if value:
+            return value
+    return None
+
+
+def _style_name(player_style):
+    if player_style is None:
+        return None
+    if isinstance(player_style, dict):
+        try:
+            a = float(player_style.get("Aggressive", 50.0))
+            p = float(player_style.get("Positional", 50.0))
+        except (TypeError, ValueError):
+            return None
+        return "aggressive" if a >= p else "positional"
+    s = str(player_style).strip().lower()
+    return s if s in ("aggressive", "positional") else None
+
+
+def _parse_candidates(before, candidates):
+    """[(Move, white_eval_or_None)] from a MultiPV-style list."""
+    out = []
+    if not candidates:
+        return out
+    for c in candidates:
+        ev, mv = None, None
+        if isinstance(c, dict):
+            ev = _analysis_value(c)
+            raw = c.get("move") or c.get("best_move") or c.get("uci")
+            if raw is None:
+                pv = _analysis_variation(c)
+                if pv:
+                    raw = pv.split()[0] if isinstance(pv, str) else list(pv)[0]
+            mv = _normalise_move(before, raw)
+        else:
+            mv = _normalise_move(before, c)
+        if mv is not None and all(mv != m for m, _ in out):
+            out.append((mv, ev))
+    return out
+
+
+def _style_score(analysis, style):
+    wanted = ATTACK_TAGS if style == "aggressive" else POSITIONAL_TAGS
+    score = sum(p for p, _, t in analysis["positives"] if t in wanted)
+    score -= sum(p for p, _, _ in analysis["negatives"]) * 0.5
+    return score
+
+
+def _pick_style_move(before, best_obj, best_ev, candidates, style):
+    """Return (move, analysis, is_style_pick)."""
+    def run(m):
+        a = before.copy(stack=False)
+        a.push(m)
+        return analyze_move(before, a, m)
+
+    best_analysis = run(best_obj)
+    if not style or not candidates:
+        return best_obj, best_analysis, False
+
+    color = before.turn
+    pool = list(candidates)
+    if all(best_obj != m for m, _ in pool):
+        pool.append((best_obj, best_ev))
+    evs = [_mover_value(e, color) for _, e in pool if e is not None]
+    best_mover = _mover_value(best_ev, color)
+    top = max(evs) if evs else best_mover
+    chosen, chosen_an, chosen_score = best_obj, best_analysis, _style_score(best_analysis, style)
+    for m, e in pool:
+        if m == best_obj:
+            continue
+        mv_e = _mover_value(e, color)
+        if mv_e is None or top is None or top - mv_e > STYLE_TOLERANCE:
+            continue
+        an = run(m)
+        score = _style_score(an, style)
+        if score > chosen_score + 10:
+            chosen, chosen_an, chosen_score = m, an, score
+    return chosen, chosen_an, chosen != best_obj
+
+
+# ==========================================================
+# EXPLANATION TEXT
+# ==========================================================
+
+def _sorted_texts(items):
+    return [t for _, t, _ in sorted(items, key=lambda x: -x[0])]
+
+
+MIN_BAD_REASON_PRIORITY = 50   # weaker findings are not good enough to justify a bad label
+
+
+def _quality_reasons(before, move_obj, quality, analysis, best_obj, best_analysis,
+                     story, ev_before, ev_after):
+    """
+    The justification for the quality label, as full sentences.
+      * inaccuracy / mistake / blunder -> exactly ONE reason: the most decisive
+        verified problem (mate allowed, piece lost, bad trade, engine line that
+        loses material).  If the board shows none, fall back to what the engine's
+        move would have done, then to the evaluation drop.
+      * good / best -> up to TWO reasons: the strongest verified positives.
+    """
+    mover = before.turn
+    pos = sorted(analysis["positives"], key=lambda x: -x[0])
+    neg = sorted(analysis["negatives"], key=lambda x: -x[0])
+
+    if quality in BAD_QUALITIES:
+        options = []
+        if best_obj is not None and best_obj != move_obj and best_analysis \
+                and "mate" in best_analysis["tags"]:
+            options.append((120, f"It misses a forced checkmate with {before.san(best_obj)}."))
+        options.extend((p, t) for p, t, _ in neg if p >= MIN_BAD_REASON_PRIORITY)
+        lost = _story_reason(story, mover, bad=True)
+        if lost:
+            text, points = lost
+            options.append((97 if points >= 3 else 70, text))
+        if options:
+            return [max(options, key=lambda o: o[0])[1]]
+
+        # nothing concrete on the board: say what the better move did instead
+        if best_obj is not None and best_obj != move_obj and best_analysis:
+            best_san = before.san(best_obj)
+            for _, text, _ in sorted(best_analysis["positives"], key=lambda x: -x[0]):
+                if text.startswith("It "):
+                    return [f"It overlooks {best_san}, which {text[3:].rstrip('.')}."]
+        if ev_before is not None and ev_after is not None:
+            return [f"The evaluation falls from {_fmt_eval(ev_before)} to {_fmt_eval(ev_after)}, "
+                    f"and {describe_eval(ev_after)}."]
+        if best_obj is not None and best_obj != move_obj:
+            return [f"It overlooks {before.san(best_obj)}, which the engine rates clearly higher."]
+        return ["The engine rates the resulting position clearly worse than its alternatives."]
+
+    options = [(p, t) for p, t, _ in pos]
+    if not options:
+        won = _story_reason(story, mover, bad=False)
+        if won:
+            options.append((80, won[0]))
+    if options:
+        return [t for _, t in sorted(options, key=lambda o: -o[0])[:2]]
+    return ["It maintains the position healthy"]
+
+
+def _compose_explanation(before, move_obj, san, quality, analysis, best_obj,
+                         best_analysis, story, ev_before, ev_after, swing):
+    """'<move> is a <quality>: <why>'  and nothing else."""
+    reasons = _quality_reasons(before, move_obj, quality, analysis, best_obj,
+                               best_analysis, story, ev_before, ev_after)
+    reasons = [r.strip() if r.strip().endswith(".") else r.strip() + "." for r in reasons if r]
+    stem = quality_stem(san, quality)
+    if not stem:
+        return " ".join(reasons)
+    if not reasons:
+        return stem + "."
+    return f"{stem}: {_lc(reasons[0])}" + "".join(" " + r for r in reasons[1:])
+
+
+# ==========================================================
+# RECOMMENDATION TEXT
+# ==========================================================
+
+def _style_line(style, analysis, san, bad):
+    tags = analysis["tags"]
+    attack = tags & ATTACK_TAGS
+    positional = tags & POSITIONAL_TAGS
+    if style == "aggressive":
+        if attack:
+            return f"This suits your aggressive style: {san} keeps the initiative and puts concrete pressure on the opponent."
+        return (f"You like to attack, but here the engine does not support a forcing continuation, "
+                f"so improve your position with {san} first and attack once it is ready.")
+    if style == "positional":
+        if positional:
+            return f"This suits your positional style: {san} improves your position without taking unnecessary risks."
+        if attack:
+            return f"A forcing move is justified here because {san} gains something concrete; calculate it carefully."
     return ""
 
 
+def _build_recommendation(before, move_obj, quality, best_obj, best_ev, best_pv_san,
+                          candidates, style):
+    color = before.turn
+    if best_obj is None:
+        return None if quality not in BAD_QUALITIES else "Stockfish did not provide a replacement move."
+
+    chosen, analysis, style_pick = _pick_style_move(before, best_obj, best_ev, candidates, style)
+    san = before.san(chosen)
+    best_san = before.san(best_obj)
+    ideas = _sorted_texts(analysis["positives"])[:2]
+    idea_text = " ".join(ideas)
+
+    if chosen == move_obj:
+        text = f"Stockfish agrees with {san}."
+        if idea_text:
+            text += " " + idea_text
+        if best_pv_san:
+            text += f" The engine expects {', '.join(best_pv_san[:3])} to follow."
+        return text
+
+    if quality in BAD_QUALITIES:
+        text = f"Prefer {san} instead."
+        if idea_text:
+            text += " " + idea_text
+        if style_pick:
+            text += f" It is only slightly behind Stockfish's {best_san} but matches your style better."
+        elif chosen != best_obj:
+            pass
+        style_text = _style_line(style, analysis, san, True)
+        if style_text:
+            text += " " + style_text
+        if best_pv_san and not style_pick:
+            text += f" The lines starts {', '.join(best_pv_san[:4])}."
+        return text.strip()
+
+    # good / best-but-not-identical: only a light pointer
+    text = f"Stockfish's top choice is {best_san}"
+    text += f": {_lc(ideas[0])}" if ideas else "."
+    if style and chosen != move_obj:
+        style_text = _style_line(style, analysis, san, False)
+        if style_text and quality == "good":
+            text += " " + style_text
+    return text.strip()
+
+
+def build_personalized_recommendation(before, best_move, player_style, candidates=None,
+                                      best_eval=None):
+    """Style-aware recommendation for inaccuracies, mistakes and blunders."""
+    if before is None or not best_move or not player_style:
+        return None
+    style = _style_name(player_style)
+    if style is None:
+        return None
+    best_obj = _normalise_move(before, best_move)
+    if best_obj is None:
+        return None
+    return _build_recommendation(before, None, "mistake", best_obj, best_eval, None,
+                                 _parse_candidates(before, candidates), style)
+
+
+def describe_move_idea(before, after, best_move_san):
+    """Short idea behind a move, built from the board (compat helper)."""
+    try:
+        move = before.parse_san(best_move_san)
+    except ValueError:
+        return ""
+    b = before.copy(stack=False)
+    b.push(move)
+    texts = _sorted_texts(analyze_move(before, b, move)["positives"])
+    if not texts:
+        return ""
+    t = texts[0]
+    return _lc(t[3:] if t.startswith("It ") else t).rstrip(".")
+
+
+def recommendation_text(before, after, played_move, best_move_san):
+    if not best_move_san:
+        return "Stockfish did not provide a replacement move."
+    idea = describe_move_idea(before, after, best_move_san)
+    if played_move == best_move_san:
+        return f"Stockfish recommends {best_move_san}" + (f": it {idea}." if idea else ".")
+    return f"Stockfish recommends {best_move_san} instead of {played_move}" + (f": it {idea}." if idea else ".")
+
+
 # ==========================================================
-# MAIN EXPLANATION FUNCTION
+# MAIN ENTRY POINT
 # ==========================================================
 
 def explain_move(
@@ -130,2165 +1130,177 @@ def explain_move(
     evaluation_after=None,
     quality=None,
     player_style=None,
+    played_analysis=None,
+    best_move_analysis=None,
+    opponent_pv=None,
+    candidates=None,
+    **kwargs,
 ):
     """
-    Generate a position-aware explanation for the played move.
+    Explain one move like a coach.
 
-    Stockfish provides:
-        - evaluation
-        - best move
-        - principal variation
+    Returns {"explanation": str, "recommendation": str|None, "consequences": [str]}
 
-    This module converts those engine results and board facts
-    into human-readable coaching.
-
-    The quality verdict is calculated here so that the function
-    does not depend on the order of calculations in
-    analysis_service.py.
+    Evaluations are in pawns from White's point of view.
+      pv           : engine line starting at `before` (best line)
+      opponent_pv  : engine line starting at `after` (opponent's reply first)
+      candidates   : optional MultiPV list [{"move": uci, "evaluation": pawns}, ...]
     """
+    if before is None or not hasattr(before, "legal_moves"):
+        return {"explanation": f"Unable to analyze {played_move}: the starting position is unavailable.",
+                "recommendation": None, "consequences": []}
 
-    # ------------------------------------------------------
-    # Calculate quality if it was not explicitly supplied
-    # ------------------------------------------------------
+    move_obj = _normalise_move(before, move)
+    if move_obj is None:
+        return {"explanation": f"Unable to verify {played_move}: it is not a legal move in the supplied position.",
+                "recommendation": None, "consequences": []}
+
+    verified_after = before.copy(stack=False)
+    verified_after.push(move_obj)
+    san = before.san(move_obj)
+    mover = before.turn
+
+    # evaluations (reuse what analysis_service already computed)
+    if evaluation_before is None:
+        evaluation_before = _analysis_value(played_analysis)
+    if evaluation_after is None:
+        evaluation_after = _analysis_value(best_move_analysis)
+    if evaluation_after is None and isinstance(played_analysis, dict):
+        for key in ("evaluation_after", "after_evaluation", "eval_after"):
+            if key in played_analysis:
+                evaluation_after = _analysis_value({"evaluation": played_analysis[key]})
+                if evaluation_after is not None:
+                    break
+
+    # engine best move
+    if best_move is None and isinstance(best_move_analysis, dict):
+        best_move = best_move_analysis.get("best_move") or best_move_analysis.get("move")
+        if best_move is None:
+            bpv = _analysis_variation(best_move_analysis)
+            if bpv:
+                best_move = bpv.split()[0] if isinstance(bpv, str) else list(bpv)[0]
+    best_obj = _normalise_move(before, best_move)
 
     if quality is None:
-        quality = calculate_move_quality(
-            before,
-            after,
-            evaluation_before,
-            evaluation_after
-        )
+        quality = calculate_move_quality(before, verified_after, evaluation_before, evaluation_after)
+    quality = str(quality).strip().lower() if quality else None
 
-    # ------------------------------------------------------
-    # Convert Stockfish best move UCI -> SAN
-    # ------------------------------------------------------
+    swing = None
+    if evaluation_before is not None and evaluation_after is not None:
+        swing = max(0.0, -(_mover_value(evaluation_after, mover) - _mover_value(evaluation_before, mover)))
 
-    best_move_san = convert_uci_to_san(
-        before,
-        best_move
-    )
+    # facts
+    analysis = analyze_move(before, verified_after, move_obj)
+    best_analysis = None
+    best_ev = None
+    if best_obj is not None:
+        ba = before.copy(stack=False)
+        ba.push(best_obj)
+        best_analysis = analyze_move(before, ba, best_obj)
+        best_ev = _analysis_value(best_move_analysis)
+        if best_ev is None and best_obj == move_obj:
+            best_ev = evaluation_after
+        if best_ev is None and candidates:
+            for m, e in _parse_candidates(before, candidates):
+                if m == best_obj and e is not None:
+                    best_ev = e
 
-    # ------------------------------------------------------
-    # Convert Stockfish PV UCI -> SAN
-    # ------------------------------------------------------
+    # engine lines
+    best_line = _analysis_variation(best_move_analysis) or pv
+    best_pv_san = _normalise_pv(before, best_line)
+    post_line = opponent_pv or _analysis_variation(played_analysis)
+    post_moves = _pv_moves(verified_after, post_line)
+    if not post_moves and pv:
+        full = _pv_moves(before, pv)
+        if full and full[0] == move_obj:
+            post_moves = full[1:]
+    story = _pv_story(verified_after, post_moves, mover)
 
-    pv_san = convert_pv_to_san(
-        before,
-        pv
-    )
+    explanation = _compose_explanation(
+        before, move_obj, san, quality, analysis, best_obj, best_analysis,
+        story, evaluation_before, evaluation_after, swing)
 
-    # ======================================================
-    # CHECKMATE
-    # ======================================================
+    style = _style_name(player_style)
+    recommendation = None
+    if quality in BAD_QUALITIES or (best_obj is not None and best_obj != move_obj and quality == "good"):
+        recommendation = _build_recommendation(
+            before, move_obj, quality, best_obj, best_ev, best_pv_san,
+            _parse_candidates(before, candidates), style)
+    elif quality == "best" and best_obj == move_obj:
+        recommendation = _build_recommendation(
+            before, move_obj, quality, best_obj, best_ev, best_pv_san, None, None)
 
-    if after.is_checkmate():
+    # The explanation already carries the single justification, so there is no
+    # separate list of side effects (keeps the UI from repeating itself).
+    return {
+        "explanation": explanation,
+        "recommendation": recommendation,
+        "consequences": [],
+    }
 
-        result = explain_checkmate(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style,
-        )
-
-    # ======================================================
-    # CASTLING
-    # ======================================================
-
-    if before.is_castling(move):
-
-        result = explain_castling(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style
-        )
-
-    # ======================================================
-    # PROMOTION
-    # ======================================================
-
-    if move.promotion:
-
-        result = explain_promotion(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style,    
-        )
-
-    # ======================================================
-    # CAPTURE
-    # ======================================================
-
-    if before.is_capture(move):
-
-        result = explain_capture(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san
-        )
-
-        return add_quality_to_result(
-            result,
-    played_move,
-    quality,
-    before=before,
-    best_move=best_move,
-    player_style=player_style,
-        )
-
-    # ======================================================
-    # CHECK
-    # ======================================================
-
-    if after.is_check():
-
-        result = explain_check(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san,
-            pv_san
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style
-        )
-
-    # ======================================================
-    # PAWN MOVE
-    # ======================================================
-
-    moving_piece = before.piece_at(
-        move.from_square
-    )
-
-    if (
-        moving_piece
-        and moving_piece.piece_type == chess.PAWN
-    ):
-
-        result = explain_pawn_move(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san,
-            quality
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style,
-        )
-
-    # ======================================================
-    # PIECE MOVE
-    # ======================================================
-
-    if moving_piece:
-
-        result = explain_piece_move(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san,
-            quality
-        )
-
-        return add_quality_to_result(
-            result,
-            played_move,
-            quality,
-            before=before,
-            best_move=best_move,
-            player_style=player_style,
-        )
-
-    # ======================================================
-    # FALLBACK
-    # ======================================================
-
-    result = explain_general_move(
-        before,
-        after,
-        move,
-        played_move,
-        best_move_san,
-        pv_san
-    )
-
-    return add_quality_to_result(
-        result,
-        played_move,
-        quality,
-        before=before,
-        best_move=best_move,
-        player_style=player_style,
-    )
-
-
-
-def build_personalized_recommendation(
-    before,
-    best_move,
-    player_style,
-):
-    """
-    Generate a personalized recommendation using Stockfish's
-    best move and the player's Aggressive or Positional style.
-
-    Only called for inaccuracies, mistakes, and blunders.
-    """
-
-    # Validate required inputs.
-    if before is None or not best_move or not player_style:
-        return None
-
-    # Accept either a style dictionary or a style string.
-    if isinstance(player_style, dict):
-        try:
-            aggressive_score = float(
-                player_style.get("Aggressive", 50.0)
-            )
-            positional_score = float(
-                player_style.get("Positional", 50.0)
-            )
-        except (TypeError, ValueError):
-            return None
-
-        style = (
-            "aggressive"
-            if aggressive_score >= positional_score
-            else "positional"
-        )
-    else:
-        style = str(player_style).strip().lower()
-
-    if style not in ("aggressive", "positional"):
-        return None
-
-    try:
-        # Convert Stockfish's best move to a chess.Move.
-        if isinstance(best_move, chess.Move):
-            move = best_move
-        else:
-            move = chess.Move.from_uci(str(best_move))
-
-        # Ensure the recommended move is legal in this position.
-        if move not in before.legal_moves:
-            return None
-
-        best_move_san = before.san(move)
-
-        # Analyze the board AFTER Stockfish's recommended move.
-        best_after = before.copy()
-        best_after.push(move)
-
-        idea = describe_move_idea(
-            before,
-            best_after,
-            best_move_san,
-        )
-
-    except (ValueError, TypeError, chess.InvalidMoveError):
-        return None
-
-    if not idea:
-        idea = (
-            "improve the position with the engine's "
-            "recommended move"
-        )
-
-    # Build the recommendation for an Aggressive player.
-    if style == "aggressive":
-        return (
-            f"Since you're an Aggressive player, I recommend "
-            f"{best_move_san}. The idea is to {idea}. "
-            f"Look for forcing continuations and attacking "
-            f"opportunities when the position supports them, "
-            f"rather than attacking without sufficient support."
-        )
-
-    # Build the recommendation for a Positional player.
-    return (
-        f"Since you're a Positional player, I recommend "
-        f"{best_move_san}. The idea is to {idea}. "
-        f"Focus on piece coordination, control of important "
-        f"squares, and improving your position while avoiding "
-        f"unnecessary weaknesses."
-    )
 
 # ==========================================================
-# ADD QUALITY TO RESULT
+# COMPATIBILITY WRAPPERS
 # ==========================================================
-def add_quality_to_result(
-    result,
-    played_move,
-    quality,
-    before=None,
-    best_move=None,
-    player_style=None,
-):
-    verdict = quality_verdict(played_move, quality)
 
-    if verdict:
-        result["explanation"] = (
-            f"{verdict} {result['explanation']}"
-        )
-
-    if quality in ("inaccuracy", "mistake", "blunder"):
-        result["recommendation"] = (
-            build_personalized_recommendation(
-                before=before,
-                best_move=best_move,
-                player_style=player_style,
-            )
-        )
-    else:
-        result["recommendation"] = None
-
+def add_consequence_analysis(result, before, after, move, played_move, best_move=None,
+                             evaluation_before=None, evaluation_after=None, pv=None,
+                             quality=None):
+    """explain_move() already includes consequences; this only fills the list."""
+    if "consequences" not in result:
+        a = analyze_move(before, after, move)
+        result["consequences"] = _sorted_texts(a["negatives"])[:3]
     return result
+
+
+def add_quality_to_result(result, played_move, quality, before=None, best_move=None,
+                          player_style=None, after=None, move=None,
+                          evaluation_before=None, evaluation_after=None, pv=None):
+    """Prepend the verdict if missing and set a style-aware recommendation."""
+    verdict = quality_verdict(played_move, quality)
+    explanation = result.get("explanation", "")
+    if verdict and not explanation.startswith(verdict.split(":")[0].split(".")[0]):
+        result["explanation"] = f"{verdict} {explanation}".strip()
+    if quality in BAD_QUALITIES and not result.get("recommendation"):
+        result["recommendation"] = build_personalized_recommendation(
+            before=before, best_move=best_move, player_style=player_style)
+    elif quality not in BAD_QUALITIES and "recommendation" not in result:
+        result["recommendation"] = None
+    return add_consequence_analysis(result, before, after, move, played_move, best_move,
+                                    evaluation_before, evaluation_after, pv, quality) \
+        if before is not None and after is not None and move is not None else result
+
+
 # ==========================================================
 # UCI -> SAN
 # ==========================================================
 
-def convert_uci_to_san(
-    board,
-    uci_move
-):
-    """
-    Convert a Stockfish UCI move into SAN.
-
-    Examples:
-        g1f3 -> Nf3
-        e2e4 -> e4
-        e1g1 -> O-O
-        f7f8q -> f8=Q
-    """
-
+def convert_uci_to_san(board, uci_move):
     if not uci_move:
         return None
-
     try:
-
-        move = chess.Move.from_uci(
-            uci_move
-        )
-
+        move = chess.Move.from_uci(uci_move)
         if move not in board.legal_moves:
             return uci_move
-
         return board.san(move)
-
     except Exception:
         return uci_move
 
 
-# ==========================================================
-# PV UCI -> SAN
-# ==========================================================
-
-def convert_pv_to_san(
-    board,
-    pv
-):
-    """
-    Convert Stockfish principal variation from UCI to SAN.
-    """
-
+def convert_pv_to_san(board, pv):
     if not pv:
         return []
-
     result = []
-
-    temp_board = board.copy()
-
+    temp = board.copy()
     for uci_move in pv:
-
         try:
-
-            move = chess.Move.from_uci(
-                uci_move
-            )
-
-            if move not in temp_board.legal_moves:
-
-                result.append(
-                    uci_move
-                )
-
+            move = chess.Move.from_uci(uci_move)
+            if move not in temp.legal_moves:
+                result.append(uci_move)
                 break
-
-            san = temp_board.san(
-                move
-            )
-
-            result.append(
-                san
-            )
-
-            temp_board.push(
-                move
-            )
-
+            result.append(temp.san(move))
+            temp.push(move)
         except Exception:
-
-            result.append(
-                uci_move
-            )
-
+            result.append(uci_move)
             break
-
     return result
-
-
-# ==========================================================
-# CHECKMATE
-# ==========================================================
-
-def explain_checkmate(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san
-):
-
-    explanation = (
-        f"{played_move} delivers checkmate. "
-        "The opposing king has no legal way to escape the check."
-    )
-
-    if best_move_san == played_move:
-
-        recommendation = (
-            f"Stockfish recommends {best_move_san}. "
-            "The move immediately ends the game, so there is "
-            "no stronger continuation."
-        )
-
-    elif best_move_san:
-
-        recommendation = (
-            f"Stockfish also identified {best_move_san} as its "
-            "engine continuation, but the played move already "
-            "finishes the game with checkmate."
-        )
-
-    else:
-
-        recommendation = (
-            "The played move already ends the game with checkmate."
-        )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# CASTLING
-# ==========================================================
-
-def explain_castling(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san
-):
-
-    if chess.square_file(
-        move.to_square
-    ) > chess.square_file(
-        move.from_square
-    ):
-
-        side = "kingside"
-
-    else:
-
-        side = "queenside"
-
-    explanation = (
-        f"{played_move} castles {side}, moving the king toward "
-        "safety and bringing the rook into a more active position."
-    )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# PROMOTION
-# ==========================================================
-
-def explain_promotion(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san
-):
-
-    promoted_piece = PIECE_NAMES.get(
-        move.promotion,
-        "piece"
-    )
-
-    explanation = (
-        f"{played_move} promotes the pawn to a {promoted_piece}, "
-        "creating a new major piece and significantly changing "
-        "the material balance."
-    )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# CAPTURE
-# ==========================================================
-
-def explain_capture(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san
-):
-
-    captured_piece = get_captured_piece(
-        before,
-        move
-    )
-
-    moving_piece = before.piece_at(
-        move.from_square
-    )
-
-    if captured_piece:
-
-        captured_name = PIECE_NAMES[
-            captured_piece.piece_type
-        ]
-
-        captured_value = PIECE_VALUES[
-            captured_piece.piece_type
-        ]
-
-    else:
-
-        captured_name = "piece"
-        captured_value = 0
-
-    moving_name = (
-        PIECE_NAMES[moving_piece.piece_type]
-        if moving_piece
-        else "piece"
-    )
-
-    if captured_piece:
-
-        if captured_value == 1:
-            material_text = "1 point of material"
-        else:
-            material_text = (
-                f"{captured_value} points of material"
-            )
-
-        explanation = (
-            f"{played_move} uses the {moving_name} to capture "
-            f"the opponent's {captured_name}, gaining "
-            f"{material_text}."
-        )
-
-    else:
-
-        explanation = (
-            f"{played_move} captures an opposing piece and "
-            "changes the material balance."
-        )
-
-    # ------------------------------------------------------
-    # Is the capturing piece attacked?
-    # ------------------------------------------------------
-
-    destination = move.to_square
-
-    if moving_piece:
-
-        attackers = after.attackers(
-            not moving_piece.color,
-            destination
-        )
-
-        if attackers:
-
-            attacker_names = []
-
-            for square in attackers:
-
-                attacker = after.piece_at(
-                    square
-                )
-
-                if attacker:
-
-                    attacker_names.append(
-                        PIECE_NAMES[
-                            attacker.piece_type
-                        ]
-                    )
-
-            if attacker_names:
-
-                names = ", ".join(
-                    sorted(
-                        set(attacker_names)
-                    )
-                )
-
-                explanation += (
-                    f" However, the {moving_name} on "
-                    f"{chess.square_name(destination)} "
-                    f"is attacked by the opponent's {names}, "
-                    "so the resulting position should be checked carefully."
-                )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# CHECK
-# ==========================================================
-
-def explain_check(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san,
-    pv_san
-):
-
-    moving_piece = before.piece_at(
-        move.from_square
-    )
-
-    if moving_piece:
-
-        piece_name = PIECE_NAMES[
-            moving_piece.piece_type
-        ]
-
-    else:
-
-        piece_name = "piece"
-
-    explanation = (
-        f"{played_move} gives check, forcing the opponent "
-        f"to respond to the {piece_name}'s attack on the king."
-    )
-
-    if pv_san and len(pv_san) >= 2:
-
-        continuation = " ".join(
-            pv_san[:4]
-        )
-
-        explanation += (
-            f" The engine continuation begins with "
-            f"{continuation}."
-        )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# PAWN MOVE
-# ==========================================================
-
-def explain_pawn_move(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san,
-    quality
-):
-    """
-    Explain pawn moves using concrete board characteristics.
-
-    The function distinguishes:
-        - central expansion
-        - space gain
-        - pawn support
-        - opening/closing lines
-        - attacks on pieces
-        - weaknesses created by the pawn move
-        - opponent counterplay
-    """
-
-    from_square = move.from_square
-    to_square = move.to_square
-
-    from_file = chess.square_file(
-        from_square
-    )
-
-    to_file = chess.square_file(
-        to_square
-    )
-
-    from_rank = chess.square_rank(
-        from_square
-    )
-
-    to_rank = chess.square_rank(
-        to_square
-    )
-
-    destination = chess.square_name(
-        to_square
-    )
-
-    pawn = before.piece_at(
-        from_square
-    )
-
-    explanation_parts = []
-
-    # ------------------------------------------------------
-    # Determine whether this is a central pawn
-    # ------------------------------------------------------
-
-    is_central = to_file in (2, 3, 4, 5)
-
-    is_d_or_e_pawn = to_file in (3, 4)
-
-    reaches_center = to_square in (
-        chess.C4,
-        chess.D4,
-        chess.E4,
-        chess.F4,
-        chess.C5,
-        chess.D5,
-        chess.E5,
-        chess.F5,
-    )
-
-    # ------------------------------------------------------
-    # Central pawn explanation
-    # ------------------------------------------------------
-
-    if is_d_or_e_pawn or reaches_center:
-
-        controlled = pawn_controlled_squares(
-            after,
-            to_square
-        )
-
-        if quality in ("best", "good"):
-
-            explanation_parts.append(
-                f"{played_move} is useful because the pawn "
-                "claims space in the center and helps control "
-                "important central squares."
-            )
-
-        elif quality == "inaccuracy":
-
-            explanation_parts.append(
-                f"{played_move} gains central space, but in this "
-                "position the pawn advance gives up some flexibility "
-                "or allows a stronger opposing plan."
-            )
-
-        elif quality in ("mistake", "blunder"):
-
-            explanation_parts.append(
-                f"{played_move} changes the center, but here the "
-                "pawn advance creates a concrete problem and gives "
-                "the opponent a useful way to challenge the position."
-            )
-
-        else:
-
-            explanation_parts.append(
-                f"{played_move} advances a central pawn and changes "
-                "the structure of the position."
-            )
-
-        if controlled:
-
-            explanation_parts.append(
-                f"The pawn now controls "
-                f"{format_square_list(controlled)}."
-            )
-
-    # ------------------------------------------------------
-    # Flank pawn
-    # ------------------------------------------------------
-
-    else:
-
-        if quality in ("best", "good"):
-
-            explanation_parts.append(
-                f"{played_move} advances the pawn on the "
-                f"{destination[0]}-file, gaining space and "
-                "changing the structure on that side of the board."
-            )
-
-        elif quality == "inaccuracy":
-
-            explanation_parts.append(
-                f"{played_move} is playable, but the pawn advance "
-                "commits the structure before the position requires it."
-            )
-
-        elif quality in ("mistake", "blunder"):
-
-            explanation_parts.append(
-                f"{played_move} creates a pawn commitment that is "
-                "unfavorable in this position and gives the opponent "
-                "useful targets or counterplay."
-            )
-
-        else:
-
-            explanation_parts.append(
-                f"{played_move} advances the pawn and changes the "
-                "pawn structure."
-            )
-
-    # ------------------------------------------------------
-    # Pawn support
-    # ------------------------------------------------------
-
-    supporters = []
-
-    for square in after.attackers(
-        pawn.color if pawn else before.turn,
-        to_square
-    ):
-
-        piece = after.piece_at(
-            square
-        )
-
-        if piece and piece.piece_type != chess.PAWN:
-
-            supporters.append(
-                PIECE_NAMES[
-                    piece.piece_type
-                ]
-            )
-
-    if supporters:
-
-        unique_supporters = sorted(
-            set(supporters)
-        )
-
-        explanation_parts.append(
-            f"The pawn is supported by the "
-            f"{format_piece_list(unique_supporters)}, "
-            "which makes the advance easier to maintain."
-        )
-
-    # ------------------------------------------------------
-    # Detect lines opened by the pawn move
-    # ------------------------------------------------------
-
-    opened_files = detect_opened_files(
-        before,
-        after
-    )
-
-    if opened_files:
-
-        explanation_parts.append(
-            f"The advance also opens the "
-            f"{format_file_list(opened_files)}, "
-            "which can give rooks or queens new lines."
-        )
-
-    # ------------------------------------------------------
-    # Detect attacks created by the pawn
-    # ------------------------------------------------------
-
-    attacks = pawn_controlled_squares(
-        after,
-        to_square
-    )
-
-    attacked_enemy_pieces = []
-
-    for square_name in attacks:
-
-        square = chess.parse_square(
-            square_name
-        )
-
-        piece = after.piece_at(
-            square
-        )
-
-        if piece and piece.color != pawn.color:
-
-            attacked_enemy_pieces.append(
-                PIECE_NAMES[
-                    piece.piece_type
-                ]
-            )
-
-    if attacked_enemy_pieces:
-
-        names = sorted(
-            set(attacked_enemy_pieces)
-        )
-
-        explanation_parts.append(
-            f"The pawn also puts pressure on the "
-            f"{format_piece_list(names)}."
-        )
-
-    # ------------------------------------------------------
-    # Detect pawn weaknesses
-    # ------------------------------------------------------
-
-    weaknesses = detect_pawn_weaknesses(
-        after,
-        pawn.color if pawn else before.turn,
-        to_square
-    )
-
-    if weaknesses:
-
-        explanation_parts.append(
-            f"The move also leaves "
-            f"{format_square_list(weaknesses)} "
-            "as potential targets."
-        )
-
-    explanation = " ".join(
-        explanation_parts
-    )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# PIECE MOVE
-# ==========================================================
-
-def explain_piece_move(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san,
-    quality
-):
-
-    piece = before.piece_at(
-        move.from_square
-    )
-
-    if piece is None:
-
-        return explain_general_move(
-            before,
-            after,
-            move,
-            played_move,
-            best_move_san,
-            []
-        )
-
-    piece_name = PIECE_NAMES[
-        piece.piece_type
-    ]
-
-    destination = chess.square_name(
-        move.to_square
-    )
-
-    explanation_parts = []
-
-    # ======================================================
-    # KNIGHT
-    # ======================================================
-
-    if piece.piece_type == chess.KNIGHT:
-
-        attacks = attacked_square_names(
-            after,
-            move.to_square
-        )
-
-        if move.from_square in (
-            chess.B1,
-            chess.G1,
-            chess.B8,
-            chess.G8,
-        ):
-
-            explanation_parts.append(
-                f"{played_move} develops the knight from "
-                "its starting square, bringing a new piece "
-                "into the game and increasing control of "
-                "important central squares."
-            )
-
-        else:
-
-            explanation_parts.append(
-                f"{played_move} moves the knight to "
-                f"{destination}, improving or changing its activity."
-            )
-
-        if attacks:
-
-            explanation_parts.append(
-                f"The knight now attacks "
-                f"{format_square_list(attacks)}."
-            )
-
-    # ======================================================
-    # BISHOP
-    # ======================================================
-
-    elif piece.piece_type == chess.BISHOP:
-
-        explanation_parts.append(
-            f"{played_move} develops the bishop to "
-            f"{destination}, activating its diagonal."
-        )
-
-        attacks = attacked_square_names(
-            after,
-            move.to_square
-        )
-
-        if attacks:
-
-            explanation_parts.append(
-                f"From there, the bishop influences "
-                f"{format_square_list(attacks)}."
-            )
-
-        target = get_bishop_target(
-            after,
-            move.to_square
-        )
-
-        if target:
-
-            explanation_parts.append(
-                f"It also puts pressure on {target}."
-            )
-
-        if destination in ("g7", "b7", "g2", "b2"):
-
-            explanation_parts.append(
-                "The bishop can become especially active along "
-                "the long diagonal, increasing pressure toward "
-                "the center and the opponent's king side."
-            )
-
-    # ======================================================
-    # ROOK
-    # ======================================================
-
-    elif piece.piece_type == chess.ROOK:
-
-        file_index = chess.square_file(
-            move.to_square
-        )
-
-        file_name = chess.square_name(
-            move.to_square
-        )[0]
-
-        if is_open_file(
-            after,
-            file_index
-        ):
-
-            explanation_parts.append(
-                f"{played_move} activates the rook on the "
-                f"open {file_name}-file, giving it a clear "
-                "line for pressure and penetration."
-            )
-
-        elif is_semi_open_file(
-            after,
-            file_index,
-            piece.color
-        ):
-
-            explanation_parts.append(
-                f"{played_move} places the rook on the "
-                f"semi-open {file_name}-file, allowing it "
-                "to pressure the opposing pawn structure."
-            )
-
-        else:
-
-            explanation_parts.append(
-                f"{played_move} improves the rook's activity "
-                f"by moving it to {destination}."
-            )
-
-    # ======================================================
-    # QUEEN
-    # ======================================================
-
-    elif piece.piece_type == chess.QUEEN:
-
-        explanation_parts.append(
-            f"{played_move} moves the queen to "
-            f"{destination}, changing the lines and targets "
-            "the queen can influence."
-        )
-
-        if move.from_square in (
-            chess.D1,
-            chess.D8
-        ):
-
-            explanation_parts.append(
-                "Moving the queen also frees the starting square "
-                "and can help coordinate the remaining pieces."
-            )
-
-    # ======================================================
-    # KING
-    # ======================================================
-
-    elif piece.piece_type == chess.KING:
-
-        explanation_parts.append(
-            f"{played_move} moves the king to "
-            f"{destination}, changing its safety and "
-            "control of nearby squares."
-        )
-
-    # ======================================================
-    # GENERAL PIECE
-    # ======================================================
-
-    else:
-
-        explanation_parts.append(
-            f"{played_move} moves the {piece_name} to "
-            f"{destination}, changing its activity and "
-            "coordination."
-        )
-
-    # ------------------------------------------------------
-    # Detect whether destination is attacked
-    # ------------------------------------------------------
-
-    opponent_attackers = after.attackers(
-        not piece.color,
-        move.to_square
-    )
-
-    if opponent_attackers:
-
-        attacker_names = []
-
-        for square in opponent_attackers:
-
-            attacker = after.piece_at(
-                square
-            )
-
-            if attacker:
-
-                attacker_names.append(
-                    PIECE_NAMES[
-                        attacker.piece_type
-                    ]
-                )
-
-        if attacker_names:
-
-            names = sorted(
-                set(attacker_names)
-            )
-
-            explanation_parts.append(
-                f"The {piece_name} on {destination} is "
-                f"also attacked by the opponent's "
-                f"{format_piece_list(names)}, so its safety "
-                "should be considered."
-            )
-
-    explanation = " ".join(
-        explanation_parts
-    )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# GENERAL MOVE
-# ==========================================================
-
-def explain_general_move(
-    before,
-    after,
-    move,
-    played_move,
-    best_move_san,
-    pv_san
-):
-
-    explanation = (
-        f"{played_move} changes the position by "
-        "improving the placement or coordination of the "
-        "moving piece."
-    )
-
-    if pv_san:
-
-        continuation = " ".join(
-            pv_san[:4]
-        )
-
-        explanation += (
-            f" The engine continuation begins with "
-            f"{continuation}."
-        )
-
-    recommendation = recommendation_text(
-        before,
-        after,
-        played_move,
-        best_move_san
-    )
-
-    return {
-        "explanation": explanation,
-        "recommendation": recommendation
-    }
-
-
-# ==========================================================
-# RECOMMENDATION
-# ==========================================================
-
-def recommendation_text(
-    before,
-    after,
-    played_move,
-    best_move_san
-):
-    """
-    Explain the purpose of the engine's recommended move.
-
-    This is intentionally separate from the explanation of
-    the move that the user actually played.
-    """
-
-    if not best_move_san:
-
-        return (
-            "Stockfish did not provide a replacement move."
-        )
-
-    # ------------------------------------------------------
-    # Played move is already best
-    # ------------------------------------------------------
-
-    if played_move == best_move_san:
-
-        idea = describe_move_idea(
-            before,
-            after,
-            best_move_san
-        )
-
-        if idea:
-
-            return (
-                f"Stockfish recommends {best_move_san}. "
-                f"The idea is to {idea}."
-            )
-
-        return (
-            f"Stockfish recommends {best_move_san}, "
-            "so the move played matches the engine's "
-            "strongest continuation."
-        )
-
-    # ------------------------------------------------------
-    # Different engine recommendation
-    # ------------------------------------------------------
-
-    idea = describe_move_idea(
-        before,
-        after,
-        best_move_san
-    )
-
-    if idea:
-
-        return (
-            f"Stockfish recommends {best_move_san}. "
-            f"The idea is to {idea}. "
-            f"This gives the position a clearer continuation "
-            f"than {played_move}."
-        )
-
-    return (
-        f"Stockfish recommends {best_move_san} instead of "
-        f"{played_move}. The recommended move provides the "
-        "engine's stronger continuation in this position."
-    )
-
-
-# ==========================================================
-# DESCRIBE ENGINE MOVE IDEA
-# ==========================================================
-
-def describe_move_idea(
-    before,
-    after,
-    best_move_san
-):
-    """
-    Explain the chess idea behind the engine's recommended move.
-    """
-
-    if not best_move_san:
-        return ""
-
-    try:
-
-        best_move = before.parse_san(
-            best_move_san
-        )
-
-    except Exception:
-
-        return ""
-
-    piece = before.piece_at(
-        best_move.from_square
-    )
-
-    if piece is None:
-        return ""
-
-    destination = chess.square_name(
-        best_move.to_square
-    )
-
-    piece_name = PIECE_NAMES[
-        piece.piece_type
-    ]
-
-    # ======================================================
-    # CASTLING
-    # ======================================================
-
-    if before.is_castling(best_move):
-
-        return (
-            "improve king safety and connect the rook to the game"
-        )
-
-    # ======================================================
-    # PAWN
-    # ======================================================
-
-    if piece.piece_type == chess.PAWN:
-
-        ideas = []
-
-        to_file = chess.square_file(
-            best_move.to_square
-        )
-
-        if to_file in (3, 4):
-
-            ideas.append(
-                "strengthen control of the center"
-            )
-
-        elif to_file in (2, 5):
-
-            ideas.append(
-                "gain useful space and influence the position on that side"
-            )
-
-        else:
-
-            ideas.append(
-                "improve the pawn structure or gain useful space"
-            )
-
-        controlled = pawn_controlled_squares(
-            after,
-            best_move.to_square
-        )
-
-        if controlled:
-
-            ideas.append(
-                f"control {format_square_list(controlled)}"
-            )
-
-        opened_files = detect_opened_files(
-            before,
-            after
-        )
-
-        if opened_files:
-
-            ideas.append(
-                f"open the {format_file_list(opened_files)} for the pieces"
-            )
-
-        return combine_ideas(
-            ideas
-        )
-
-    # ======================================================
-    # KNIGHT
-    # ======================================================
-
-    if piece.piece_type == chess.KNIGHT:
-
-        ideas = [
-            "develop the knight",
-            "improve piece activity",
-        ]
-
-        if best_move.from_square in (
-            chess.B1,
-            chess.G1,
-            chess.B8,
-            chess.G8,
-        ):
-
-            ideas.append(
-                "increase control of important central squares"
-            )
-
-        attacks = attacked_square_names(
-            after,
-            best_move.to_square
-        )
-
-        if attacks:
-
-            ideas.append(
-                f"control {format_square_list(attacks)}"
-            )
-
-        return combine_ideas(
-            ideas
-        )
-
-    # ======================================================
-    # BISHOP
-    # ======================================================
-
-    if piece.piece_type == chess.BISHOP:
-
-        ideas = [
-            "develop the bishop",
-            "activate its diagonal",
-        ]
-
-        if destination in (
-            "g7",
-            "b7",
-            "g2",
-            "b2"
-        ):
-
-            ideas.append(
-                "increase pressure along the long diagonal"
-            )
-
-        target = get_bishop_target(
-            after,
-            best_move.to_square
-        )
-
-        if target:
-
-            ideas.append(
-                f"put pressure on {target}"
-            )
-
-        if (
-            destination in ("g7", "b7")
-            and not before.has_castling_rights(
-                piece.color
-            ) is False
-        ):
-
-            ideas.append(
-                "prepare or support king safety"
-            )
-
-        return combine_ideas(
-            ideas
-        )
-
-    # ======================================================
-    # ROOK
-    # ======================================================
-
-    if piece.piece_type == chess.ROOK:
-
-        file_index = chess.square_file(
-            best_move.to_square
-        )
-
-        file_name = chess.square_name(
-            best_move.to_square
-        )[0]
-
-        if is_open_file(
-            after,
-            file_index
-        ):
-
-            return (
-                f"activate the rook on the open {file_name}-file "
-                "and increase pressure along it"
-            )
-
-        if is_semi_open_file(
-            after,
-            file_index,
-            piece.color
-        ):
-
-            return (
-                f"place the rook on the semi-open {file_name}-file "
-                "to pressure the opposing pawn structure"
-            )
-
-        return (
-            f"improve the rook's activity on {destination} "
-            "and improve coordination"
-        )
-
-    # ======================================================
-    # QUEEN
-    # ======================================================
-
-    if piece.piece_type == chess.QUEEN:
-
-        attacks = attacked_square_names(
-            after,
-            best_move.to_square
-        )
-
-        if attacks:
-
-            return (
-                f"improve the queen's activity and increase "
-                f"pressure on {format_square_list(attacks)}"
-            )
-
-        return (
-            f"improve the queen's activity and coordination "
-            f"from {destination}"
-        )
-
-    # ======================================================
-    # KING
-    # ======================================================
-
-    if piece.piece_type == chess.KING:
-
-        return (
-            "improve the king's safety or centralize the king "
-            "for the next phase of the game"
-        )
-
-    # ======================================================
-    # FALLBACK
-    # ======================================================
-
-    return (
-        f"improve the {piece_name}'s activity and coordination "
-        f"from {destination}"
-    )
-
-
-# ==========================================================
-# COMBINE IDEAS
-# ==========================================================
-
-def combine_ideas(
-    ideas
-):
-
-    cleaned = []
-
-    for idea in ideas:
-
-        if idea and idea not in cleaned:
-
-            cleaned.append(
-                idea
-            )
-
-    if not cleaned:
-        return ""
-
-    if len(cleaned) == 1:
-
-        return cleaned[0]
-
-    if len(cleaned) == 2:
-
-        return (
-            f"{cleaned[0]} and {cleaned[1]}"
-        )
-
-    return (
-        ", ".join(cleaned[:-1])
-        + ", and "
-        + cleaned[-1]
-    )
-
-
-# ==========================================================
-# CAPTURED PIECE
-# ==========================================================
-
-def get_captured_piece(
-    board,
-    move
-):
-
-    # ------------------------------------------------------
-    # Normal capture
-    # ------------------------------------------------------
-
-    captured_piece = board.piece_at(
-        move.to_square
-    )
-
-    if captured_piece:
-
-        return captured_piece
-
-    # ------------------------------------------------------
-    # En passant
-    # ------------------------------------------------------
-
-    if board.is_en_passant(
-        move
-    ):
-
-        captured_square = chess.square(
-            chess.square_file(
-                move.to_square
-            ),
-            chess.square_rank(
-                move.from_square
-            )
-        )
-
-        return board.piece_at(
-            captured_square
-        )
-
-    return None
-
-
-# ==========================================================
-# PAWN CONTROLLED SQUARES
-# ==========================================================
-
-def pawn_controlled_squares(
-    board,
-    pawn_square
-):
-    """
-    Return squares controlled by the pawn on pawn_square.
-    """
-
-    pawn = board.piece_at(
-        pawn_square
-    )
-
-    if pawn is None:
-        return []
-
-    if pawn.piece_type != chess.PAWN:
-        return []
-
-    result = []
-
-    attacks = board.attacks(
-        pawn_square
-    )
-
-    for square in attacks:
-
-        result.append(
-            chess.square_name(square)
-        )
-
-    return result
-
-
-# ==========================================================
-# ATTACKED SQUARE NAMES
-# ==========================================================
-
-def attacked_square_names(
-    board,
-    square
-):
-
-    attacks = board.attacks(
-        square
-    )
-
-    result = []
-
-    for target in attacks:
-
-        result.append(
-            chess.square_name(target)
-        )
-
-    return result
-
-
-# ==========================================================
-# BISHOP TARGET
-# ==========================================================
-
-def get_bishop_target(
-    board,
-    bishop_square
-):
-
-    bishop = board.piece_at(
-        bishop_square
-    )
-
-    if bishop is None:
-        return None
-
-    if bishop.piece_type != chess.BISHOP:
-        return None
-
-    color = bishop.color
-
-    targets = [
-        chess.F7,
-        chess.F2,
-        chess.H7,
-        chess.H2,
-        chess.B7,
-        chess.B2,
-    ]
-
-    for target in targets:
-
-        if board.is_attacked_by(
-            color,
-            target
-        ):
-
-            return chess.square_name(
-                target
-            )
-
-    return None
-
-
-# ==========================================================
-# OPEN FILE
-# ==========================================================
-
-def is_open_file(
-    board,
-    file_index
-):
-
-    for rank in range(8):
-
-        square = chess.square(
-            file_index,
-            rank
-        )
-
-        piece = board.piece_at(
-            square
-        )
-
-        if (
-            piece
-            and piece.piece_type == chess.PAWN
-        ):
-
-            return False
-
-    return True
-
-
-# ==========================================================
-# SEMI-OPEN FILE
-# ==========================================================
-
-def is_semi_open_file(
-    board,
-    file_index,
-    rook_color
-):
-
-    own_pawn = False
-    enemy_pawn = False
-
-    for rank in range(8):
-
-        square = chess.square(
-            file_index,
-            rank
-        )
-
-        piece = board.piece_at(
-            square
-        )
-
-        if (
-            piece
-            and piece.piece_type == chess.PAWN
-        ):
-
-            if piece.color == rook_color:
-
-                own_pawn = True
-
-            else:
-
-                enemy_pawn = True
-
-    return (
-        not own_pawn
-        and enemy_pawn
-    )
-
-
-# ==========================================================
-# DETECT OPENED FILES
-# ==========================================================
-
-def detect_opened_files(
-    before,
-    after
-):
-
-    opened = []
-
-    for file_index in range(8):
-
-        was_open = is_open_file(
-            before,
-            file_index
-        )
-
-        is_open = is_open_file(
-            after,
-            file_index
-        )
-
-        if not was_open and is_open:
-
-            opened.append(
-                chr(
-                    ord("a")
-                    + file_index
-                )
-                + "-file"
-            )
-
-    return opened
-
-
-# ==========================================================
-# DETECT PAWN WEAKNESSES
-# ==========================================================
-
-def detect_pawn_weaknesses(
-    board,
-    color,
-    moved_square
-):
-    """
-    Detect simple pawn weaknesses created or exposed by
-    the pawn structure.
-
-    This is deliberately conservative. It does not claim
-    that every isolated or backward pawn is automatically bad.
-    """
-
-    weaknesses = []
-
-    moved_file = chess.square_file(
-        moved_square
-    )
-
-    # ------------------------------------------------------
-    # Check adjacent files
-    # ------------------------------------------------------
-
-    for file_index in (
-        moved_file - 1,
-        moved_file + 1
-    ):
-
-        if file_index < 0 or file_index > 7:
-            continue
-
-        has_supporting_pawn = False
-
-        for rank in range(8):
-
-            square = chess.square(
-                file_index,
-                rank
-            )
-
-            piece = board.piece_at(
-                square
-            )
-
-            if (
-                piece
-                and piece.color == color
-                and piece.piece_type == chess.PAWN
-            ):
-
-                has_supporting_pawn = True
-                break
-
-        if not has_supporting_pawn:
-
-            square = chess.square(
-                moved_file,
-                chess.square_rank(
-                    moved_square
-                )
-            )
-
-            weaknesses.append(
-                chess.square_name(square)
-            )
-
-    return sorted(
-        set(weaknesses)
-    )
-
-
-# ==========================================================
-# FORMAT SQUARE LIST
-# ==========================================================
-
-def format_square_list(
-    squares
-):
-
-    if not squares:
-        return ""
-
-    if len(squares) == 1:
-
-        return squares[0]
-
-    if len(squares) == 2:
-
-        return (
-            f"{squares[0]} and {squares[1]}"
-        )
-
-    return (
-        ", ".join(
-            squares[:-1]
-        )
-        + ", and "
-        + squares[-1]
-    )
-
-
-# ==========================================================
-# FORMAT PIECE LIST
-# ==========================================================
-
-def format_piece_list(
-    pieces
-):
-
-    if not pieces:
-        return ""
-
-    if len(pieces) == 1:
-
-        return pieces[0]
-
-    if len(pieces) == 2:
-
-        return (
-            f"{pieces[0]} and {pieces[1]}"
-        )
-
-    return (
-        ", ".join(
-            pieces[:-1]
-        )
-        + ", and "
-        + pieces[-1]
-    )
-
-
-# ==========================================================
-# FORMAT FILE LIST
-# ==========================================================
-
-def format_file_list(
-    files
-):
-
-    if not files:
-        return ""
-
-    if len(files) == 1:
-
-        return files[0]
-
-    if len(files) == 2:
-
-        return (
-            f"{files[0]} and {files[1]}"
-        )
-
-    return (
-        ", ".join(
-            files[:-1]
-        )
-        + ", and "
-        + files[-1]
-    )

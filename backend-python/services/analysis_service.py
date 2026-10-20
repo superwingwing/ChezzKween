@@ -10,7 +10,7 @@ from supabase import create_client
 
 from engine.stockfish_engine import (
     evaluate_fast,
-    evaluate_critical
+    evaluate_critical,
 )
 
 from ml.coach.move_explanation import explain_move
@@ -23,6 +23,10 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+
+# ==========================================================
+# PLAYER STYLE
+# ==========================================================
 
 def get_player_style(user_supabase):
     try:
@@ -50,12 +54,12 @@ def get_player_style(user_supabase):
         if total == 0:
             return {
                 "Aggressive": 50.0,
-                "Positional": 50.0
+                "Positional": 50.0,
             }
 
         return {
             "Aggressive": round(aggressive / total * 100, 2),
-            "Positional": round(positional / total * 100, 2)
+            "Positional": round(positional / total * 100, 2),
         }
 
     except Exception as error:
@@ -63,15 +67,19 @@ def get_player_style(user_supabase):
 
         return {
             "Aggressive": 50.0,
-            "Positional": 50.0
+            "Positional": 50.0,
         }
 
+
+# ==========================================================
+# MOVE QUALITY
+# ==========================================================
 
 def determine_quality(
     before,
     after,
     prev_eval,
-    current_eval
+    current_eval,
 ):
     if after.is_checkmate():
         return "best"
@@ -101,13 +109,16 @@ def determine_quality(
     return "blunder"
 
 
+# ==========================================================
+# PLAYER IDENTIFICATION
+# ==========================================================
+
 def is_logged_in_player(username, move_player):
     """
-    Match the logged-in ChessKween username to the PGN player name.
+    Match the logged-in ChessKween username to the PGN player.
 
     Special case:
-    ChessKween username 'superwingwing' also matches
-    PGN player name 'super-wingwing'.
+    'superwingwing' also matches 'super-wingwing'.
     """
     if not isinstance(username, str):
         return False
@@ -121,19 +132,18 @@ def is_logged_in_player(username, move_player):
     if not system_username or not pgn_player:
         return False
 
-    # Normal username match.
     if system_username == pgn_player:
         return True
 
-    # Explicit exception for this account.
-    if (
+    return (
         system_username == "superwingwing"
         and pgn_player == "super-wingwing"
-    ):
-        return True
+    )
 
-    return False
 
+# ==========================================================
+# SINGLE-MOVE ANALYSIS
+# ==========================================================
 
 def analyze_single_move(
     before,
@@ -144,20 +154,20 @@ def analyze_single_move(
     after_analysis=None,
     username=None,
     white_name=None,
-    black_name=None
+    black_name=None,
 ):
     if move not in before.legal_moves:
         return {
-            "error": "Illegal move"
+            "error": "Illegal move",
         }
 
     if player_style is None:
         player_style = {
             "Aggressive": 50.0,
-            "Positional": 50.0
+            "Positional": 50.0,
         }
 
-    # Identify who made this move before playing it.
+    # Identify the player before making the move.
     move_player = (
         white_name
         if before.turn == chess.WHITE
@@ -166,88 +176,141 @@ def analyze_single_move(
 
     is_user_move = is_logged_in_player(
         username,
-        move_player
+        move_player,
     )
 
     san_move = before.san(move)
 
+    # Ensure the pre-move analysis exists before accessing it.
     if position_analysis is None:
         position_analysis = evaluate_fast(before)
 
     if prev_eval is None:
-        prev_eval = position_analysis["evaluation"]
+        prev_eval = position_analysis.get("evaluation")
 
-    stockfish_best = position_analysis["best_move"]
-
+    # Play the move on a separate board.
     after = before.copy()
     after.push(move)
 
+    # Ensure the post-move analysis exists.
     if after_analysis is None:
         after_analysis = evaluate_fast(after)
 
-    current_eval = after_analysis["evaluation"]
+    current_eval = after_analysis.get("evaluation")
 
     quality = determine_quality(
         before,
         after,
         prev_eval,
-        current_eval
+        current_eval,
     )
 
-    if quality in ["inaccuracy", "mistake", "blunder"]:
+    # ------------------------------------------------------
+    # CRITICAL ANALYSIS FOR SERIOUS ERRORS
+    # ------------------------------------------------------
+
+    if quality in ("inaccuracy", "mistake", "blunder"):
         position_analysis = evaluate_critical(before)
         after_analysis = evaluate_critical(after)
 
-        current_eval = after_analysis["evaluation"]
-        stockfish_best = position_analysis["best_move"]
+        current_eval = after_analysis.get("evaluation")
 
         quality = determine_quality(
             before,
             after,
             prev_eval,
-            current_eval
+            current_eval,
         )
 
-    candidates = position_analysis["candidates"]
+        # Temporary diagnostics for investigating explanations.
+        print("\n========== CRITICAL MOVE ANALYSIS ==========")
+        print("FEN BEFORE MOVE:", before.fen())
+        print("PLAYED MOVE:", san_move)
+        print("PLAYED MOVE UCI:", move.uci())
+        print(
+            "STOCKFISH BEST MOVE:",
+            position_analysis.get("best_move"),
+        )
+        print(
+            "STOCKFISH BEST PV:",
+            position_analysis.get("pv"),
+        )
+        print(
+            "STOCKFISH PV AFTER PLAYED MOVE:",
+            after_analysis.get("pv"),
+        )
+        print("EVALUATION BEFORE:", prev_eval)
+        print("EVALUATION AFTER:", current_eval)
+        print("FINAL QUALITY:", quality)
+        print("============================================\n")
+
+    # Safely obtain candidate moves.
+    candidates = position_analysis.get("candidates", [])
+    stockfish_best = position_analysis.get("best_move")
+
+    # ------------------------------------------------------
+    # STYLE-BASED CANDIDATES
+    # ------------------------------------------------------
 
     style_result = {
         "style_recommended": None,
-        "playable_alternatives": []
+        "playable_alternatives": [],
     }
 
     style_recommended = None
 
-    if quality in ["inaccuracy", "mistake", "blunder"]:
+    if quality in ("inaccuracy", "mistake", "blunder"):
         style_result = filter_candidates_by_style(
             board=before,
             candidates=candidates,
             player_aggressive=player_style["Aggressive"],
-            player_positional=player_style["Positional"]
+            player_positional=player_style["Positional"],
         )
 
         style_recommended = style_result.get(
             "style_recommended"
         )
 
-    # Only pass the player's style to the coach for the user's moves.
+    # ------------------------------------------------------
+    # MOVE EXPLANATION
+    # ------------------------------------------------------
+
     coach = explain_move(
         before=before,
         after=after,
         move=move,
         played_move=san_move,
         best_move=stockfish_best,
-        pv=position_analysis["pv"],
+
+        # Principal variation from the position before the move.
+        pv=position_analysis.get("pv"),
+
         evaluation_before=prev_eval,
         evaluation_after=current_eval,
         quality=quality,
-        player_style=player_style if is_user_move else None
+
+        # Only personalize the explanation for the logged-in player.
+        player_style=player_style if is_user_move else None,
+
+        # Principal variation from the position after the move.
+        opponent_pv=after_analysis.get("pv"),
+
+        # Full post-move engine analysis.
+        played_analysis=after_analysis,
+
+        # Full pre-move engine analysis.
+        best_move_analysis=position_analysis,
+
+        candidates=candidates,
     )
 
+    # Only return a recommendation for the logged-in player's
+    # inaccuracies, mistakes, and blunders.
     recommendation = None
 
     if (
         is_user_move
-        and quality in ["inaccuracy", "mistake", "blunder"]
+        and quality in ("inaccuracy", "mistake", "blunder")
     ):
         recommendation = coach.get("recommendation")
 
@@ -255,7 +318,7 @@ def analyze_single_move(
         "fen": after.fen(),
         "evaluation": current_eval,
         "best_move": stockfish_best,
-        "pv": position_analysis["pv"],
+        "pv": position_analysis.get("pv", []),
         "candidates": candidates,
         "player_style": player_style,
         "quality": quality,
@@ -269,30 +332,42 @@ def analyze_single_move(
         ),
         "style_alternatives": (
             style_result.get("playable_alternatives", [])
-            if quality in ["inaccuracy", "mistake", "blunder"]
+            if quality in ("inaccuracy", "mistake", "blunder")
             else []
-        )
+        ),
     }
 
+
+# ==========================================================
+# PGN ANALYSIS
+# ==========================================================
 
 def analyze_pgn(
     pgn_text: str,
     access_token: str,
-    progress_callback=None
+    progress_callback=None,
 ):
     if not access_token:
         return {
-            "error": "Missing authentication token"
+            "error": "Missing authentication token",
+        }
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return {
+            "error": "Supabase configuration is missing",
         }
 
     user_supabase = create_client(
         SUPABASE_URL,
-        SUPABASE_KEY
+        SUPABASE_KEY,
     )
 
     user_supabase.postgrest.auth(access_token)
 
-    # Retrieve the authenticated ChessKween account.
+    # ------------------------------------------------------
+    # AUTHENTICATED USER
+    # ------------------------------------------------------
+
     try:
         auth_response = user_supabase.auth.get_user(access_token)
         auth_user = auth_response.user
@@ -307,24 +382,31 @@ def analyze_pgn(
 
         if not isinstance(username, str) or not username.strip():
             return {
-                "error": "Could not find the username in your account metadata"
+                "error": (
+                    "Could not find the username in your "
+                    "account metadata"
+                ),
             }
 
     except Exception as error:
         print("FAILED TO GET AUTHENTICATED USER:", error)
+
         return {
-            "error": "Could not identify the logged-in user"
+            "error": "Could not identify the logged-in user",
         }
 
     player_style = get_player_style(user_supabase)
     print("PLAYER STYLE:", player_style)
 
-    # Parse the PGN and obtain both player names.
+    # ------------------------------------------------------
+    # PARSE PGN
+    # ------------------------------------------------------
+
     game = chess.pgn.read_game(io.StringIO(pgn_text))
 
     if game is None:
         return {
-            "error": "Invalid PGN"
+            "error": "Invalid PGN",
         }
 
     white_name = game.headers.get("White")
@@ -333,6 +415,10 @@ def analyze_pgn(
     print("PGN WHITE:", white_name)
     print("PGN BLACK:", black_name)
     print("SYSTEM USERNAME:", username)
+
+    # ------------------------------------------------------
+    # FIND SAVED GAME
+    # ------------------------------------------------------
 
     pgn_hash = hashlib.sha256(
         pgn_text.encode("utf-8")
@@ -349,12 +435,15 @@ def analyze_pgn(
 
     if not existing_game.data:
         return {
-            "error": "Game was not found in review_games"
+            "error": "Game was not found in review_games",
         }
 
     game_id = existing_game.data[0]["id"]
 
-    # Use saved analysis if available.
+    # ------------------------------------------------------
+    # LOAD CACHED ANALYSIS
+    # ------------------------------------------------------
+
     cached_analysis = (
         user_supabase
         .table("game_analysis")
@@ -370,10 +459,14 @@ def analyze_pgn(
                 "progress": 100,
                 "move": 0,
                 "total_moves": 0,
-                "status": "Analysis already available."
+                "status": "Analysis already available.",
             })
 
         return cached_analysis.data[0]["analysis_json"]
+
+    # ------------------------------------------------------
+    # ANALYZE EACH MOVE
+    # ------------------------------------------------------
 
     moves = list(game.mainline_moves())
     total_moves = len(moves)
@@ -383,14 +476,14 @@ def analyze_pgn(
             "progress": 0,
             "move": 0,
             "total_moves": total_moves,
-            "status": "Preparing analysis..."
+            "status": "Preparing analysis...",
         })
 
     board = game.board()
     evaluations = []
 
     current_analysis = evaluate_fast(board)
-    prev_eval = current_analysis["evaluation"]
+    prev_eval = current_analysis.get("evaluation")
 
     for move_number, move in enumerate(moves, start=1):
         before = board.copy()
@@ -398,6 +491,7 @@ def analyze_pgn(
         after = before.copy()
         after.push(move)
 
+        # Fast evaluation of the position after the played move.
         next_analysis = evaluate_fast(after)
 
         result = analyze_single_move(
@@ -409,7 +503,7 @@ def analyze_pgn(
             after_analysis=next_analysis,
             username=username,
             white_name=white_name,
-            black_name=black_name
+            black_name=black_name,
         )
 
         if "error" in result:
@@ -418,9 +512,14 @@ def analyze_pgn(
         result["move_number"] = move_number
         evaluations.append(result)
 
+        # Advance the actual game board.
         board.push(move)
 
+        # Use the move's returned evaluation for the next comparison.
         prev_eval = result["evaluation"]
+
+        # Keep the fast analysis for the next position.
+        # Critical analysis is requested again when needed.
         current_analysis = next_analysis
 
         if progress_callback:
@@ -437,19 +536,23 @@ def analyze_pgn(
                 "status": (
                     f"Analyzing move {move_number} "
                     f"of {total_moves}..."
-                )
+                ),
             })
 
     analysis_result = {
-        "evaluations": evaluations
+        "evaluations": evaluations,
     }
+
+    # ------------------------------------------------------
+    # SAVE ANALYSIS
+    # ------------------------------------------------------
 
     if progress_callback:
         progress_callback({
             "progress": 97,
             "move": total_moves,
             "total_moves": total_moves,
-            "status": "Saving analysis..."
+            "status": "Saving analysis...",
         })
 
     try:
@@ -458,7 +561,7 @@ def analyze_pgn(
             .table("game_analysis")
             .insert({
                 "game_id": game_id,
-                "analysis_json": analysis_result
+                "analysis_json": analysis_result,
             })
             .execute()
         )
@@ -471,27 +574,36 @@ def analyze_pgn(
             "progress": 100,
             "move": total_moves,
             "total_moves": total_moves,
-            "status": "Analysis complete!"
+            "status": "Analysis complete!",
         })
 
     return analysis_result
 
 
+# ==========================================================
+# ANALYZE AN EXPLORED POSITION
+# ==========================================================
+
 def analyze_explored_move(
     fen: str,
-    move_uci: str
+    move_uci: str,
 ):
     try:
         before = chess.Board(fen)
         move = chess.Move.from_uci(move_uci)
 
-    except ValueError:
+    except (ValueError, TypeError):
         return {
-            "error": "Invalid FEN or move"
+            "error": "Invalid FEN or move",
+        }
+
+    if not before.is_valid():
+        return {
+            "error": "Invalid chess position",
         }
 
     # An isolated FEN does not identify the logged-in PGN player.
     return analyze_single_move(
         before=before,
-        move=move
+        move=move,
     )
